@@ -143,3 +143,7 @@
 #define BLE_COMPLETED_RIDE_NOTIFICATION_CARACTRISTIC "61656aa8-b795-427f-a96c-c4b6c57430dd"
 #define BLE_COMPLETED_RIDE_DESCRIPTOR_NOTIF_NAME "Notification"
 #define BLE_COMPLETED_RIDE_DESCRIPTOR_NOTIFICATION_UUID "6a2b4a0f-8ddd-4c69-a825-dbab5822ba0e"
+
+// seuil pour detecter la chute
+#define pitch_threshold 30
+#define roll_threshold 30

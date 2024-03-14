@@ -14,8 +14,7 @@
 #include "Modules/BLE.h"
 #include "Modules/ScreenGC9A01.h"
 #include "Modules/Buzzer.h"
-
-
+#include "Modules/MPU6050.h"
 
 class Program
 {
@@ -31,6 +30,8 @@ private:
     IBuzzer *_buzzer;
     ControlerButtons *_controlerButtons;
     IControlerScreen *_controlerScreen;
+    // rajouter 6050
+    MPU6050 *_MPU6050;
 
 public:
     Program();

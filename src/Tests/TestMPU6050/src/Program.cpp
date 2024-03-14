@@ -2,15 +2,15 @@
 
 Program::Program() : _TSProperties(nullptr),
                      // _lte(nullptr),
-                     _gsm(nullptr),
-                     _sdCard(nullptr),
-                     _gyroscope(nullptr),
-                     _compass(nullptr),
-                     _accelerometer(nullptr),
-                     _ble(nullptr),
-                     _buzzer(nullptr),
-                     _controlerButtons(nullptr),
-                     _controlerScreen(nullptr),
+                     //  _gsm(nullptr),
+                     //  _sdCard(nullptr),
+                     //  _gyroscope(nullptr),
+                     //  _compass(nullptr),
+                     //  _accelerometer(nullptr),
+                     //  _ble(nullptr),
+                     //  _buzzer(nullptr),
+                     //  _controlerButtons(nullptr),
+                     //  _controlerScreen(nullptr),
                      _MPU6050(nullptr)
 
 {
@@ -27,10 +27,10 @@ Program::Program() : _TSProperties(nullptr),
     // this->_accelerometer = new AccelerometerMPU6050(this->_TSProperties);
     // this->_buzzer = new Buzzer(this->_TSProperties);
 
-    this->_TSProperties->PropertiesTS.IsInitializingTS = false;
-    this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
+    // this->_TSProperties->PropertiesTS.IsInitializingTS = false;
+    // this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
 
-    this->_controlerButtons->resetLastDateChangementStateButtons();
+    // this->_controlerButtons->resetLastDateChangementStateButtons();
 
     // pinMode(PIN_BATTERY, INPUT);
 
@@ -50,7 +50,7 @@ Program::~Program()
 
 void Program::execute()
 {
-    Serial.println("program in");
+    // Serial.println("program in");
     // rajouter 6050
     this->_MPU6050->tick();
     // this->_controlerButtons->tick();
@@ -73,5 +73,5 @@ void Program::execute()
     // Serial.println(voltage);
 
     // this->_TSProperties->PropertiesBattery.BatteryLevelPourcentage = (double)analogueVoltage;
-    Serial.println("program out");
+    // Serial.println("program out");
 }
