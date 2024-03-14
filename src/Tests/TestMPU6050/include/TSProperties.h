@@ -289,4 +289,5 @@ public:
     ~TSProperties();
 
     void initProperties();
+    void showPropertiesPosture();
 };

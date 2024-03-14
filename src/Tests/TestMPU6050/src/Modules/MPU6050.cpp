@@ -316,16 +316,16 @@ void MPU6050::tick()
     if (m_now_ms - m_last_ms >= m_print_ms)
     {
         m_last_ms = m_now_ms;
-        // printPosture();
+        this->_TSProperties->showPropertiesPosture();
         // print angles for serial plotter...
-        Serial.print("yaw: ");
-        Serial.print(this->yaw, 0);
-        Serial.print(", ");
-        Serial.print("pitch: ");
-        Serial.print(this->pitch, 0);
-        Serial.print(", ");
-        Serial.print("roll: ");
-        Serial.println(this->roll, 0);
+        // Serial.print("yaw: ");
+        // Serial.print(this->yaw, 0);
+        // Serial.print(", ");
+        // Serial.print("pitch: ");
+        // Serial.print(this->pitch, 0);
+        // Serial.print(", ");
+        // Serial.print("roll: ");
+        // Serial.println(this->roll, 0);
 
         if (yaw == 0 || yaw == 360)
         {

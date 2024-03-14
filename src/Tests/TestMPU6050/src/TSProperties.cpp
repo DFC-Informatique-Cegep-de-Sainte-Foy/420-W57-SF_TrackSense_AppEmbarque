@@ -63,3 +63,15 @@ void TSProperties::initProperties()
     // GPS
     this->PropertiesGPS.resetGPSValues();
 }
+
+void TSProperties::showPropertiesPosture()
+{
+    Serial.print("yaw: ");
+    Serial.print(this->PropertiesPosture.YawAngle, 0);
+    Serial.print(", ");
+    Serial.print("pitch: ");
+    Serial.print(this->PropertiesPosture.PitchAngle, 0);
+    Serial.print(", ");
+    Serial.print("roll: ");
+    Serial.println(this->PropertiesPosture.RollAngle, 0);
+}
