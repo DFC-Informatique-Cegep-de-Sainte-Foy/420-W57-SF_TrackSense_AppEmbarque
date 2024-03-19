@@ -35,7 +35,7 @@ void QMC5883L::tick()
     // 更新当前TS数据
     this->_TSProperties->PropertiesCompass.Heading_angle = this->_azimuth;
     // 打印debug数据
-    this->printData();
+    // this->printData();
 }
 
 int QMC5883L::obtenirAzimuth()
