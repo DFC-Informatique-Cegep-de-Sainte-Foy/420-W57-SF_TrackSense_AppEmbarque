@@ -3,12 +3,15 @@
 #include <Arduino.h>
 #include <QMC5883LCompass.h>
 #include "Interfaces/IQMC5883L.h"
+#include "MyMPU6050.h"
 
 class QMC5883L : public IQMC5883L
 {
 private:
     TSProperties *_TSProperties;
     QMC5883LCompass *_compass;
+
+    MyMPU6050 *_mpu6050;
     int _QMCaddr;
     // data brutes
     int _xyzRaw[3] = {0, 0, 0};
@@ -40,7 +43,7 @@ private:
     };
 
 public:
-    QMC5883L(TSProperties *, int p_QMC_addr = 0x0D);
+    QMC5883L(TSProperties *, MyMPU6050 *, int p_QMC_addr = 0x77);
     ~QMC5883L();
     void tick() override;
     int obtenirAzimuth();
@@ -48,4 +51,5 @@ public:
     void obtenirDirection();
     void printData();
     void obtenirXYZ();
+    float getMagnetometerTiltCompensatedBearing();
 };

@@ -1,0 +1,26 @@
+{
+    "files.associations": {
+        "*.js": "javascript",
+        "*.json": "jsonc",
+        "*.cjson": "jsonc",
+        "*.wxss": "css",
+        "*.wxs": "javascript",
+        "cmath": "cpp",
+        "*.tcc": "cpp",
+        "new": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "vector": "cpp",
+        "string_view": "cpp",
+        "initializer_list": "cpp",
+        "fstream": "cpp",
+        "iosfwd": "cpp",
+        "istream": "cpp",
+        "limits": "cpp",
+        "sstream": "cpp",
+        "streambuf": "cpp"
+    }
+}

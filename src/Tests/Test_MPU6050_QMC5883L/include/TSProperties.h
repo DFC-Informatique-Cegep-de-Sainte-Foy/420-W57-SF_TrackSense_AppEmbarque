@@ -221,6 +221,9 @@ public:
         // double CalibrationCompassX;
         // double CalibrationCompassY;
         // double CalibrationCompassZ;
+        double XH;
+        double YH;
+        double ZH;
 
     } PropertiesCompass;
 

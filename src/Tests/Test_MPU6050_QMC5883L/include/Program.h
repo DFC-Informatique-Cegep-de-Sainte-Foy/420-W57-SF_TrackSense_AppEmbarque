@@ -15,7 +15,7 @@
 // #include "Modules/BLE.h"
 // #include "Modules/ScreenGC9A01.h"
 // #include "Modules/Buzzer.h"
-#include "Modules/MPU6050.h"
+#include "Modules/MyMPU6050.h"
 #include "Modules/QMC5883L.h"
 class Program
 {
@@ -32,7 +32,7 @@ private:
     // ControlerButtons *_controlerButtons;
     // IControlerScreen *_controlerScreen;
     // rajouter 6050
-    MPU6050 *_MPU6050;
+    MyMPU6050 *_MPU6050;
     QMC5883L *_QMC5883L;
     // Timer
     unsigned long m_now_ms, m_last_ms = 0; // millis() timers

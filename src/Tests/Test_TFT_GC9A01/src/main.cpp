@@ -39,7 +39,7 @@ TFT_eSprite spr = TFT_eSprite(&tft);    // Sprite for meter reading
 #include "dial.h"
 
 // Include the jpeg decoder library
-#include <TJpg_Decoder.h>
+#include <TJpg_Decoder.h> // render un img en format array dans un ecran de TFT
 
 uint16_t *tft_buffer;
 bool buffer_loaded = false;

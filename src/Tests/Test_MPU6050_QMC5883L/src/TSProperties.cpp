@@ -77,8 +77,8 @@ void TSProperties::showPropertiesPosture()
     Serial.print(", ");
     if (this->PropertiesPosture.isChute)
     {
-        Serial.println("Chute détectée");
-        Serial.print(", ");
+        // Serial.println("Chute détectée");
+        // Serial.print(", ");
     }
 }
 
@@ -86,5 +86,14 @@ void TSProperties::showPropertiesCompass()
 {
     Serial.print("Azimuth-> ");
     Serial.print(this->PropertiesCompass.Heading_angle);
+    Serial.print(", ");
+    Serial.print("XH-> ");
+    Serial.print(this->PropertiesCompass.XH);
+    Serial.print(", ");
+    Serial.print("YH-> ");
+    Serial.print(this->PropertiesCompass.YH);
+    Serial.print(", ");
+    Serial.print("ZH-> ");
+    Serial.print(this->PropertiesCompass.ZH);
     Serial.print(", ");
 }

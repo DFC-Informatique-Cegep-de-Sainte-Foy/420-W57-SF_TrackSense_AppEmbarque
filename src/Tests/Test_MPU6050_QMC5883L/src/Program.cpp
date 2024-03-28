@@ -18,9 +18,9 @@ Program::Program() : _TSProperties(nullptr),
     // this->_controlerButtons = new ControlerButtons(this->_TSProperties);
 
     // rajouter 6050
-    this->_MPU6050 = new MPU6050(this->_TSProperties);
+    this->_MPU6050 = new MyMPU6050(this->_TSProperties);
     // rajouter QMC5883L
-    this->_QMC5883L = new QMC5883L(this->_TSProperties);
+    this->_QMC5883L = new QMC5883L(this->_TSProperties, this->_MPU6050);
 
     // this->_ble = new BLE(this->_TSProperties);
     // this->_sdCard = new SDCard(this->_TSProperties);
@@ -58,6 +58,7 @@ void Program::execute()
     this->_MPU6050->tick();
     // rajouter QMC5883l
     this->_QMC5883L->tick();
+
     // this->_controlerButtons->tick();
     // this->_buzzer->tick();
     // this->_controlerScreen->tick();
@@ -85,8 +86,11 @@ void Program::execute()
     if (m_now_ms - m_last_ms >= m_print_ms)
     {
         m_last_ms = m_now_ms;
-        this->_TSProperties->showPropertiesPosture();
-        this->_TSProperties->showPropertiesCompass();
+        // int BearingCompensated = this->_QMC5883L->getMagnetometerTiltCompensatedBearing();
+        // Serial.print("Bearing-> ");
+        // Serial.println(BearingCompensated);
+        // this->_TSProperties->showPropertiesPosture();
+        // this->_TSProperties->showPropertiesCompass();
         Serial.println("");
     }
 }

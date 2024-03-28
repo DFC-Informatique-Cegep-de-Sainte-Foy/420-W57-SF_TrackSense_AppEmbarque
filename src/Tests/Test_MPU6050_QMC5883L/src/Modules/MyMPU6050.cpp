@@ -1,7 +1,7 @@
-#include "Modules/MPU6050.h"
+#include "Modules/MyMPU6050.h"
 #include <TSProperties.h>
 
-MPU6050::MPU6050(TSProperties *TSProperties, int p_MPU_addr)
+MyMPU6050::MyMPU6050(TSProperties *TSProperties, int p_MPU_addr)
     : m_MPU_addr(p_MPU_addr),
       _TSProperties(TSProperties)
 {
@@ -17,12 +17,12 @@ MPU6050::MPU6050(TSProperties *TSProperties, int p_MPU_addr)
     Serial.println("CTOR MPU");
 }
 
-bool MPU6050::detectChut()
+bool MyMPU6050::detectChut()
 {
     return false;
 }
 
-void MPU6050::fusionEnPostures()
+void MyMPU6050::fusionEnPostures()
 {
     // Compute Tait-Bryan angles. Strictly valid only for approximately level movement
 
@@ -56,7 +56,7 @@ void MPU6050::fusionEnPostures()
     roll *= 180.0 / PI;
 }
 
-void MPU6050::printPosture()
+void MyMPU6050::printPosture()
 {
     // print angles for serial plotter...
     Serial.print("yaw: ");
@@ -105,7 +105,7 @@ void MPU6050::printPosture()
         Serial.print("North-Ouest  ");
     }
 }
-void MPU6050::Mahony_update(float ax, float ay, float az, float gx, float gy, float gz, float deltat)
+void MyMPU6050::Mahony_update(float ax, float ay, float az, float gx, float gy, float gz, float deltat)
 {
     float recipNorm;
     float vx, vy, vz;
@@ -173,16 +173,16 @@ void MPU6050::Mahony_update(float ax, float ay, float az, float gx, float gy, fl
     m_quaternion[2] = m_quaternion[2] * recipNorm;
     m_quaternion[3] = m_quaternion[3] * recipNorm;
 }
-void MPU6050::calibrer()
+void MyMPU6050::calibrer()
 {
 }
 
-MPU6050::~MPU6050()
+MyMPU6050::~MyMPU6050()
 {
     ;
 }
 
-void MPU6050::readDonneesBrutes(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int16_t *gy, int16_t *gz)
+void MyMPU6050::readDonneesBrutes(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int16_t *gy, int16_t *gz)
 {
     Wire.beginTransmission(m_MPU_addr);
     Wire.write(0x3B); // starting with register 0x3B (ACCEL_XOUT_H)
@@ -213,50 +213,11 @@ void MPU6050::readDonneesBrutes(int16_t *ax, int16_t *ay, int16_t *az, int16_t *
     Gxyz[1] = ((float)*gy - m_G_off[1]) * gscale;
     Gxyz[2] = ((float)*gz - m_G_off[2]) * gscale;
 }
-void MPU6050::tick()
+void MyMPU6050::tick()
 {
     static float deltat = 0;                // loop time in seconds
     static unsigned long now = 0, last = 0; // micros() timers
     readDonneesBrutes(&this->m_ax, &this->m_ay, &this->m_az, &this->m_gx, &this->m_gy, &this->m_gz);
-    // raw data
-    int16_t ax, ay, az;
-    int16_t gx, gy, gz;
-    int16_t Tmp; // temperature
-
-    // scaled data as vector
-    float Axyz[3];
-    float Gxyz[3];
-
-    Wire.beginTransmission(m_MPU_addr);
-    Wire.write(0x3B); // starting with register 0x3B (ACCEL_XOUT_H)
-    Wire.endTransmission(false);
-    Wire.requestFrom(m_MPU_addr, 14); // request a total of 14 registers
-    int t = Wire.read() << 8;
-    ax = t | Wire.read(); // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)
-    t = Wire.read() << 8;
-    ay = t | Wire.read(); // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
-    t = Wire.read() << 8;
-    az = t | Wire.read(); // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
-    t = Wire.read() << 8;
-    Tmp = t | Wire.read(); // 0x41 (TEMP_OUT_H) & 0x42 (TEMP_OUT_L)
-    t = Wire.read() << 8;
-    gx = t | Wire.read(); // 0x43 (GYRO_XOUT_H) & 0x44 (GYRO_XOUT_L)
-    t = Wire.read() << 8;
-    gy = t | Wire.read(); // 0x45 (GYRO_YOUT_H) & 0x46 (GYRO_YOUT_L)
-    t = Wire.read() << 8;
-    gz = t | Wire.read(); // 0x47 (GYRO_ZOUT_H) & 0x48 (GYRO_ZOUT_L)
-
-    Axyz[0] = (float)ax;
-    Axyz[1] = (float)ay;
-    Axyz[2] = (float)az;
-
-    // apply offsets and scale factors from Magneto
-    for (int i = 0; i < 3; i++)
-        Axyz[i] = (Axyz[i] - m_A_cal[i]) * m_A_cal[i + 3];
-
-    Gxyz[0] = ((float)gx - m_G_off[0]) * gscale; // 250 LSB(d/s) default to radians/s
-    Gxyz[1] = ((float)gy - m_G_off[1]) * gscale;
-    Gxyz[2] = ((float)gz - m_G_off[2]) * gscale;
 
     //  snprintf(s,sizeof(s),"mpu raw %d,%d,%d,%d,%d,%d",ax,ay,az,gx,gy,gz);
     //  Serial.println(s);
@@ -317,6 +278,34 @@ void MPU6050::tick()
     if (m_now_ms - m_last_ms >= m_print_ms)
     {
         m_last_ms = m_now_ms;
+
+        // 原始数据
+        Serial.print("Acceleration - GYRO-> ");
+        Serial.print(m_ax);
+        Serial.print("\t");
+        Serial.print(m_ay);
+        Serial.print("\t");
+        Serial.print(m_az);
+        Serial.print("\t");
+        Serial.print(m_gx);
+        Serial.print("\t");
+        Serial.print(m_gy);
+        Serial.print("\t");
+        Serial.println(m_gz);
+
+        // 应用偏移量后的数据
+        // Serial.print(Axyz[0]);
+        // Serial.print("\t");
+        // Serial.print(Axyz[1]);
+        // Serial.print("\t");
+        // Serial.print(Axyz[2]);
+        // Serial.print("\t");
+        // Serial.print(Gxyz[0]);
+        // Serial.print("\t");
+        // Serial.print(Gxyz[1]);
+        // Serial.print("\t");
+        // Serial.println(Gxyz[2]);
+        /*--------------------------------------------*/
         // this->_TSProperties->showPropertiesPosture();
         // print angles for serial plotter...
         // Serial.print("yaw: ");

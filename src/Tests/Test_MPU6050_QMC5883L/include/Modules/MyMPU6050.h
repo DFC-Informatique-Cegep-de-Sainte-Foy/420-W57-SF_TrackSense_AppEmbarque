@@ -3,7 +3,7 @@
 #include "Interfaces/IMPU6050.h"
 #include "Wire.h"
 
-class MPU6050 : public IMPU6050
+class MyMPU6050 : public IMPU6050
 {
 private:
     TSProperties *_TSProperties;
@@ -28,7 +28,7 @@ private:
 
     float m_A_cal[6] = {265.0, -80.0, -700.0, 0.994, 1.000, 1.014}; // 0..2 offset xyz, 3..5 scale xyz
     // the code will work, but not as accurately, for an uncalibrated accelerometer. Use this line instead:
-    // float A_cal[6] = {0.0, 0.0, 0.0, 1.000, 1.000, 1.000};        // 0..2 offset xyz, 3..5 scale xyz
+    // float m_A_cal[6] = {0.0, 0.0, 0.0, 1.000, 1.000, 1.000}; // 0..2 offset xyz, 3..5 scale xyz
 
     float m_G_off[3] = {-499.5, -17.7, -82.0};   // raw offsets, determined for gyro at rest
 #define gscale ((250. / 32768.0) * (PI / 180.0)) // gyro default 250 LSB per d/s -> rad/s
@@ -42,8 +42,8 @@ private:
     void Mahony_update(float ax, float ay, float az, float gx, float gy, float gz, float deltat);
 
 public:
-    MPU6050(TSProperties *TSProperties, int p_MPU_addr = 0x68);
-    ~MPU6050();
+    MyMPU6050(TSProperties *TSProperties, int p_MPU_addr = 0x68);
+    ~MyMPU6050();
     void readDonneesBrutes(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int16_t *gy, int16_t *gz);
     void calibrer();
     bool detectChut();

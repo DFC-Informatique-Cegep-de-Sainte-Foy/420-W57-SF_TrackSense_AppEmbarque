@@ -1,0 +1,44 @@
+1 - 磁力计在XYZ三个轴上产生读数
+2 - 通过三轴读数融合成一个磁力矢量，由XYZ三轴的分量合成
+3 - 全球表面的磁场部分不均匀，根据不同的地点，XYZ分量的合成比例是不同的，所得到的磁矢量也是不同的，
+    具体来说：
+        在赤道上，磁矢量与经线平行，Z轴上的分量几乎为0
+        在北极，磁矢量与地表垂直，磁矢量几乎全部有Z分量构成，方向向下
+        在南极，磁矢量与地表垂直，磁矢量几乎全部由Z分量否成，方向向上
+4 - 所以Z分量所占比重会根据不同的地点而不同
+5 - 当磁力计在水平方向上产生倾斜时，会产生相当大的Z分量，这种Z分量会根据地点的不同而不同，
+    Z分量会分配到X和Y的分量重，最终会影响磁力矢量的合成结果；
+    具体来说：
+        在赤道附近时，由于Z分量相对较小，所以磁力计水平方向的倾斜对磁力计矢量最终的合成影响较小；
+        相对的，在两级附近，由于Z分量相对较大，所以磁力计水平方向的倾斜对磁力计矢量最终的合成影响较大；
+6 - 当测量磁力时，需要考虑磁力计在水平方向上的倾斜是多少，可以根据加速度计的pitch和roll角度，来判断X轴和Y轴距离水平面偏离多少，
+    然后在合成磁力矢量中，取出这些异变；
+            
+关于芯片：
+GY-87有两种不同芯片设计：
+    GY-87 -> MPU6050 +  HMC5883L (HMC5983-temperature compensation) Honeywell over after 2016 
+    GY-87 -> MPU6050 +  QMC5883L (registers are not the same as the Honeywell)
+                            |——————  'A' version with "DA 5883" ————0X1E (HMC5983/HMC5883L datasheet)
+                            |——————  'B' version with "DB 5833" ————0X0D (QMC5883L datasheet)
+
+关于GY87的MPU6050模块与HMC5883L模块通信：
+    1) 需要开启从模式
+        Wire.beginTransmission(0x68);
+        Wire.write(0x37);
+        Wire.write(0x02);
+        Wire.endTransmission();
+
+        Wire.beginTransmission(0x68);
+        Wire.write(0x6A);
+        Wire.write(0x00);
+        Wire.endTransmission();
+
+        使用 I2Cdevlib-MPU6050库中的类：MPU6050::setI2CBypassEnabled(true);
+
+    2) 需要关闭睡眠模式
+        Wire.beginTransmission(0x68);
+        Wire.write(0x6B);
+        Wire.write(0x00);
+        Wire.endTransmission();
+
+
