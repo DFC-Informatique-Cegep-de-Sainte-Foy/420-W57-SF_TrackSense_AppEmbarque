@@ -15,7 +15,7 @@
 #include "Modules/ScreenGC9A01.h"
 #include "Modules/Buzzer.h"
 #include "Modules/MPU6050.h"
-
+#include "Modules/GY87_Adafruit.h"
 class Program
 {
 private:
@@ -30,8 +30,9 @@ private:
     IBuzzer *_buzzer;
     ControlerButtons *_controlerButtons;
     IControlerScreen *_controlerScreen;
-    // rajouter 6050
     MPU6050 *_MPU6050;
+    // 惯性单元
+    IGY87 *_gy87;
 
 public:
     Program();

@@ -18,6 +18,7 @@ MPU6050::MPU6050(TSProperties *TSProperties, int p_MPU_addr)
 
 bool MPU6050::detectChut()
 {
+    return true;
 }
 
 void MPU6050::Mahony_update(float ax, float ay, float az, float gx, float gy, float gz, float deltat)

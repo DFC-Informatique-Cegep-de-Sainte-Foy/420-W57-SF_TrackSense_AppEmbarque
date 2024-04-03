@@ -1,37 +1,37 @@
 #include "Program.h"
-
 Program::Program() : _TSProperties(nullptr),
                      // _lte(nullptr),
-                     _gsm(nullptr),
-                     _sdCard(nullptr),
-                     _gyroscope(nullptr),
-                     _compass(nullptr),
-                     _accelerometer(nullptr),
-                     _ble(nullptr),
-                     _buzzer(nullptr),
-                     _controlerButtons(nullptr),
-                     _controlerScreen(nullptr),
-                     _MPU6050(nullptr),
-                     _gy87(nullptr)
-
+                     //  _gsm(nullptr),
+                     //  _sdCard(nullptr),
+                     //  _gyroscope(nullptr),
+                     //  _compass(nullptr),
+                     //  _accelerometer(nullptr),
+                     //  _ble(nullptr),
+                     //  _buzzer(nullptr),
+                     //  _controlerButtons(nullptr),
+                     //  _controlerScreen(nullptr),
+                     //  _MPU6050(nullptr),
+                     _Compass(nullptr)
 {
     this->_TSProperties = new TSProperties();
     // this->_controlerScreen = new ControlerScreen(this->_TSProperties);
     // this->_controlerButtons = new ControlerButtons(this->_TSProperties);
     // rajouter 6050
     // this->_MPU6050 = new MPU6050(this->_TSProperties);
-    // this->_gyroscope = new GyroscopeMPU6050(this->_TSProperties);
-    // this->_compass = new CompassHMC5883L(this->_TSProperties);
-    // this->_accelerometer = new AccelerometerMPU6050(this->_TSProperties);
-    // Rajouter GY87
-    this->_gy87 = new GY87_Adafruit(this->_TSProperties);
+    // rajouter QMC5883L
+    this->_Compass = new GY87_Adafruit(this->_TSProperties);
+    this->_Compass->calibrationHMC5883L();
+
     // this->_ble = new BLE(this->_TSProperties);
     // this->_sdCard = new SDCard(this->_TSProperties);
     // this->_gsm = new GSMTiny(this->_TSProperties);
+    // this->_gyroscope = new GyroscopeMPU6050(this->_TSProperties);
+    // this->_compass = new CompassHMC5883L(this->_TSProperties);
+    // this->_accelerometer = new AccelerometerMPU6050(this->_TSProperties);
     // this->_buzzer = new Buzzer(this->_TSProperties);
 
-    this->_TSProperties->PropertiesTS.IsInitializingTS = false;
-    this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
+    // this->_TSProperties->PropertiesTS.IsInitializingTS = false;
+    // this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
 
     // this->_controlerButtons->resetLastDateChangementStateButtons();
 
@@ -56,8 +56,8 @@ void Program::execute()
     // Serial.println("program in");
     // rajouter 6050
     // this->_MPU6050->tick();
-    // Rajouter GY87
-    this->_gy87->tick();
+    // rajouter QMC5883l
+    this->_Compass->tick();
     // this->_controlerButtons->tick();
     // this->_buzzer->tick();
     // this->_controlerScreen->tick();
