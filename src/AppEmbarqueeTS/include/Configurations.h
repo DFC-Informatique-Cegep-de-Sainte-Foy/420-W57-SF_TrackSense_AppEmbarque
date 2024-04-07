@@ -108,17 +108,17 @@
 /*----- I2C : Accelerometer, Gyroscope, Compass, Temperature -----*/
 #define PIN_GY87_SDA 21
 #define PIN_GY87_SCL 22
-
+#define PIN_GY87_INTA 39
 /*----- Buzzer -----*/
-#define PIN_BUZZER 32
+#define PIN_BUZZER 14
 // #define PIN_BUZZER 39
 
 /*----- Battery -----*/
-#define PIN_BATTERY 35
+#define PIN_BATTERY 35 //???
 
 /*----- Buttons -----*/
-#define PIN_BUTTON1 33
-#define PIN_BUTTON2 34
+#define PIN_BUTTON1 2
+#define PIN_BUTTON2 15
 #define BUTTON_LONG_PRESS_DURATION_MS 2000
 #define BUTTON_INACTIVITY_TIME_MS 300000 // 5 minutes
 
