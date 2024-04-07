@@ -24,6 +24,19 @@ private:
     float Kx = 0, Ky = 0;
     float _magneticDeclinationDegrees = 0;
 
+    //
+    float GyroMeasError = PI * (60.0f / 180.0f);
+    float beta = sqrt(3.0f / 4.0f) * GyroMeasError; // compute beta
+    float GyroMeasDrift = PI * (1.0f / 180.0f);     // gyroscope measurement drift in rad/s/s (start at 0.0 deg/s/s)
+    float zeta = sqrt(3.0f / 4.0f) * GyroMeasDrift; // compute zeta, the other free parameter in the Madgwick scheme usually set to a small or zero value
+    float deltat = 0.0f;                            // integration interval for both filter schemes
+    int lastUpdate, firstUpdate, bootTime, Now;     // used to calculate integration interval
+    int delt_t;                                     // used to control display output rate
+    int count;                                      // used to control display output rate
+    // Euler angles
+    float pitch, yaw, roll;
+    float q[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // vector to hold quaternion
+
 public:
     GY87_Adafruit(TSProperties *);
     ~GY87_Adafruit();
@@ -37,4 +50,8 @@ public:
     void setCalibrationScales(float x_scale, float y_scale, float z_scale);
     void setMagneticDeclination(int degrees, uint8_t minutes);
     void tick() override;
+
+    void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
+    void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
+    void quaternionToEuler();
 };

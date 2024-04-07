@@ -15,7 +15,7 @@ void enableGPSAndModem();
 void disableGPSAndModem();
 void showScreenWaitingPage();
 
-#define TINY_GSM_MODEM_SIM7000
+#define TINY_GSM_MODEM_SIM7600  // change le modele du T-SIM
 #define TINY_GSM_RX_BUFFER 1024 // Set RX buffer to 1Kb
 
 #include <Arduino.h>
@@ -49,7 +49,7 @@ TinyGsm modem(SerialAT);
 #define TFT_SCL_CLK_SCK 18
 // #define TFT_MISO 19
 
-Adafruit_GC9A01A tft(TFT_CS, TFT_DC, TFT_MOSI, TFT_CLK, TFT_RST);
+Adafruit_GC9A01A tft(TFT_CS_SS, TFT_DC, TFT_SDA_DIN_MOSI, TFT_SCL_CLK_SCK, TFT_RES_RST);
 
 void setup()
 {
@@ -81,17 +81,17 @@ void setup()
     if (!modem.restart())
     {
         Serial.println("Failed to restart modem, attempting to continue without restarting");
-        // modem.init();
+        modem.init();
     }
 
     // Print modem info
     String modemName = modem.getModemName();
     delay(500);
-    SerialMon.println("Modem Name: " + modemName);
+    SerialMon.println("Modem Name: " + modemName); // SIMCom SIM7000
 
     String modemInfo = modem.getModemInfo();
     delay(500);
-    SerialMon.println("Modem Info: " + modemInfo);
+    SerialMon.println("Modem Info: " + modemInfo); // vide
 }
 
 void loop()
@@ -102,7 +102,7 @@ void loop()
     modem.sendAT("+SGPIO=0,4,1,1");
     if (modem.waitResponse(10000L) != 1)
     {
-        SerialMon.println(" SGPIO=0,4,1,1 false ");
+        SerialMon.println(" SGPIO=0,4,1,1 false "); // SGPIO=0,4,1,1 false
     }
 
     modem.enableGPS();
@@ -269,7 +269,6 @@ void printGPSOnScreen(float lat, float lon, float speed, float alt, float accura
     String strAccuracy = "Accu : " + String(accuracy, 4);
     tft.printf(formatChar, strAccuracy.c_str());
 }
-
 
 // Coordonnées Borne Fontaine : 46.8428955078, -71.4045486450
 // Coordonnées Borne Fontaine : 46.8428916931, -71.4045486450
