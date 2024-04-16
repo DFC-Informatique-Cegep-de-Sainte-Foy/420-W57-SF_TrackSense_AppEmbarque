@@ -107,6 +107,8 @@ public:
         int Seconde;
         bool IsFixValid;
         bool IsGPSFixed;
+        bool estChute;
+        bool estEnvoyerSMS;
 
         int CounterGoodValue;
         int CounterTotal;
@@ -132,6 +134,8 @@ public:
             this->CounterGoodValue = 0;
             this->CounterTotal = 0;
             this->IsFixValid = false;
+            this->estChute = false;
+            this->estEnvoyerSMS = false;
         }
     } PropertiesGPS;
 
@@ -216,11 +220,40 @@ public:
     /* datas Compass */
     struct TSPropertiesCompass
     {
-        // double Heading_angle; // PositionNord
-        // double DeclinationAngle;
-        // double CalibrationCompassX;
-        // double CalibrationCompassY;
-        // double CalibrationCompassZ;
+        // datas brute Compass
+        float Acc_X;
+        float Acc_Y;
+        float Acc_Z;
+        float Gyro_X;
+        float Gyro_Y;
+        float Gyro_Z;
+        float Mag_X;
+        float Mag_Y;
+        float Mag_Z;
+
+        float heading;
+        float pitch;
+        float roll;
+        float yaw;
+        void resetCompassValues()
+        {
+            // data raw
+            this->Acc_X;
+            this->Acc_Y;
+            this->Acc_Z;
+            this->Gyro_X;
+            this->Gyro_Y;
+            this->Gyro_Z;
+            this->Mag_X;
+            this->Mag_Y;
+            this->Mag_Z;
+            // data normalise
+            this->heading;
+            this->pitch;
+            this->roll;
+            this->yaw;
+        }
+
     } PropertiesCompass;
 
     /* datas Gyroscope */

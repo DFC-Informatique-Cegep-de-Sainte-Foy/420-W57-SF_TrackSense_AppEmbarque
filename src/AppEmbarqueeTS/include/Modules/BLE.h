@@ -11,22 +11,24 @@
 #include "Configurations.h"
 #include "TSProperties.h"
 
-class BLE 
+class BLE
     : public IBLE
 {
 private:
-    TSProperties* _TSProperties;
+    TSProperties *_TSProperties;
 
-    BLEServer* _serverBLE;
-    BLEAdvertising* _advertisingBLE;
+    BLEServer *_serverBLE;
+    BLEAdvertising *_advertisingBLE;
 
-    BLEService* _completedRideService;
+    BLEService *_completedRideService;
+    BLECharacteristic *_CRDataCharacteristic;
+    BLECharacteristic *_CRNotificationCharacteristic;
+    BLEDescriptor *_CRDataDescriptor;
+    BLEDescriptor *_CRNotificationDescriptor;
 
-    BLECharacteristic* _CRDataCaracteristic;
-    BLECharacteristic* _CRNotificationCaracteristic;
-
-    BLEDescriptor* _CRDataDescriptor;
-    BLEDescriptor* _CRNotificationDescriptor;
+    BLEService *_screenService;
+    BLECharacteristic *_screenRotateCharacteristic;
+    BLEDescriptor *_screenRotateDescriptor;
 
     unsigned long _lastTimeStatsSent;
     unsigned long _lastTimePointSent;
@@ -36,13 +38,15 @@ private:
 
     void initBLE();
     void initAdvertising();
-    void initCompletedRideService();
-    void initCompletedRideCaracteristics();
-    void initCompletedRideDescriptors();
+    void initServices();
+    void initCaracteristics();
+    void initDescriptors();
     void startServices();
     void sendCompletedRideStats();
     void sendCompletedRideCurrentPoint();
     void confirmPointReceived();
+
+    void updateTSProperties();
 
 public:
     static bool isDeviceConnected;
@@ -53,7 +57,9 @@ public:
     static bool isAdvertiesingStarted;
     static int currentPointNumber;
 
-    BLE(TSProperties* TSProperties);
+    static bool isNeedToUpdateTSProperties;
+
+    BLE(TSProperties *TSProperties);
     ~BLE();
 
     void tick() override;

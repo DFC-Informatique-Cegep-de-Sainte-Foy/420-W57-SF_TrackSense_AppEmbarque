@@ -1,6 +1,6 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
@@ -45,7 +45,7 @@
       "ftdi"
     ],
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 921600
   },
   "url": "https://espressif.com/en/products/hardware/esp-wrover-kit/overview",
   "vendor": "Espressif + LilyGO"

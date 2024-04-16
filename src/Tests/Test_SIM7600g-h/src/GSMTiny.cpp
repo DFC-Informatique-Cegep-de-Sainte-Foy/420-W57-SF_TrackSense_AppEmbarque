@@ -97,13 +97,15 @@ void GSMTiny::tick()
     Serial.println("IsRideFinished : " + String(this->_TSProperties->PropertiesCurrentRide.IsRideFinished));
 #endif
 
+    // 如果在骑行过程中
     if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted && this->_TSProperties->PropertiesCurrentRide.IsRideFinished == false)
     {
+        // 如果GPS没开启，则启动GPS
         if (this->_isGpsOn == false && this->_isModemOn == true && this->_isInitialized == true)
         {
             this->gpsPowerOn();
         }
-
+        // 如果满足时间间隔(大于1秒钟)，则GPS工作
         if (actualTime - this->_lastReadTimeMS > 1000)
         {
             this->_durationS = (actualTime - this->_TSProperties->PropertiesCurrentRide.StartTimeMS) / 1000;
@@ -150,10 +152,9 @@ void GSMTiny::tick()
                 DEBUG_STRING_LN(DEBUG_TS_GPS, "Write GPS : Location is not Valid");
             }
         }
-
         this->_TSProperties->PropertiesCurrentRide.AverageSpeedKMPH = (this->_TSProperties->PropertiesCurrentRide.DistanceTotalMeters / this->_durationS) * 3.6;
     }
-    else
+    else // 不在骑行中
     {
         DEBUG_STRING_LN(DEBUG_TS_GSM, "Write GPS : Ride is not Started");
 
@@ -161,6 +162,21 @@ void GSMTiny::tick()
         {
             this->gpsPowerOff();
         }
+    }
+    // Serial.println("GSM tick");
+
+    // 无论在哪种状态下，只要有跌倒，并且消息还没有发送，就发送消息
+    if (this->_TSProperties->PropertiesGPS.estChute && !this->_TSProperties->PropertiesGPS.estEnvoyerSMS)
+    {
+        // 发送消息
+        envoyerSMS();
+        // 更新TS状态为：已发送
+        // TODO:
+        // 更新是否发送了短信的状态：已经发送(true)
+        // this->_TSProperties->PropertiesGPS.estEnvoyerSMS = true;
+        Serial.println("SMS est envoye!");
+        // 等待按钮事件，如果点击了按钮，则重新更新状态：还未发送(false)
+        // TODO
     }
 }
 
@@ -462,4 +478,59 @@ double GSMTiny::distanceBetweenInMeters(double lat1, double long1, double lat2, 
     double denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
     delta = atan2(delta, denom);
     return delta * 6372795;
+}
+
+void GSMTiny::envoyerSMS()
+{
+    float lat = 0;
+    float lon = 0;
+    float speed = 0;
+    float alt = 0;
+    int vsat = 0;
+    int usat = 0;
+    float accuracy = 0;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    int hour = 0;
+    int min = 0;
+    int sec = 0;
+
+    // 获取GPS数据
+    // TODO:
+    for (int8_t i = 15; i; i--)
+    {
+        // SerialMon.println("Requesting current GPS/GNSS/GLONASS location");
+        if (modem->getGPS(&lat, &lon, &speed, &alt, &vsat, &usat, &accuracy,
+                          &year, &month, &day, &hour, &min, &sec))
+        {
+            Serial.println("Latitude: " + String(lat, 8) + "\tLongitude: " + String(lon, 8));
+            Serial.println("Speed: " + String(speed) + "\tAltitude: " + String(alt));
+            Serial.println("Visible Satellites: " + String(vsat) + "\tUsed Satellites: " + String(usat));
+            Serial.println("Accuracy: " + String(accuracy));
+            Serial.println("Year: " + String(year) + "\tMonth: " + String(month) + "\tDay: " + String(day));
+            Serial.println("Hour: " + String(hour) + "\tMinute: " + String(min) + "\tSecond: " + String(sec));
+            break;
+        }
+        else
+        {
+            Serial.println("Couldn't get GPS/GNSS/GLONASS location, retrying in 15s.");
+            delay(15000L);
+        }
+    }
+    // SerialMon.println("Retrieving GPS/GNSS/GLONASS location again as a string");
+    String gps_raw = modem->getGPSraw();
+    // SerialMon.println("GPS/GNSS Based Location String: " + gps_raw);
+
+    // 发送GPS数据到telephone
+    // TODO:
+    mylati = dtostrf(lat, 3, 6, buff);
+    mylong = dtostrf(lon, 3, 6, buff);
+    textForSMS = textForSMS + "http://www.google.com/maps/place/" + mylati + "," + mylong;
+    delay(5000);
+    modem->sendSMS(SMS_TARGET, "Je suis ici: ");
+    modem->sendSMS(SMS_TARGET, textForSMS);
+    // fona.sendSMS(callerIDbuffer,textForSMS );
+    Serial.println("SMS send");
+    textForSMS = "";
 }

@@ -40,4 +40,5 @@ public:
     ~Program();
 
     void execute();
+    void executeCore0();
 };

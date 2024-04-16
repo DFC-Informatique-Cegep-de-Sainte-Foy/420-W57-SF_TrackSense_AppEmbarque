@@ -80,3 +80,9 @@ void Program::execute()
     // this->_TSProperties->PropertiesBattery.BatteryLevelPourcentage = (double)analogueVoltage;
     // Serial.println("program out");
 }
+
+void Program::executeCore0()
+{
+    DEBUG_STRING_LN(DEBUG_TS_CORE || DEBUG_TS_SCREEN, "                                             _controlerScreen->drawOnScreen()");
+    // this->_controlerScreen->drawOnScreen();
+}

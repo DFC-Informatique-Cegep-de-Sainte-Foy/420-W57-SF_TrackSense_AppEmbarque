@@ -7,13 +7,14 @@ Buzzer::Buzzer(TSProperties *TSProperties) : _TSProperties(TSProperties)
 
 Buzzer::~Buzzer()
 {
+    ;
 }
 
 void Buzzer::tick()
 {
-    if (this->_TSProperties->PropertiesBuzzer.IsBuzzerOn) // if on
+    if (this->_TSProperties->PropertiesBuzzer.IsBuzzerOn)
     {
         tone(PIN_BUZZER, 500, 100);
-        this->_TSProperties->PropertiesBuzzer.IsBuzzerOn = false; // off
+        this->_TSProperties->PropertiesBuzzer.IsBuzzerOn = false;
     }
 }

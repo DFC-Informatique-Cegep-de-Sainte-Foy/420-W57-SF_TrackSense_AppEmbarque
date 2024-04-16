@@ -2,10 +2,14 @@
 
 ControlerScreen::ControlerScreen(TSProperties *TSProperties) : _TSProperties(TSProperties),
                                                                _screen(nullptr),
-                                                               _timeToDisplayEndingRidePageMS(10000)
+                                                               _timeToDisplayEndingRidePageMS(10000),
+                                                               _xMutex(nullptr)
 {
     this->_screen = new ScreenGC9A01(this->_TSProperties);
+    this->_xMutex = xSemaphoreCreateMutex(); // Create a mutex object
+
     this->tick();
+    this->drawOnScreen();
 }
 
 ControlerScreen::~ControlerScreen()
@@ -38,92 +42,111 @@ ControlerScreen::~ControlerScreen()
 */
 void ControlerScreen::tick()
 {
-    if (this->_TSProperties->PropertiesTS.IsOnStanby)
+    // if (xSemaphoreTake(_xMutex, portMAX_DELAY))
+    if (xSemaphoreTake(_xMutex, (150 * portTICK_PERIOD_MS)))
     {
-        Serial.println("IsOnStanby");
-        this->_screen->drawBackgroundColor(GC9A01A_BLUE, GC9A01A_BLUE);
-        this->_screen->setTextSize(4);
-        this->_screen->printText("Veille", this->_screen->calculateXCoordTextToCenter("Veille"), 140);
-    }
-    else
-    {
-        if (!this->_TSProperties->PropertiesTS.IsInitializedGSM)
-        {
-            this->_TSProperties->PropertiesScreen.ActiveScreen = ERROR_PAGE_ID;
-        }
+        this->_screen->drawBackgroundColor(); // Reset Canvas
 
+        DEBUG_STRING_LN(DEBUG_TS_SCREEN, "Screen Rotation : " + String(this->_TSProperties->PropertiesScreen.ScreenRotation));
         this->_screen->setRotation(this->_TSProperties->PropertiesScreen.ScreenRotation);
 
-        Serial.print("Active Screen : ");
-        Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
-
-        switch (this->_TSProperties->PropertiesScreen.ActiveScreen)
+        if (this->_TSProperties->PropertiesTS.IsOnStanby)
         {
-        case INIT_TS_PAGE_ID: // -1
-            this->drawInitTSPage();
-            break;
-
-        case HOME_PAGE_ID: // 0
-            this->drawHomePage();
-            break;
-
-        case RIDE_PAGE_ID: // 1
-            if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted)
-            {
-                this->drawRidePage();
-            }
-            else
-            {
-                this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
-            }
-            break;
-
-        case RIDE_STATISTICS_PAGE_ID: // 2
-            if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted)
-            {
-                this->drawRideStatisticsPage();
-            }
-            else
-            {
-                this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
-            }
-            break;
-
-        case COMPASS_PAGE_ID: // 3
-            this->drawCompassPage();
-            break;
-
-        case RIDE_DIRECTION_PAGE_ID: // 4
-            this->drawRideDirectionPage();
-            break;
-
-        case GLOBAL_STATISTICS_PAGE_ID: // 5
-            this->drawGlobalStatisticsPage();
-            break;
-
-        case GO_HOME_PAGE_ID: // 6
-            this->drawGoHomePage();
-            break;
-
-        case ENDING_RIDE_PAGE_ID: // -2
-            if (this->_TSProperties->PropertiesCurrentRide.EndTimeMS + this->_timeToDisplayEndingRidePageMS >= millis())
-            {
-                this->drawEndingRidePage();
-            }
-            else
-            {
-                this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
-            }
-
-            break;
-
-        default:                   // -3
-            this->drawErrorPage(); // TODO : Enlever l'affichage de la page d'erreur pour la production
-            break;
+            DEBUG_STRING_LN(DEBUG_TS_SCREEN, "IsOnStanby");
+            // this->_screen->drawBackgroundColor(GC9A01A_BLACK, GC9A01A_BLACK);
+            // this->_screen->setTextSize(4);
+            // this->_screen->printText("Veille", this->_screen->calculateXCoordTextToCenter("Veille"), 140);
+            digitalWrite(TFT_BLK, LOW); // Backlight off
         }
-    }
+        else
+        {
+            if (!this->_TSProperties->PropertiesTS.IsInitializedGSM)
+            {
+                this->_TSProperties->PropertiesScreen.ActiveScreen = ERROR_PAGE_ID;
+            }
 
-    this->_screen->drawOnScreen();
+            DEBUG_STRING_LN(DEBUG_TS_SCREEN, "Active Screen : " + String(this->_TSProperties->PropertiesScreen.ActiveScreen));
+
+            switch (this->_TSProperties->PropertiesScreen.ActiveScreen)
+            {
+            case INIT_TS_PAGE_ID: // -1
+                this->drawInitTSPage();
+                break;
+
+            case HOME_PAGE_ID: // 0
+                this->drawHomePage();
+                break;
+
+            case RIDE_PAGE_ID: // 1
+                if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted)
+                {
+                    this->drawRidePage();
+                }
+                else
+                {
+                    this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
+                }
+                break;
+
+            case RIDE_STATISTICS_PAGE_ID: // 2
+                if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted)
+                {
+                    this->drawRideStatisticsPage();
+                }
+                else
+                {
+                    this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
+                }
+                break;
+
+            case COMPASS_PAGE_ID: // 3
+                this->drawCompassPage();
+                break;
+
+            case RIDE_DIRECTION_PAGE_ID: // 4
+                this->drawRideDirectionPage();
+                break;
+
+            case GLOBAL_STATISTICS_PAGE_ID: // 5
+                this->drawGlobalStatisticsPage();
+                break;
+
+            case GO_HOME_PAGE_ID: // 6
+                this->drawGoHomePage();
+                break;
+
+            case ENDING_RIDE_PAGE_ID: // -2
+                if (this->_TSProperties->PropertiesCurrentRide.EndTimeMS + this->_timeToDisplayEndingRidePageMS >= millis())
+                {
+                    this->drawEndingRidePage();
+                }
+                else
+                {
+                    this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
+                }
+
+                break;
+
+            default: // -3
+                this->drawErrorPage();
+                break;
+            }
+        }
+
+        // this->_screen->drawOnScreen();   // We use void ControlerScreen::drawOnScreen() on Core 0 to draw on screen
+        xSemaphoreGive(_xMutex); // release the mutex
+    }
+}
+
+void ControlerScreen::drawOnScreen()
+{
+    // if (xSemaphoreTake(_xMutex, (200 * portTICK_PERIOD_MS)))
+    if (xSemaphoreTake(_xMutex, portMAX_DELAY))
+    {
+        this->_screen->drawOnScreen();
+
+        xSemaphoreGive(_xMutex); // release the mutex
+    }
 }
 
 /*
@@ -155,36 +178,18 @@ void ControlerScreen::drawInitTSPage()
     this->_screen->setFont(1);
 }
 
-int ControlerScreen::arrondiPourcentageAux5UnitesPres(int pourcentage)
-{
-    int temp = pourcentage % 5;
-
-    if (temp < 3)
-    {
-        pourcentage -= temp;
-    }
-    else
-    {
-        pourcentage += (5 - temp);
-    }
-
-    return pourcentage;
-}
-
 void ControlerScreen::drawHomePage()
 {
-#if DEBUG_BUTTONS
+#if DEBUG_TS_BUTTONS_HARDCORE
     this->_screen->testButtonsScreen();
 #else
     this->_screen->drawLogoTS();
 
     int batteryLengthInPixels = 50;
-    // this->_screen->drawBattery(this->_screen->calculateXCoordItemToCenter(batteryLengthInPixels),
-    this->_screen->drawBattery(15,
+    this->_screen->drawBattery(this->_screen->calculateXCoordItemToCenter(batteryLengthInPixels),
                                15,
                                batteryLengthInPixels,
                                this->_TSProperties->PropertiesBattery.BatteryLevelPourcentage);
-    //    this->arrondiPourcentageAux5UnitesPres((uint)this->_TSProperties->PropertiesBattery.BatteryLevelPourcentage));
 
     int rideStartedLengthInPixels = 40;
     this->_screen->drawIsRideStarted(this->_screen->calculateXCoordItemToCenter(rideStartedLengthInPixels), 185, rideStartedLengthInPixels);
@@ -203,7 +208,7 @@ void ControlerScreen::drawRideDirectionPage()
 
 void ControlerScreen::drawRidePage()
 {
-#if DEBUG_GSM
+#if DEBUG_TS_GPS_HARDCORE
     this->_screen->testGPS();
 #else
     String speed = "";
@@ -252,7 +257,6 @@ void ControlerScreen::drawRidePage()
                                8,
                                batteryLengthInPixels,
                                this->_TSProperties->PropertiesBattery.BatteryLevelPourcentage);
-    //    this->arrondiPourcentageAux5UnitesPres((uint)this->_TSProperties->PropertiesBattery.BatteryLevelPourcentage));
 #endif
 }
 
@@ -276,8 +280,6 @@ void ControlerScreen::drawRideStatisticsPage()
 
     if (this->_TSProperties->PropertiesTS.IsFrenchMode) // Français
     {
-        // this->_screen->printText("Statistiques", this->_screen->calculateXCoordTextToCenter("Statistiques"), 65);
-
         this->_screen->drawStatistics("Dist.:", String(this->_TSProperties->PropertiesCurrentRide.DistanceTotalMeters / 1000, 3), "Km", 10, 85, 185, 95);
         this->_screen->drawStatistics("Duree:", this->_TSProperties->PropertiesCurrentRide.formatDurationHMS(), "h:m:s", 10, 85, 185, 120);
         this->_screen->drawStatistics("V.Moy:", String(this->_TSProperties->PropertiesCurrentRide.AverageSpeedKMPH, 2), "Km/h", 10, 85, 185, 145);
@@ -285,8 +287,6 @@ void ControlerScreen::drawRideStatisticsPage()
     }
     else // Anglais
     {
-        // this->_screen->printText("Statistics", this->_screen->calculateXCoordTextToCenter("Statistics"), 65);
-
         this->_screen->drawStatistics("Dist.:", String(this->_TSProperties->PropertiesCurrentRide.DistanceTotalMeters / 1000, 3), "Km", 10, 90, 185, 95);
         this->_screen->drawStatistics("Dur.:", this->_TSProperties->PropertiesCurrentRide.formatDurationHMS(), "h:m:s", 10, 90, 185, 120);
         this->_screen->drawStatistics("Avg. S.:", String(this->_TSProperties->PropertiesCurrentRide.AverageSpeedKMPH, 2), "Km/h", 10, 90, 185, 145);

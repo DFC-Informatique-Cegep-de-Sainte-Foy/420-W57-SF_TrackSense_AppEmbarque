@@ -1,1192 +1,2261 @@
 
-#define dashboard
-// #define CompassPlane
-// #define Panda
-// #define Rotated_Sprite
-// #define watchESP
-// #define compass_zhao // not finished
-// #define Six_Watch_Gauges
+// #define spiral   //works greate
+// #define humidity_meter // works greate
+// #define chart_mono // works greate
+// #define chart_rainbow // works greate
+// #define tachometer // works greate    类似于跑步用秒表，可以作为参考
+// #define voltage // works greate
+// #define myclock // works greate          一个表盘，有指针每秒移动，可以作为模版
+#define myCompass
 
-#ifdef dashboard
-// This example draws an animated dial with a rotating needle.
-
-// The dial is a jpeg image, the needle is created using a rotated
-// Sprite. The example operates by reading blocks of pixels from the
-// TFT, thus the TFT setup must support reading from the TFT CGRAM.
-
-// The sketch operates by creating a copy of the screen block where
-// the needle will be drawn, the needle is then drawn on the screen.
-// When the needle moves, the original copy of the screen area is
-// pushed to the screen to over-write the needle graphic. A copy
-// of the screen where the new position will be drawn is then made
-// before drawing the needle in the new position. This technique
-// allows the needle to move over other screen graphics.
-
-// The sketch calculates the size of the buffer memory required and
-// reserves the memory for the TFT block copy.
-
-// Created by Bodmer 17/3/20 as an example to the TFT_eSPI library:
-// https://github.com/Bodmer/TFT_eSPI
-
-#define NEEDLE_LENGTH 35         // Visible length
-#define NEEDLE_WIDTH 5           // Width of needle - make it an odd number
-#define NEEDLE_RADIUS 90         // Radius at tip
-#define NEEDLE_COLOR1 TFT_MAROON // Needle periphery colour
-#define NEEDLE_COLOR2 TFT_RED    // Needle centre colour
-#define DIAL_CENTRE_X 120
-#define DIAL_CENTRE_Y 120
-
-// Font attached to this sketch
-#include "NotoSansBold36.h"
-#define AA_FONT_LARGE NotoSansBold36
-
-#include <TFT_eSPI.h>
-TFT_eSPI tft = TFT_eSPI();
-TFT_eSprite needle = TFT_eSprite(&tft); // Sprite object for needle
-TFT_eSprite spr = TFT_eSprite(&tft);    // Sprite for meter reading
-
-// Jpeg image array attached to this sketch
-#include "dial.h"
-#include "gauge1.h"
-#include "plane.h"
-#include "png_compass_plane.h"
-#include "png_compass_transparant.h"
-
-/*-------------------------从watchESP添加----------------------------*/
-TFT_eSprite img = TFT_eSprite(&tft); // Sprite for the compass
-/*-------------------------从watchESP添加----------------------------*/
-
-/*-------------------------从watchESP添加----------------------------*/
-#include "fonts.h"
-double rad = 0.01745;
-float x[360];
-float y[360];
-
-float px[360];
-float py[360];
-
-float lx[360];
-float ly[360];
-
-int r = 104;
-int sx = 120;
-int sy = 120;
-
-#define color1 TFT_WHITE
-#define color2 0x8410
-#define color3 0x5ACB
-#define color4 0x15B3
-#define color5 0x00A3
-
-String cc[12] = {"45", "40", "35", "30", "25", "20", "15", "10", "05", "0", "55", "50"};
-String days[] = {"SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"};
-int start[12];
-int startP[60];
-
-int lastAngle = 0;
-float circle = 100;
-bool dir = 0;
-int rAngle = 359;
-
-int angle = 0;
-bool onOff = 0;
-bool debounce = 0;
-
-String h, m, s, d1, d2, m1, m2;
-
-/*------------------------- 从watchESP添加----------------------------*/
-
-// Include the jpeg decoder library
-#include <TJpg_Decoder.h>
-#include <PNGdec.h>
-uint16_t *tft_buffer;
-bool buffer_loaded = false;
-uint16_t spr_width = 0;
-uint16_t bg_color = 0;
-PNG png;
-// =======================================================================================
-// This function will be called during decoding of the jpeg file
-// =======================================================================================
-bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap)
-{
-    // Stop further decoding as image is running off bottom of screen
-    if (y >= tft.height())
-        return 0;
-
-    // This function will clip the image block rendering automatically at the TFT boundaries
-    tft.pushImage(x, y, w, h, bitmap);
-
-    // Return 1 to decode next block
-    return 1;
-}
-void createNeedle(void);
-void plotNeedle(int16_t angle, uint16_t ms_delay);
-// =======================================================================================
-// Setup
-// =======================================================================================
-void setup()
-{
-    // Tester
-    pinMode(13, INPUT);
-    // pinMode(15, INPUT);
-
-    // Serial.begin(115200); // Debug only
-    Serial.begin(9600); // Debug only
-    // The byte order can be swapped (set true for TFT_eSPI)
-    TJpgDec.setSwapBytes(true);
-    // The jpeg decoder must be given the exact name of the rendering function above
-    TJpgDec.setCallback(tft_output);
-
-    tft.begin();
-    tft.setRotation(0);
-    tft.fillScreen(TFT_BLACK);
-
-    /*-------------------------从watchESP添加----------------------------*/
-    // img.setSwapBytes(true);
-    // img.createSprite(240, 240);
-    // img.setTextDatum(4);
-    // img.setFreeFont(&DSEG7_Modern_Bold_20);
-    /*-------------------------从watchESP添加----------------------------*/
-
-    /*-------------------------画表盘----------------------------*/
-
-    //  Draw the dial
-    // TJpgDec.drawJpg(0, 0, DSEG7_Modern_Bold_20Bitmaps, sizeof(DSEG7_Modern_Bold_20Bitmaps));
-    // TJpgDec.drawJpg(0, 0, dial, sizeof(dial));
-    TJpgDec.drawJpg(0, 0, gauge1, sizeof(gauge1));
-    //  tft.drawCircle(DIAL_CENTRE_X, DIAL_CENTRE_Y, NEEDLE_RADIUS - NEEDLE_LENGTH, TFT_DARKGREY);
-
-    // Load the font and create the Sprite for reporting the value
-
-    /*-------------------------画屏幕中间的数字----------------------------*/
-    // spr.loadFont(AA_FONT_LARGE);
-    // spr_width = spr.textWidth("777"); // 7 is widest numeral in this font
-    // spr.createSprite(spr_width, spr.fontHeight());
-    // bg_color = tft.readPixel(120, 120); // Get colour from dial centre
-    // spr.fillSprite(bg_color);
-    // spr.setTextColor(TFT_WHITE, bg_color, true);
-    // spr.setTextDatum(MC_DATUM);
-    // spr.setTextPadding(spr_width);
-    // // spr.drawNumber(0, spr_width / 2, spr.fontHeight() / 2); // 根据第一个参数，在屏幕中间渲染数字
-    // spr.pushSprite(DIAL_CENTRE_X - spr_width / 2, DIAL_CENTRE_Y - spr.fontHeight() / 2);
-
-    /*-------------------------画屏幕中间的文字----------------------------*/
-    // Plot the label text
-    // tft.setTextColor(TFT_WHITE, bg_color);
-    // tft.setTextDatum(MC_DATUM);
-    // tft.drawString("(degrees)", DIAL_CENTRE_X, DIAL_CENTRE_Y + 48, 2); // 在屏幕中间渲染文字“degree”
-
-    // Define where the needle pivot point is on the TFT before
-    // creating the needle so boundary calculation is correct
-    // tft.setPivot(DIAL_CENTRE_X, DIAL_CENTRE_Y);
-
-    // Create the needle Sprite
-    // createNeedle();
-
-    /*-------------------------根据参数渲染红色指针和数字----------------------------*/
-    // Reset needle position to 0
-    // plotNeedle(0, 0); // 根据参数渲染红色指针
-
-    delay(2000);
-}
-
-// =======================================================================================
-// Loop
-// =======================================================================================
-void loop()
-{
-    if (digitalRead(13) == HIGH)
-    {
-        Serial.println("Button pushed!");
-    }
-    else if (analogRead(13))
-    {
-    }
-
-    // uint16_t angle = random(241); // random speed in range 0 to 240
-
-    // Plot needle at random angle in range 0 to 240, speed 40ms per increment
-    // plotNeedle(angle, 30);
-
-    // Pause at new position
-    // delay(2500);
-}
-
-// =======================================================================================
-// Create the needle Sprite
-// =======================================================================================
-void createNeedle(void)
-{
-    needle.setColorDepth(16);
-    needle.createSprite(NEEDLE_WIDTH, NEEDLE_LENGTH); // create the needle Sprite
-
-    needle.fillSprite(TFT_BLACK); // Fill with black
-
-    // Define needle pivot point relative to top left corner of Sprite
-    uint16_t piv_x = NEEDLE_WIDTH / 2; // pivot x in Sprite (middle)
-    uint16_t piv_y = NEEDLE_RADIUS;    // pivot y in Sprite
-    needle.setPivot(piv_x, piv_y);     // Set pivot point in this Sprite
-
-    // Draw the red needle in the Sprite
-    needle.fillRect(0, 0, NEEDLE_WIDTH, NEEDLE_LENGTH, TFT_MAROON);
-    needle.fillRect(1, 1, NEEDLE_WIDTH - 2, NEEDLE_LENGTH - 2, TFT_RED);
-
-    // Bounding box parameters to be populated
-    int16_t min_x;
-    int16_t min_y;
-    int16_t max_x;
-    int16_t max_y;
-
-    // Work out the worst case area that must be grabbed from the TFT,
-    // this is at a 45 degree rotation
-    needle.getRotatedBounds(45, &min_x, &min_y, &max_x, &max_y);
-
-    // Calculate the size and allocate the buffer for the grabbed TFT area
-    tft_buffer = (uint16_t *)malloc(((max_x - min_x) + 2) * ((max_y - min_y) + 2) * 2);
-}
-
-// =======================================================================================
-// Move the needle to a new position
-// =======================================================================================
-void plotNeedle(int16_t angle, uint16_t ms_delay)
-{
-    static int16_t old_angle = -120; // Starts at -120 degrees
-
-    // Bounding box parameters
-    static int16_t min_x;
-    static int16_t min_y;
-    static int16_t max_x;
-    static int16_t max_y;
-
-    if (angle < 0)
-        angle = 0; // Limit angle to emulate needle end stops
-    if (angle > 240)
-        angle = 240;
-
-    angle -= 120; // Starts at -120 degrees
-
-    // Move the needle until new angle reached
-    while (angle != old_angle || !buffer_loaded)
-    {
-
-        if (old_angle < angle)
-            old_angle++;
-        else
-            old_angle--;
-
-        // Only plot needle at even values to improve plotting performance
-        if ((old_angle & 1) == 0)
-        {
-            if (buffer_loaded)
-            {
-                // Paste back the original needle free image area
-                tft.pushRect(min_x, min_y, 1 + max_x - min_x, 1 + max_y - min_y, tft_buffer);
-            }
-
-            if (needle.getRotatedBounds(old_angle, &min_x, &min_y, &max_x, &max_y))
-            {
-                // Grab a copy of the area before needle is drawn
-                tft.readRect(min_x, min_y, 1 + max_x - min_x, 1 + max_y - min_y, tft_buffer);
-                buffer_loaded = true;
-            }
-
-            // Draw the needle in the new position, black in needle image is transparent
-            needle.pushRotated(old_angle, TFT_BLACK);
-
-            // Wait before next update
-            delay(ms_delay);
-        }
-
-        // Update the number at the centre of the dial
-        spr.setTextColor(TFT_WHITE, bg_color, true);
-        spr.drawNumber(old_angle + 120, spr_width / 2, spr.fontHeight() / 2);
-        spr.pushSprite(120 - spr_width / 2, 120 - spr.fontHeight() / 2);
-
-        // Slow needle down slightly as it approaches the new position
-        if (abs(old_angle - angle) < 10)
-            ms_delay += ms_delay / 5;
-    }
-}
-
-// =======================================================================================
-
-#endif
-
-#ifdef CompassPlane
+#ifdef spiral
 
 #include <Arduino.h>
-#include <TFT_eSPI.h>
-#include <heading.h>
-#include <plane.h>
-#include "dial.h"
-#include "png_compass_transparant.h"
-#include "png_compass_plane.h"
-#include <PNGdec.h>
-#include <TJpg_Decoder.h> // render un img en format array dans un ecran de TFT
+// GCA901_Nano_Bodmer_spiral
+//
+// microcontroller: Arduino Nano
+// 1.28 inch circular SPI TFT GC9A01 controller - 240*240 pixels
+//
+// this sketch implements Bodmer's 'rainbow spiral'
+// drawn from TFT_eSPI library examples
+// TFT_eSPI by Bodmer
+//
+// Floris Wouterlood
+// September 1, 2023
+// public domain
 
-TFT_eSPI tft = TFT_eSPI();
-
-TFT_eSprite fb = TFT_eSprite(&tft);
-TFT_eSprite dial_s = TFT_eSprite(&tft);
-TFT_eSprite plane_s = TFT_eSprite(&tft);
-
-int i = 0;
-
-void setup()
-{
-
-    tft.begin();
-    tft.setRotation(0);
-
-    fb.setColorDepth(16);
-    fb.createSprite(240, 240);
-    fb.setPivot(120, 120);
-
-    dial_s.setColorDepth(8);
-    dial_s.createSprite(240, 240);
-    dial_s.setPivot(120, 120);
-    dial_s.pushImage(00, 00, 240, 240, heading);
-
-    plane_s.setColorDepth(16);
-    plane_s.createSprite(121, 190);
-    plane_s.pushImage(00, 00, 121, 190, plane);
-
-    tft.setPivot(120, 120);
-}
-
-void loop()
-{
-    delay(20);
-    dial_s.pushRotated(&fb, i++, 0xc);
-    plane_s.pushToSprite(&fb, 60, 7, 0);
-    fb.pushSprite(0, 0);
-}
-
-#endif
-
-#ifdef Panda
-
-// This example renders a png file that is stored in a FLASH array
-// using the PNGdec library (available via library manager).
-
-// Note: The PNGDEC required lots of RAM to work (~40kbytes) so
-// this sketch is will not run on smaller memory processors (e.g.
-// ESP8266, STM32F103 etc.)
-
-// Image files can be converted to arrays using the tool here:
-// https://notisrac.github.io/FileToCArray/
-// To use this tool:
-//   1. Drag and drop file on "Browse..." button
-//   2. Tick box "Treat as binary"
-//   3. Click "Convert"
-//   4. Click "Save as file" and move the header file to sketch folder
-//   5. Open the sketch in IDE
-//   6. Include the header file containing the array (panda.h in this example)
-
-// Include the PNG decoder library
-#include <PNGdec.h>
-#include "panda.h" // Image is stored here in an 8-bit array
-#include "png_compass_plane.h"
-#include "png_compass_transparant.h"
-
-PNG png; // PNG decoder instance
-
-#define MAX_IMAGE_WIDTH 239 // Adjust for your images
-
-int16_t xpos = 0;
-int16_t ypos = 0;
-
-// Include the TFT library https://github.com/Bodmer/TFT_eSPI
 #include "SPI.h"
-#include <TFT_eSPI.h>      // Hardware-specific library
-TFT_eSPI tft = TFT_eSPI(); // Invoke custom library
-void pngDraw(PNGDRAW *pDraw);
-void pngPlane(PNGDRAW *pDraw);
-//====================================================================================
-//                                    Setup
-//====================================================================================
-void setup()
+#include "Adafruit_GFX.h"
+#include "Adafruit_GC9A01A.h"
+
+#define TFT_DC 0
+#define TFT_CS 5
+
+Adafruit_GC9A01A tft(TFT_CS, TFT_DC);
+
+#define DEG2RAD 0.0174532925
+#define GREY 0x2108
+
+int segment = 0;
+unsigned int col = 0;
+int delta = -1;
+
+byte red = 31;  // red is the top 5 bits of a 16 bit colour value
+byte green = 0; // green is the middle 6 bits
+byte blue = 0;  // blue is the bottom 5 bits
+byte state = 0;
+unsigned int rainbow(byte value);
+unsigned int brightness(unsigned int colour, int brightness);
+void fillArc(int x, int y, int start_angle, int seg_count, int rx, int ry, int w, unsigned int colour);
+void setup(void)
 {
-    Serial.begin(115200);
-    Serial.println("\n\n Using the PNGdec library");
 
-    // Initialise the TFT
     tft.begin();
-    tft.fillScreen(TFT_BLACK);
+    tft.setRotation(1);
+    tft.fillScreen(GREY);
+}
 
-    Serial.println("\r\nInitialisation done.");
+void loop()
+{
 
-    int16_t rc = png.openFLASH((uint8_t *)png_compass_transparant, sizeof(png_compass_transparant), pngDraw);
-    if (rc == PNG_SUCCESS)
+    fillArc(120, 120, segment * 6, 1, 120 - segment / 4, 120 - segment / 4, 3, rainbow(col));
+
+    segment += delta;
+    col += 1;
+    if (col > 191)
+        col = 0;
+    if (segment < 0)
+        delta = 1;
+    if (segment > 298)
+        delta = -1; // ~5 turns in the spiral (300*6 degrees)
+                    // delay (5);                                                                     // slow drawing down
+}
+
+// #########################################################################
+// Draw an arc with a defined thickness (modified to aid drawing spirals)  #
+// #########################################################################
+
+// x,y == coords of centre of arc
+// start_angle = 0 - 359
+// seg_count = number of 3 degree segments to draw (120 => 360 degree arc)
+// rx = x axis radius
+// yx = y axis radius
+// w  = width (thickness) of arc in pixels
+// colour = 16 bit colour value
+// Note if rx and ry are the same an arc of a circle is drawn
+
+void fillArc(int x, int y, int start_angle, int seg_count, int rx, int ry, int w, unsigned int colour)
+{
+
+    // make the segment size 7 degrees to prevent gaps when drawing spirals
+    byte seg = 7; // Angle a single segment subtends (made more than 6 deg. for spiral drawing)
+    byte inc = 6; // Draw segments every 6 degrees
+
+    // draw colour blocks every inc degrees
+    for (int i = start_angle; i < start_angle + seg * seg_count; i += inc)
     {
-        // Serial.println("Successfully opened png file");
-        // Serial.printf("image specs: (%d x %d), %d bpp, pixel type: %d\n", png.getWidth(), png.getHeight(), png.getBpp(), png.getPixelType());
-        tft.startWrite();
-        uint32_t dt = millis();
-        rc = png.decode(NULL, 0);
-        // Serial.print(millis() - dt);
-        // Serial.println("ms");
-        tft.endWrite();
-        // png.close(); // not needed for memory->memory decode
+        float sx = cos((i - 90) * DEG2RAD); // calculate pair of coordinates for segment start
+        float sy = sin((i - 90) * DEG2RAD);
+        uint16_t x0 = sx * (rx - w) + x;
+        uint16_t y0 = sy * (ry - w) + y;
+        uint16_t x1 = sx * rx + x;
+        uint16_t y1 = sy * ry + y;
+
+        float sx2 = cos((i + seg - 90) * DEG2RAD); // calculate pair of coordinates for segment end
+        float sy2 = sin((i + seg - 90) * DEG2RAD);
+        int x2 = sx2 * (rx - w) + x;
+        int y2 = sy2 * (ry - w) + y;
+        int x3 = sx2 * rx + x;
+        int y3 = sy2 * ry + y;
+
+        tft.fillTriangle(x0, y0, x1, y1, x2, y2, colour);
+        tft.fillTriangle(x1, y1, x2, y2, x3, y3, colour);
     }
 }
 
-//====================================================================================
-//                                    Loop
-//====================================================================================
-void loop()
+// #########################################################################
+// Return a 16 bit colour with brightness 0 - 100%                         #
+// #########################################################################
+
+unsigned int brightness(unsigned int colour, int brightness)
 {
 
-    // int16_t rc = png.openFLASH((uint8_t *)png_compass_transparant, sizeof(png_compass_transparant), pngDraw);
-    // if (rc == PNG_SUCCESS)
-    // {
-    //     // Serial.println("Successfully opened png file");
-    //     // Serial.printf("image specs: (%d x %d), %d bpp, pixel type: %d\n", png.getWidth(), png.getHeight(), png.getBpp(), png.getPixelType());
-    //     tft.startWrite();
-    //     uint32_t dt = millis();
-    //     rc = png.decode(NULL, 0);
-    //     // Serial.print(millis() - dt);
-    //     // Serial.println("ms");
-    //     tft.endWrite();
-    //     // png.close(); // not needed for memory->memory decode
-    // }
-    //
-    // int16_t plane = png.openFLASH((uint8_t *)png_compass_plane, sizeof(png_compass_plane), pngPlane);
-    // if (plane == PNG_SUCCESS)
-    // {
-    //     // Serial.println("Successfully opened png file");
-    //     // Serial.printf("image specs: (%d x %d), %d bpp, pixel type: %d\n", png.getWidth(), png.getHeight(), png.getBpp(), png.getPixelType());
-    //     tft.startWrite();
-    //     uint32_t dt = millis();
-    //     plane = png.decode(NULL, 0);
-    //     Serial.print(millis() - dt);
-    //     Serial.println("ms");
-    //     tft.endWrite();
-    //     // png.close(); // not needed for memory->memory decode
-    // }
+    byte red = colour >> 11;
+    byte green = (colour & 0x7E0) >> 5;
+    byte blue = colour & 0x1F;
 
-    // delay(3000);
-    // tft.fillScreen(random(0x10000));
+    blue = (blue * brightness) / 100;
+    green = (green * brightness) / 100;
+    red = (red * brightness) / 100;
+
+    return (red << 11) + (green << 5) + blue;
 }
 
-//=========================================v==========================================
-//                                      pngDraw
-//====================================================================================
-// This next function will be called during decoding of the png file to
-// render each image line to the TFT.  If you use a different TFT library
-// you will need to adapt this function to suit.
-// Callback function to draw pixels to the display
-void pngDraw(PNGDRAW *pDraw)
+// #########################################################################
+// Return a 16 bit rainbow colour                                          #
+// #########################################################################
+
+unsigned int rainbow(byte value)
 {
-    uint16_t lineBuffer[MAX_IMAGE_WIDTH];
-    png.getLineAsRGB565(pDraw, lineBuffer, PNG_RGB565_BIG_ENDIAN, 0xffffffff);
-    tft.pushImage(0, 0 + pDraw->y, pDraw->iWidth, 1, lineBuffer);
+    // value is expected to be in range 0-127
+    // the value is converted to a spectrum colour from 0 = blue through to 127 = red
+
+    switch (state)
+    {
+    case 0:
+        green++;
+        if (green == 64)
+        {
+            green = 63;
+            state = 1;
+        }
+        break;
+    case 1:
+        red--;
+        if (red == 255)
+        {
+            red = 0;
+            state = 2;
+        }
+        break;
+    case 2:
+        blue++;
+        if (blue == 32)
+        {
+            blue = 31;
+            state = 3;
+        }
+        break;
+    case 3:
+        green--;
+        if (green == 255)
+        {
+            green = 0;
+            state = 4;
+        }
+        break;
+    case 4:
+        red++;
+        if (red == 32)
+        {
+            red = 31;
+            state = 5;
+        }
+        break;
+    case 5:
+        blue--;
+        if (blue == 255)
+        {
+            blue = 0;
+            state = 0;
+        }
+        break;
+    }
+    return red << 11 | green << 5 | blue;
 }
-
-void pngPlane(PNGDRAW *pDraw)
-{
-    uint16_t lineBuffer[MAX_IMAGE_WIDTH];
-    png.getLineAsRGB565(pDraw, lineBuffer, PNG_RGB565_BIG_ENDIAN, 0xffffffff);
-    tft.pushImage(49, 49 + pDraw->y, pDraw->iWidth, 1, lineBuffer);
-}
-#endif
-
-#ifdef Rotated_Sprite
-// This example plots a rotated Sprite to the screen using the pushRotated()
-// function. It is written for a 240 x 320 TFT screen.
-
-// Two rotation pivot points must be set, one for the Sprite and one for the TFT
-// using setPivot(). These pivot points do not need to be within the visible screen
-// or Sprite boundary.
-
-// When the Sprite is rotated and pushed to the TFT with pushRotated(angle) it will be
-// drawn so that the two pivot points coincide. This makes rotation about a point on the
-// screen very simple. The rotation is clockwise with increasing angle. The angle is in
-// degrees, an angle of 0 means no Sprite rotation.
-
-// The pushRotated() function works with 1, 4, 8 and 16-bit per pixel (bpp) Sprites.
-
-// The original Sprite is unchanged so can be plotted again at a different angle.
-
-// Optionally a transparent colour can be defined, pixels of this colour will
-// not be plotted to the TFT.
-
-// For 1 bpp Sprites the foreground and background colours are defined with the
-// function spr.setBitmapColor(foregroundColor, backgroundColor).
-
-// For 4 bpp Sprites the colour map index is used instead of the 16-bit colour
-// e.g. spr.setTextColor(5); // Green text in default colour map
-// See "Transparent_Sprite_Demo_4bit" example for default colour map details
-
-// Created by Bodmer 6/1/19 as an example to the TFT_eSPI library:
-// https://github.com/Bodmer/TFT_eSPI
-
-#include <TFT_eSPI.h>
-
-TFT_eSPI tft = TFT_eSPI(); // TFT object
-
-TFT_eSprite spr = TFT_eSprite(&tft); // Sprite object
-
-void drawX(int x, int y);
-void showMessage(String msg);
-
-// =======================================================================================
-// Setup
-// =======================================================================================
-
-void setup()
-{
-    Serial.begin(250000); // Debug only
-
-    tft.begin(); // initialize
-    tft.setRotation(0);
-}
-
-// =======================================================================================
-// Loop
-// =======================================================================================
-
-void loop()
-{
-
-    int xw = tft.width() / 2; // xw, yh is middle of screen
-    int yh = tft.height() / 2;
-
-    // showMessage("90 degree angles");
-    // tft.setPivot(xw, yh); // Set pivot to middle of TFT screen
-    // drawX(xw, yh);        // Show where screen pivot is
-
-    // // Create the Sprite
-    // spr.setColorDepth(8);      // Create an 8bpp Sprite of 60x30 pixels
-    // spr.createSprite(64, 30);  // 8bpp requires 64 * 30 = 1920 bytes
-    // spr.setPivot(32, 55);      // Set pivot relative to top left corner of Sprite
-    // spr.fillSprite(TFT_BLACK); // Fill the Sprite with black
-
-    // spr.setTextColor(TFT_GREEN);        // Green text
-    // spr.setTextDatum(MC_DATUM);         // Middle centre datum
-    // spr.drawString("Hello", 32, 15, 4); // Plot text, font 4, in Sprite at 30, 15
-
-    // spr.pushRotated(0);
-    // spr.pushRotated(90);
-    // spr.pushRotated(180);
-    // spr.pushRotated(270);
-
-    // delay(2000);
-
-    // showMessage("45 degree angles");
-    // drawX(xw, yh); // Show where screen pivot is
-
-    // spr.pushRotated(45);
-    // spr.pushRotated(135);
-    // spr.pushRotated(225);
-    // spr.pushRotated(315);
-
-    // delay(2000); // Pause so we see it
-
-    // showMessage("Moved Sprite pivot point");
-    // drawX(xw, yh); // Show where screen pivot is
-
-    // spr.setPivot(-20, 15); // Change just the Sprite pivot point
-
-    // spr.pushRotated(45);
-    // spr.pushRotated(135);
-    // spr.pushRotated(225);
-    // spr.pushRotated(315);
-
-    // delay(2000); // Pause so we see it
-
-    // showMessage("Moved TFT pivot point");
-    // tft.setPivot(100, 100); // Change just the TFT pivot point
-    // drawX(100, 100);        // Show where pivot is
-
-    // spr.pushRotated(45);
-    // spr.pushRotated(135);
-    // spr.pushRotated(225);
-    // spr.pushRotated(315);
-
-    // delay(2000); // Pause so we see it
-
-    // showMessage("Transparent rotations");
-    // tft.fillCircle(xw, yh, 70, TFT_DARKGREY); // Draw a filled circle
-
-    // tft.setPivot(xw, yh); // Set pivot to middle of screen
-    // drawX(xw, yh);        // Show where pivot is
-
-    // spr.deleteSprite();
-
-    // spr.setColorDepth(8);     // Create a 8bpp Sprite
-    // spr.createSprite(40, 30); // Create a new Sprite 40x30
-    // spr.setPivot(20, 70);     // Set Sprite pivot at 20,80
-
-    // spr.setTextColor(TFT_RED);  // Red text in Sprite
-    // spr.setTextDatum(MC_DATUM); // Middle centre datum
-
-    // int num = 1;
-
-    // for (int16_t angle = 30; angle <= 360; angle += 30)
-    // {
-    //     spr.fillSprite(TFT_BLACK);         // Clear the Sprite
-    //     spr.drawNumber(num, 20, 15, 4);    // Plot number, in Sprite at 20,15 and with font 4
-    //     spr.pushRotated(angle, TFT_BLACK); // Plot rotated Sprite, black being transparent
-    //     num++;
-    // }
-
-    // spr.setTextColor(TFT_WHITE); // White text in Sprite
-    // spr.setPivot(-75, 15);       // Set Sprite pivot at -75,15
-
-    // for (int16_t angle = -90; angle < 270; angle += 30)
-    // {
-    //     spr.fillSprite(TFT_BLACK);             // Clear the Sprite
-    //     spr.drawNumber(angle + 90, 20, 15, 4); // Plot number, in Sprite at 20,15 and with font 4
-    //     spr.pushRotated(angle, TFT_BLACK);     // Plot rotated Sprite, black being transparent
-    //     num++;
-    // }
-
-    delay(8000); // Pause so we see it
-
-    spr.deleteSprite();
-}
-
-// =======================================================================================
-// Draw an X centered on x,y
-// =======================================================================================
-
-void drawX(int x, int y)
-{
-    tft.drawLine(x - 5, y - 5, x + 5, y + 5, TFT_WHITE);
-    tft.drawLine(x - 5, y + 5, x + 5, y - 5, TFT_WHITE);
-}
-
-// =======================================================================================
-// Show a message at the top of the screen
-// =======================================================================================
-
-void showMessage(String msg)
-{
-    // Clear the screen areas
-    tft.fillRect(0, 0, tft.width(), 20, TFT_BLACK);
-    tft.fillRect(0, 20, tft.width(), tft.height() - 20, TFT_BLUE);
-
-    uint8_t td = tft.getTextDatum(); // Get current datum
-
-    tft.setTextDatum(TC_DATUM); // Set new datum
-
-    tft.drawString(msg, tft.width() / 2, 2, 2); // Message in font 2
-
-    tft.setTextDatum(td); // Restore old datum
-}
-
-// =======================================================================================
 
 #endif
 
-#ifdef watchESP
-/*
-    需要根据网上的介绍来布置ESP32的针脚
-    MISO 5     (用不着，不是触摸屏)
-    MOSI 2      D2   (SDA)
-    SCLK 15     D15
-    CS 17       TX2
-    DC 16       RX2
-    RST 4       D4
-    BLK 5       D5
+#ifdef humidity_meter
+// GC9A01_Nano_humidity_meter
+//
+// governs an 'analog' meter VU meter style on color scale
+// microcontroller: Arduino Nano
+// display 240*240 circular SPI 3.3V TFT with GC9A01 controller
+//
+// note: for demonstration purposes I have inserted a random function providing pseudo-humidity
+// GC9A01       Nano
+//  RST -------- NC
+//  CST -------- 10
+//  DC ---------  9
+//  SDA -------- 11 - green wire
+//  SCL -------- 13 - yellow wire
+//
+// inspired by analog meter example created by Bodmer in his TFT_eSPI library
+// needle rotary point (pivot) coordinates are (120,160)
+//
+// by Floris Wouterlood
+// September 1, 2023
+// public domain
 
-    RTC3231     SCL D21
-                SDA D22
+#include "SPI.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_GC9A01A.h"
 
-*/
-#include <TFT_eSPI.h>
-#include "fonts.h"
-#include "time.h"
-// #include "RTClib.h" //电子时钟 没有芯片 暂时不用
-#include "ESP32Time.h"
+#define TFT_DC 0
+#define TFT_CS 5 // pin of your choice
 
-// RTC_DS3231 rtc; // 电子时钟
-// 使用ESPTime
+Adafruit_GC9A01A tft(TFT_CS, TFT_DC);
 
-#define NEEDLE_LENGTH 35         // Visible length
-#define NEEDLE_WIDTH 5           // Width of needle - make it an odd number
-#define NEEDLE_RADIUS 90         // Radius at tip
-#define NEEDLE_COLOR1 TFT_MAROON // Needle periphery colour
-#define NEEDLE_COLOR2 TFT_RED    // Needle centre colour
-#define DIAL_CENTRE_X 120
-#define DIAL_CENTRE_Y 120
+// RGB 565 color picker at https://ee-programming-notepad.blogspot.com/2016/10/16-bit-color-generator-picker.html
 
-ESP32Time rtc(-(3600) * 4); // offset in seconds GMT-4
-TFT_eSPI tft = TFT_eSPI();
-TFT_eSprite img = TFT_eSprite(&tft);
+#define WHITE 0xFFFF // some principal color definitions
+#define BLACK 0x0000
+#define BLUE 0x001F
+#define RED 0xF800
+#define GREEN 0x07E0
+#define CYAN 0x07FF
+#define MAGENTA 0xF81F
+#define YELLOW 0xFFE0
+#define GREY 0x2108
+#define ORANGE 0xFBE0
+#define TEXT_COLOR 0xFFFF
+#define AFRICA 0xAB21
+#define BORDEAUX 0xA000
+#define VOLTMETER 0xF6D3
 
-#define color1 TFT_WHITE
-#define color2 0x8410
-#define color3 0x5ACB
-#define color4 0x15B3
-#define color5 0x00A3
+#define DEG2RAD 0.0174532925
 
-volatile int counter = 0;
-float VALUE;
-float lastValue = 0;
+int x, y;
+float humidity;
+float angle_circle;
+// radius pivot to ticks
+int k;
+float scale_x_out, scale_y_out, scale_x_out_old, scale_y_out_old;
+float scale_x_in, scale_y_in, scale_x_in_old, scale_y_in_old;
+float n1_x, n1_y, n2_x, n2_y, n3_x, n3_y, n4_x, n4_y;
+float n1_x_old, n1_y_old, n2_x_old, n2_y_old, n3_x_old, n3_y_old, n4_x_old, n4_y_old;
+float needleAngle;
+float outArc_x, outArc_y;
+float outArc_x_old, outArc_y_old;
+int tickLength = 15;
+int radius = 40;
 
-double rad = 0.01745;
-float x[360];
-float y[360];
-
-float px[360];
-float py[360];
-
-float lx[360];
-float ly[360];
-
-int r = 104;
-int sx = 120;
-int sy = 120;
-
-String cc[12] = {"45", "40", "35", "30", "25", "20", "15", "10", "05", "0", "55", "50"};
-String days[] = {"SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"};
-int start[12];
-int startP[60];
-
-const int pwmFreq = 5000;
-const int pwmResolution = 8;
-const int pwmLedChannelTFT = 0; //??
-
-int angle = 0;
-bool onOff = 0;
-bool debounce = 0;
-
-String h, m, s, d1, d2, m1, m2;
-
-void setup()
+void drawTicks();
+void makeMulticolorScale();
+void subArc();
+void intermediateArc();
+void drawNeedle();
+void numericModule();
+void setup(void)
 {
+
+    randomSeed(analogRead(0));
     Serial.begin(9600);
-    rtc.setTime(00, 00, 0, 8, 4, 2024); // 8th Avril 2024 00:00:00
-    // if (rtc == nullptr)
-    // {
-    //     Serial.println("Couldn't find RTC");
-    // }
+    tft.begin(); // initialize the CG9A01 chip, 240x240 pixels
+    tft.setRotation(0);
+    tft.fillScreen(BLACK);
 
-    //???
-    // pinMode(2, OUTPUT);
-    // pinMode(0, INPUT_PULLUP);
-    // pinMode(35, INPUT_PULLUP);
-    // pinMode(13, INPUT_PULLUP);
-    //??
-    digitalWrite(2, 0);
+    tft.drawRoundRect(80, 195, 80, 40, 4, CYAN); // secondary frame under meter panel frame
 
-    ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
-    ledcAttachPin(5, pwmLedChannelTFT);
-    ledcWrite(pwmLedChannelTFT, 200);
+    x = 120;
+    y = 160; // pivot coords
+    drawTicks();
+    makeMulticolorScale(); // create the multicolored scale under the ticks
+    x = 120;
+    y = 160;
+    subArc();
 
-    tft.init();
+    humidity = 20; // draw needle once on fancy humidity - to fill buffers
+    x = 120;       // pivot coordinates
+    y = 160;       // pivot coordinates
+    n1_x_old = 120;
+    n1_y_old = 160; // draw needle once on fancy humidity - to fill buffers
+    n2_x_old = 120;
+    n2_y_old = 160;
+    n3_x_old = 120;
+    n3_y_old = 160;
+    n4_x_old = 120;
+    n4_y_old = 160;
+    intermediateArc();
+    drawNeedle();
+    numericModule();
 
-    tft.setSwapBytes(true);
-    tft.fillScreen(TFT_BLACK);
+    tft.setCursor(135, 210);
+    tft.setTextSize(2);
+    tft.setTextColor(WHITE, BLACK);
+    tft.print("%");
 
-    img.setSwapBytes(true);
-    img.createSprite(240, 240);
-    img.setTextDatum(4);
-
-    int b = 0;
-    int b2 = 0;
-
-    for (int i = 0; i < 360; i++)
-    {
-        x[i] = (r * cos(rad * i)) + sx;
-        y[i] = (r * sin(rad * i)) + sy;
-        px[i] = ((r - 16) * cos(rad * i)) + sx;
-        py[i] = ((r - 16) * sin(rad * i)) + sy;
-
-        lx[i] = ((r - 26) * cos(rad * i)) + sx;
-        ly[i] = ((r - 26) * sin(rad * i)) + sy;
-
-        if (i % 30 == 0)
-        {
-            start[b] = i;
-            b++;
-        }
-
-        if (i % 6 == 0)
-        {
-            startP[b2] = i;
-            b2++;
-        }
-    }
+    delay(100);
 }
-
-int lastAngle = 0;
-float circle = 100;
-bool dir = 0;
-int rAngle = 359;
 
 void loop()
 {
 
-    rAngle = rAngle - 2;
-    tm now = rtc.getTimeStruct();
+    humidity = random(20, 85);
+    Serial.print("humidity: ");
+    Serial.print(humidity, 0);
+    Serial.println(" %");
 
-    angle = now.tm_sec * 6;
+    drawNeedle();      // execute the needle drawing function
+    intermediateArc(); // restore integrity of the intermediate arc
+    numericModule();
+    delay(1000);
+}
 
-    s = String(now.tm_sec);
-    m = String(now.tm_min);
-    h = String(now.tm_hour);
+void drawTicks()
+{
 
-    if (m.toInt() < 10)
-        m = "0" + m;
-
-    if (h.toInt() < 10)
-        h = "0" + h;
-
-    if (s.toInt() < 10)
-        s = "0" + s;
-
-    if (now.tm_mday > 10)
+    k = 216; // first tick
+    do
     {
-        d1 = now.tm_mday / 10;
-        d2 = now.tm_mday % 10;
+        float angle_circle = (k * DEG2RAD);                                         // angle expressed in radians - 1 degree = 0,01745331 radians
+        float edge_x1 = (x + ((radius + 84) * cos(angle_circle)));                  // x coordinate tick, inner
+        float edge_y1 = (y + ((radius + 84) * sin(angle_circle)));                  // y coordinate tick, inner
+        float edge_x1_out = (x + ((radius + 80 + tickLength) * cos(angle_circle))); // x coordinate tick, outer
+        float edge_y1_out = (y + ((radius + 80 + tickLength) * sin(angle_circle))); // y coordinate tick, outer
+        tft.drawLine(edge_x1, edge_y1, edge_x1_out, edge_y1_out, MAGENTA);          // draw tick
+        k = k + 3;
+    } while (k < 330);
+}
+
+void subArc()
+{ // sub arc is two thin  arcs under the green-yellow-orange scale
+
+    k = 216;
+    for (k = 216; k < 330; k++)
+    {
+        angle_circle = (k * DEG2RAD);
+        outArc_x = (x + (radius + 69) * cos(angle_circle));
+        outArc_y = (y + (radius + 69) * sin(angle_circle));
+        outArc_x_old = outArc_x;
+        outArc_y_old = outArc_y;
+        tft.drawLine(outArc_x_old, outArc_y_old, outArc_x, outArc_y, CYAN);
     }
-    else
+
+    for (k = 216; k < 330; k++)
     {
-        d1 = "0";
-        d2 = String(now.tm_mday);
-    }
-
-    if (now.tm_mon > 10)
-    {
-        m1 = now.tm_mon / 10;
-        m2 = now.tm_mon % 10;
-    }
-    else
-    {
-        m1 = "0";
-        m2 = String(now.tm_mon);
-    }
-
-    if (angle >= 360)
-        angle = 0;
-
-    if (rAngle <= 0)
-        rAngle = 359;
-
-    if (dir == 0)
-        circle = circle + 0.5;
-    else
-        circle = circle - 0.5;
-
-    if (circle > 140)
-        dir = !dir;
-
-    if (circle < 100)
-        dir = !dir;
-
-    if (angle > -1)
-    {
-        lastAngle = angle;
-
-        VALUE = ((angle - 270) / 3.60) * -1;
-        if (VALUE < 0)
-            VALUE = VALUE + 100;
-
-        img.fillSprite(TFT_BLACK);
-        img.fillCircle(sx, sy, 124, color5);
-
-        img.setTextColor(TFT_WHITE, color5);
-
-        img.drawString(days[now.tm_wday], circle, 120, 2);
-
-        for (int i = 0; i < 12; i++)
-            if (start[i] + angle < 360)
-            {
-                img.drawString(cc[i], x[start[i] + angle], y[start[i] + angle], 2);
-                img.drawLine(px[start[i] + angle], py[start[i] + angle], lx[start[i] + angle], ly[start[i] + angle], color1);
-            }
-            else
-            {
-                img.drawString(cc[i], x[(start[i] + angle) - 360], y[(start[i] + angle) - 360], 2);
-                img.drawLine(px[(start[i] + angle) - 360], py[(start[i] + angle) - 360], lx[(start[i] + angle) - 360], ly[(start[i] + angle) - 360], color1);
-            }
-
-        img.setFreeFont(&DSEG7_Modern_Bold_20);
-        img.drawString(s, sx, sy - 36);
-        img.setFreeFont(&DSEG7_Classic_Regular_28);
-        img.drawString(h + ":" + m, sx, sy + 28);
-        img.setTextFont(0);
-
-        img.fillRect(70, 86, 12, 20, color3);
-        img.fillRect(84, 86, 12, 20, color3);
-        img.fillRect(150, 86, 12, 20, color3);
-        img.fillRect(164, 86, 12, 20, color3);
-
-        img.setTextColor(0x35D7, TFT_BLACK);
-        img.drawString("MONTH", 84, 78);
-        img.drawString("DAY", 162, 78);
-        img.setTextColor(TFT_ORANGE, TFT_BLACK);
-        img.drawString("VOLOS PROJECTS", 120, 174);
-        img.drawString("***", 120, 104);
-
-        img.setTextColor(TFT_WHITE, color3);
-        img.drawString(m1, 77, 96, 2);
-        img.drawString(m2, 91, 96, 2);
-
-        img.drawString(d1, 157, 96, 2);
-        img.drawString(d2, 171, 96, 2);
-
-        for (int i = 0; i < 60; i++)
-            if (startP[i] + angle < 360)
-                img.fillCircle(px[startP[i] + angle], py[startP[i] + angle], 1, color1);
-            else
-                img.fillCircle(px[(startP[i] + angle) - 360], py[(startP[i] + angle) - 360], 1, color1);
-
-        img.fillTriangle(sx - 1, sy - 70, sx - 5, sy - 56, sx + 4, sy - 56, TFT_ORANGE);
-        img.fillCircle(px[rAngle], py[rAngle], 6, TFT_RED);
-        img.pushSprite(0, 0);
+        angle_circle = (k * DEG2RAD);
+        outArc_x = (x + (radius + 68) * cos(angle_circle));
+        outArc_y = (y + (radius + 68) * sin(angle_circle));
+        outArc_x_old = outArc_x;
+        outArc_y_old = outArc_y;
+        tft.drawLine(outArc_x_old, outArc_y_old, outArc_x, outArc_y, CYAN);
     }
 }
+
+void intermediateArc()
+{
+
+    k = 216;
+    for (k = 216; k < 330; k++)
+    {
+        angle_circle = (k * DEG2RAD);
+        outArc_x = (x + (radius + 40) * cos(angle_circle));
+        outArc_y = (y + (radius + 40) * sin(angle_circle));
+        outArc_x_old = outArc_x;
+        outArc_y_old = outArc_y;
+        tft.drawLine(outArc_x_old, outArc_y_old, outArc_x, outArc_y, CYAN);
+    }
+}
+
+void makeMulticolorScale()
+{ // draw the green-yellow-orange scale through triangles arranged on an arc
+
+    k = 216;
+    angle_circle = (k * DEG2RAD);                                // angle expressed in radians - 1 degree = 0,01745331 radians
+    scale_x_out_old = (x + ((radius + 80) * cos(angle_circle))); // outer points coordinates
+    scale_y_out_old = (y + ((radius + 80) * sin(angle_circle)));
+    scale_x_in_old = (x + ((radius + 80) * cos(angle_circle))); // inner points coordinates
+    scale_y_in_old = (y + ((radius + 80) * sin(angle_circle)));
+
+    do
+    {
+        angle_circle = (k * DEG2RAD);                            // angle expressed in radians - 1 degree = 0,01745331 radians
+        scale_x_out = (x + ((radius + 80) * cos(angle_circle))); // outer points coordinates
+        scale_y_out = (y + ((radius + 80) * sin(angle_circle)));
+        scale_x_in = (x + ((radius + 72) * cos(angle_circle))); // inner points coordinates
+        scale_y_in = (y + ((radius + 72) * sin(angle_circle)));
+
+        if ((k > 128) && (k < 250)) // create green zone
+        {
+            tft.fillTriangle(scale_x_out_old, scale_y_out_old, scale_x_out, scale_y_out,
+                             scale_x_in_old, scale_y_in_old, GREEN);
+            tft.fillTriangle(scale_x_out, scale_y_out, scale_x_in_old, scale_y_in_old,
+                             scale_x_in, scale_y_in, GREEN);
+        }
+
+        if ((k > 250) && (k < 300)) // create yellow zone
+        {
+            tft.fillTriangle(scale_x_out_old, scale_y_out_old, scale_x_out, scale_y_out,
+                             scale_x_in_old, scale_y_in_old, YELLOW);
+            tft.fillTriangle(scale_x_out, scale_y_out, scale_x_in_old, scale_y_in_old,
+                             scale_x_in, scale_y_in, YELLOW);
+        }
+
+        if ((k > 299)) // create orange zone
+        {
+            tft.fillTriangle(scale_x_out_old, scale_y_out_old, scale_x_out, scale_y_out,
+                             scale_x_in_old, scale_y_in_old, ORANGE);
+            tft.fillTriangle(scale_x_out, scale_y_out, scale_x_in_old, scale_y_in_old,
+                             scale_x_in, scale_y_in, ORANGE);
+        }
+
+        scale_x_out_old = scale_x_out;
+        scale_y_out_old = scale_y_out;
+        scale_x_in_old = scale_x_in;
+        scale_y_in_old = scale_y_in;
+        k = k + 4;
+    } while (k < 330);
+}
+
+void drawNeedle()
+{
+
+    tft.drawLine(x, y, n1_x_old, n1_y_old, BLACK);                                       // remove old needle
+    tft.fillTriangle(n1_x_old, n1_y_old, n2_x_old, n2_y_old, n3_x_old, n3_y_old, BLACK); // remove old needle head
+    tft.drawLine(x, y, n4_x_old, n4_y_old, BLACK);                                       // remove previous needle tail
+
+    needleAngle = (((humidity)*DEG2RAD * 1.8) - 3.14);
+    n1_x = (x + ((radius + 60) * cos(needleAngle))); // needle tip point
+    n1_y = (y + ((radius + 60) * sin(needleAngle)));
+    n2_x = (x + ((radius + 50) * cos(needleAngle - 0.05))); // needle tip triange left point
+    n2_y = (y + ((radius + 50) * sin(needleAngle - 0.05)));
+    n3_x = (x + ((radius + 50) * cos(needleAngle + 0.05))); // needle tip triange left point
+    n3_y = (y + ((radius + 50) * sin(needleAngle + 0.05)));
+    n4_x = (x + ((radius - 20) * cos(needleAngle + 3.14))); // needle tail point
+    n4_y = (y + ((radius - 20) * sin(needleAngle + 3.14)));
+
+    tft.drawLine(x, y, n1_x, n1_y, WHITE);                       // draw new needle
+    tft.fillTriangle(n1_x, n1_y, n2_x, n2_y, n3_x, n3_y, WHITE); // draw new needle arrow head
+    tft.drawLine(x, y, n4_x, n4_y, WHITE);                       // draw new needle tail
+    tft.fillCircle(x, y, 6, BLACK);                              // remove old pivot
+    tft.fillCircle(x, y, 2, WHITE);
+    tft.drawCircle(x, y, 6, WHITE); // draw new pivot
+
+    n1_x_old = n1_x;
+    n1_y_old = n1_y; // remember needle point coordinatess
+    n2_x_old = n2_x;
+    n2_y_old = n2_y;
+    n3_x_old = n3_x;
+    n3_y_old = n3_y;
+    n4_x_old = n4_x;
+    n4_y_old = n4_y;
+}
+
+void numericModule()
+{
+
+    tft.setCursor(105, 210);
+    tft.setTextSize(2);
+    tft.setTextColor(WHITE, BLACK);
+    tft.print(humidity, 0);
+}
+
 #endif
 
-#ifdef compass_zhao
-#define NEEDLE_LENGTH 35         // Visible length
-#define NEEDLE_WIDTH 5           // Width of needle - make it an odd number
-#define NEEDLE_RADIUS 90         // Radius at tip
-#define NEEDLE_COLOR1 TFT_MAROON // Needle periphery colour
-#define NEEDLE_COLOR2 TFT_RED    // Needle centre colour
-#define DIAL_CENTRE_X 120
-#define DIAL_CENTRE_Y 120
+#ifdef chart_mono
+// GC9A01_Nano_pie_chart_mono
+//
+// purpose: pie chart meter with pie expanding and shrinking without flicker
+// microcontroller: Arduino Nano
+// display 240*240 circular SPI 3.3V TFT with GC9A01 controller
+//
+// the variable driving the pie chart is named pieParameter
+//   GC9A01       Nano
+//    RST -------- NC
+//    CST -------- 10
+//    DC ---------  9
+//    SDA -------- 11 - green wire
+//    SCL -------- 13 - yellow wire
+//
+// thanks to everybody who provided inspiration
+// Floris Wouterlood
+// September 1, 2023
+// public domain
 
-#include <TFT_eSPI.h>
-TFT_eSPI tft = TFT_eSPI();
-TFT_eSprite needle = TFT_eSprite(&tft); // Sprite object for needle
-TFT_eSprite spr = TFT_eSprite(&tft);    // Sprite for meter reading
+#include "SPI.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_GC9A01A.h"
 
-// Font attached to this sketch
-#include "NotoSansBold36.h"
-#define AA_FONT_LARGE NotoSansBold36
-// Jpeg image array attached to this sketch
-#include "dial.h"
-#include "plane.h"
-#include "png_compass_plane.h"
-#include "png_compass_transparant.h"
+#define TFT_DC 0
+#define TFT_CS 5
 
-// Include the jpeg decoder library
-#include <TJpg_Decoder.h>
-#include <PNGdec.h>
-uint16_t *tft_buffer;
-bool buffer_loaded = false;
-uint16_t spr_width = 0;
-uint16_t bg_color = 0;
-PNG png;
+Adafruit_GC9A01A tft(TFT_CS, TFT_DC);
+
+// some principal color definitions
+// RGB 565 color picker at https://ee-programming-notepad.blogspot.com/2016/10/16-bit-color-generator-picker.html
+#define WHITE 0xFFFF
+#define BLACK 0x0000
+#define BLUE 0x001F
+#define RED 0xF800
+#define GREEN 0x07E0
+#define CYAN 0x07FF
+#define MAGENTA 0xF81F
+#define YELLOW 0xFFE0
+#define GREY 0x2108
+#define SCALE0 0x2108     // color outer segment unused scale
+#define SCALE1 0x2108     // color inner segment unused scale
+#define TEXT_COLOR 0xFFFF // is currently white
+
+#define DEG2RAD 0.0174532925
+
+int x_center = 120; // center screeen coordinate
+int y_center = 120; // center screeen coordinate
+float x_new = 0;
+float y_new = 0;
+float x_old = 0;
+float y_old = 0;
+float pieParameter;
+int iteration = 0;
+int radius = 100;
+float angle_new;
+float angle_old;
+float sliceAngle;
+int flag = 0; // flag necessary to determine case - either forward or retreat
+int j;
 
 void setup()
 {
-    // Serial.begin(115200); // Debug only
-    Serial.begin(9600); // Debug only
-    // The byte order can be swapped (set true for TFT_eSPI)
-    TJpgDec.setSwapBytes(true);
-    // The jpeg decoder must be given the exact name of the rendering function above
-    // TJpgDec.setCallback(tft_output);
 
+    Serial.begin(9600);
+    Serial.println("starting TFT display");
     tft.begin();
-    tft.setRotation(0);
-    tft.fillScreen(TFT_BLACK);
+    tft.setRotation(0); // display in portrait
+    tft.fillScreen(GREY);
+    tft.drawCircle(x_center, y_center, radius + 8, CYAN); // outer margin
 
-    /*-------------------------从watchESP添加----------------------------*/
-    // img.setSwapBytes(true);
-    // img.createSprite(240, 240);
-    // img.setTextDatum(4);
-    // img.setFreeFont(&DSEG7_Modern_Bold_20);
-    /*-------------------------从watchESP添加----------------------------*/
+    x_new = 125, y_new = 20, x_old = 125, y_old = 20;
+    tft.fillTriangle(x_center, y_center, x_old, y_old, x_new, y_new, GREEN); // initial triangle to fill buffers
 
-    /*-------------------------画表盘----------------------------*/
+    pieParameter = random(0, 100);
+    angle_new = (360 * pieParameter / 100);
 
-    //  Draw the dial
-    // TJpgDec.drawJpg(0, 0, DSEG7_Modern_Bold_20Bitmaps, sizeof(DSEG7_Modern_Bold_20Bitmaps));
-    TJpgDec.drawJpg(0, 0, dial, sizeof(dial));
-    //  tft.drawCircle(DIAL_CENTRE_X, DIAL_CENTRE_Y, NEEDLE_RADIUS - NEEDLE_LENGTH, TFT_DARKGREY);
+    for (j = 0; j < angle_new; j++)
+    {
+        sliceAngle = ((j * DEG2RAD) - (90 * DEG2RAD));
+        x_old = x_new;
+        y_old = y_new;
+        x_new = (x_center + radius * cos(sliceAngle));
+        y_new = (y_center + radius * sin(sliceAngle));
+        tft.fillTriangle(x_center, y_center, x_new, y_new, x_old, y_old, GREEN);
+    }
 
-    // Load the font and create the Sprite for reporting the value
+    angle_old = angle_new;
+}
 
-    /*-------------------------画屏幕中间的数字----------------------------*/
-    spr.loadFont(AA_FONT_LARGE);
-    spr_width = spr.textWidth("777"); // 7 is widest numeral in this font
-    spr.createSprite(spr_width, spr.fontHeight());
-    bg_color = tft.readPixel(120, 120); // Get colour from dial centre
-    spr.fillSprite(bg_color);
-    spr.setTextColor(TFT_WHITE, bg_color, true);
-    spr.setTextDatum(MC_DATUM);
-    spr.setTextPadding(spr_width);
-    // spr.drawNumber(0, spr_width / 2, spr.fontHeight() / 2); // 根据第一个参数，在屏幕中间渲染数字
-    spr.pushSprite(DIAL_CENTRE_X - spr_width / 2, DIAL_CENTRE_Y - spr.fontHeight() / 2);
+void loop()
+{
 
-    /*-------------------------画屏幕中间的文字----------------------------*/
-    // Plot the label text
-    tft.setTextColor(TFT_WHITE, bg_color);
-    tft.setTextDatum(MC_DATUM);
-    // tft.drawString("(degrees)", DIAL_CENTRE_X, DIAL_CENTRE_Y + 48, 2); // 在屏幕中间渲染文字“degree”
+    iteration++;
+    Serial.print("iteration ");
+    Serial.print(iteration);
 
-    // Define where the needle pivot point is on the TFT before
-    // creating the needle so boundary calculation is correct
-    tft.setPivot(DIAL_CENTRE_X, DIAL_CENTRE_Y);
+    pieParameter = random(0, 100);
+    angle_new = (360 * pieParameter / 100);
+    if (angle_new > angle_old)
+        flag = 1;
+    if (angle_new <= angle_old)
+        flag = 0;
 
-    // Create the needle Sprite
-    // createNeedle();
+    switch (flag)
+    {
 
-    /*-------------------------根据参数渲染红色指针和数字----------------------------*/
-    // Reset needle position to 0
-    // plotNeedle(0, 0); // 根据参数渲染红色指针
+    case 0: // case 0 exists when new pieParameter is higher than old
 
+        Serial.println(" - case flag 0 - new value lower than old value");
+
+        for (j = angle_old; j > angle_new; j--)
+        {
+            sliceAngle = ((j * DEG2RAD) - (90 * DEG2RAD));
+            x_old = x_new;
+            y_old = y_new;
+            x_new = (x_center + radius * cos(sliceAngle));
+            y_new = (y_center + radius * sin(sliceAngle));
+            tft.fillTriangle(x_center, y_center, x_new, y_new, x_old, y_old, GREY);
+        }
+        break;
+
+    case 1:
+
+        Serial.println(" - case flag 1 - new value higher than old value");
+
+        for (j = angle_old; j < angle_new; j++)
+        {
+            sliceAngle = ((j * DEG2RAD) - (90 * DEG2RAD));
+            x_old = x_new;
+            y_old = y_new;
+            x_new = (x_center + radius * cos(sliceAngle));
+            y_new = (y_center + radius * sin(sliceAngle));
+            tft.fillTriangle(x_center, y_center, x_new, y_new, x_old, y_old, GREEN);
+        }
+        break;
+    }
+
+    angle_old = angle_new;
     delay(2000);
 }
 
-void loop()
+#endif
+
+#ifdef chart_rainbow
+// GC9A01_Nano_pie_chart_rainbow
+//
+// purpose: pie chart meter with rainbow-colored pie that expands and shrinks without flicker
+// microcontroller: Arduino Nano
+// display 240*240 circular SPI 3.3V TFT with GC9A01 controller
+//
+// the variable driving the pie chart is named pieParameter
+// GC9A01       Nano
+//  RST -------- NC
+//  CST -------- 10
+//  DC ---------  9
+//  SDA -------- 11 - green wire
+//  SCL -------- 13 - yellow wire
+//
+// thanks to everybody who provided inspiration
+// Floris Wouterlood
+// September 1, 2023
+// public domain
+
+#include "SPI.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_GC9A01A.h"
+
+#define TFT_DC 0
+#define TFT_CS 5
+
+Adafruit_GC9A01A tft(TFT_CS, TFT_DC); // constructor
+
+// some principal color definitions
+// RGB 565 color picker at https://ee-programming-notepad.blogspot.com/2016/10/16-bit-color-generator-picker.html
+#define WHITE 0xFFFF
+#define BLACK 0x0000
+#define BLUE 0x001F
+#define RED 0xF800
+#define GREEN 0x07E0
+#define CYAN 0x07FF
+#define MAGENTA 0xF81F
+#define YELLOW 0xFFE0
+#define GREY 0x2108
+#define TEXT_COLOR 0xFFFF // is currently white
+
+#define DEG2RAD 0.0174532925 // degrees to radians - 360 degrees is 2*pi radians
+
+const uint16_t lookupTable[] = {
+    0x480F, // blue to red colors used in 256 colors 16 bit
+    0x400F,
+    0x400F,
+    0x400F,
+    0x4010,
+    0x3810,
+    0x3810,
+    0x3810,
+    0x3810,
+    0x3010,
+    0x3010,
+    0x3010,
+    0x2810,
+    0x2810,
+    0x2810,
+    0x2810,
+    0x2010,
+    0x2010,
+    0x2010,
+    0x1810,
+    0x1810,
+    0x1811,
+    0x1811,
+    0x1011,
+    0x1011,
+    0x1011,
+    0x0811,
+    0x0811,
+    0x0811,
+    0x0011,
+    0x0011,
+    0x0011,
+    0x0011,
+    0x0011,
+    0x0031,
+    0x0031,
+    0x0051,
+    0x0072,
+    0x0072,
+    0x0092,
+    0x00B2,
+    0x00B2,
+    0x00D2,
+    0x00F2,
+    0x00F2,
+    0x0112,
+    0x0132,
+    0x0152,
+    0x0152,
+    0x0172,
+    0x0192,
+    0x0192,
+    0x01B2,
+    0x01D2,
+    0x01F3,
+    0x01F3,
+    0x0213,
+    0x0233,
+    0x0253,
+    0x0253,
+    0x0273,
+    0x0293,
+    0x02B3,
+    0x02D3,
+    0x02D3,
+    0x02F3,
+    0x0313,
+    0x0333,
+    0x0333,
+    0x0353,
+    0x0373,
+    0x0394,
+    0x03B4,
+    0x03D4,
+    0x03D4,
+    0x03F4,
+    0x0414,
+    0x0434,
+    0x0454,
+    0x0474,
+    0x0474,
+    0x0494,
+    0x04B4,
+    0x04D4,
+    0x04F4,
+    0x0514,
+    0x0534,
+    0x0534,
+    0x0554,
+    0x0554,
+    0x0574,
+    0x0574,
+    0x0573,
+    0x0573,
+    0x0573,
+    0x0572,
+    0x0572,
+    0x0572,
+    0x0571,
+    0x0591,
+    0x0591,
+    0x0590,
+    0x0590,
+    0x058F,
+    0x058F,
+    0x058F,
+    0x058E,
+    0x05AE,
+    0x05AE,
+    0x05AD,
+    0x05AD,
+    0x05AD,
+    0x05AC,
+    0x05AC,
+    0x05AB,
+    0x05CB,
+    0x05CB,
+    0x05CA,
+    0x05CA,
+    0x05CA,
+    0x05C9,
+    0x05C9,
+    0x05C8,
+    0x05E8,
+    0x05E8,
+    0x05E7,
+    0x05E7,
+    0x05E6,
+    0x05E6,
+    0x05E6,
+    0x05E5,
+    0x05E5,
+    0x0604,
+    0x0604,
+    0x0604,
+    0x0603,
+    0x0603,
+    0x0602,
+    0x0602,
+    0x0601,
+    0x0621,
+    0x0621,
+    0x0620,
+    0x0620,
+    0x0620,
+    0x0620,
+    0x0E20,
+    0x0E20,
+    0x0E40,
+    0x1640,
+    0x1640,
+    0x1E40,
+    0x1E40,
+    0x2640,
+    0x2640,
+    0x2E40,
+    0x2E60,
+    0x3660,
+    0x3660,
+    0x3E60,
+    0x3E60,
+    0x3E60,
+    0x4660,
+    0x4660,
+    0x4E60,
+    0x4E80,
+    0x5680,
+    0x5680,
+    0x5E80,
+    0x5E80,
+    0x6680,
+    0x6680,
+    0x6E80,
+    0x6EA0,
+    0x76A0,
+    0x76A0,
+    0x7EA0,
+    0x7EA0,
+    0x86A0,
+    0x86A0,
+    0x8EA0,
+    0x8EC0,
+    0x96C0,
+    0x96C0,
+    0x9EC0,
+    0x9EC0,
+    0xA6C0,
+    0xAEC0,
+    0xAEC0,
+    0xB6E0,
+    0xB6E0,
+    0xBEE0,
+    0xBEE0,
+    0xC6E0,
+    0xC6E0,
+    0xCEE0,
+    0xCEE0,
+    0xD6E0,
+    0xD700,
+    0xDF00,
+    0xDEE0,
+    0xDEC0,
+    0xDEA0,
+    0xDE80,
+    0xDE80,
+    0xE660,
+    0xE640,
+    0xE620,
+    0xE600,
+    0xE5E0,
+    0xE5C0,
+    0xE5A0,
+    0xE580,
+    0xE560,
+    0xE540,
+    0xE520,
+    0xE500,
+    0xE4E0,
+    0xE4C0,
+    0xE4A0,
+    0xE480,
+    0xE460,
+    0xEC40,
+    0xEC20,
+    0xEC00,
+    0xEBE0,
+    0xEBC0,
+    0xEBA0,
+    0xEB80,
+    0xEB60,
+    0xEB40,
+    0xEB20,
+    0xEB00,
+    0xEAE0,
+    0xEAC0,
+    0xEAA0,
+    0xEA80,
+    0xEA60,
+    0xEA40,
+    0xF220,
+    0xF200,
+    0xF1E0,
+    0xF1C0,
+    0xF1A0,
+    0xF180,
+    0xF160,
+    0xF140,
+    0xF100,
+    0xF0E0,
+    0xF0C0,
+    0xF0A0,
+    0xF080,
+    0xF060,
+    0xF040,
+    0xF020,
+    0xF800,
+};
+
+int x_center = 120; // center screeen coordinate
+int y_center = 120; // center screeen coordinate
+float x_new = 0;
+float y_new = 0;
+float x_old = 0;
+float y_old = 0;
+float pieParameter;
+int radius = 100;
+float angle_new;
+float angle_old;
+float sliceAngle;
+int flag = 0; // flag necessary to determine case - either forward or retreat
+int i, j;
+int colorIndex;
+
+void smallDial();
+void setup()
 {
 
-    uint16_t angle = random(241); // random speed in range 0 to 240
+    Serial.begin(9600);
+    Serial.println(" - starting TFT display");
+    tft.begin();
+    tft.setRotation(0); // display in portrait
+    tft.fillScreen(GREY);
 
-    // Plot needle at random angle in range 0 to 240, speed 40ms per increment
-    // plotNeedle(angle, 30);
+    tft.drawCircle(x_center, y_center, radius + 10, MAGENTA); // outer margin
+    tft.drawCircle(x_center, y_center, radius + 8, BLUE);     // outer margin
+    tft.drawCircle(x_center, y_center, radius + 7, CYAN);     // outer margin
 
-    // Pause at new position
-    delay(2500);
+    x_new = 125, y_new = 20, x_old = 125, y_old = 20;
+    tft.fillTriangle(x_center, y_center, x_old, y_old, x_new, y_new, GREY); // initial triangle to fill buffers
+
+    pieParameter = random(0, 100);
+    angle_new = (360 * pieParameter / 100);
+
+    for (j = 0; j < angle_new; j++)
+    {
+        sliceAngle = ((j * DEG2RAD) - (90 * DEG2RAD));
+        colorIndex = ((sliceAngle + (90 * DEG2RAD)) * 40.1071); // color index derived from actual angle - correction 360/256 for the 256 color lookup table
+        x_old = x_new;
+        y_old = y_new;
+        x_new = (x_center + radius * cos(sliceAngle));
+        y_new = (y_center + radius * sin(sliceAngle));
+        tft.fillTriangle(x_center, y_center, x_new, y_new, x_old, y_old, (lookupTable[colorIndex]));
+    }
+
+    angle_old = angle_new;
+}
+
+void loop()
+{
+    delay(1000);
+
+    pieParameter = random(0, 100);
+    angle_new = (360 * pieParameter / 100);
+    if (angle_new > angle_old)
+        flag = 1;
+    if (angle_new <= angle_old)
+        flag = 0;
+
+    switch (flag)
+    {
+
+    case 0: // case 0 exists when new pieParameter is lower than old
+
+        Serial.println(" - flag = 0 - new value < previous");
+        smallDial();
+        for (j = angle_old; j > angle_new; j--)
+        {
+            sliceAngle = ((j * DEG2RAD) - (90 * DEG2RAD));
+            x_old = x_new;
+            y_old = y_new;
+            x_new = (x_center + radius * cos(sliceAngle));
+            y_new = (y_center + radius * sin(sliceAngle));
+            tft.fillTriangle(x_center, y_center, x_new, y_new, x_old, y_old, GREY);
+        }
+
+        angle_old = angle_new;
+        smallDial();
+        break;
+
+    case 1: // case 1 exists when new pieParameter is higher than old
+
+        Serial.println(" - flag = 1 - new value > previous");
+        smallDial();
+        for (j = angle_old; j < angle_new; j++)
+        {
+            sliceAngle = ((j * DEG2RAD) - (90 * DEG2RAD));
+            colorIndex = ((sliceAngle + (90 * DEG2RAD)) * 40.1071); // color index derived from actual angle - correction 360/256 for the 256 color lookup table
+            if (colorIndex > 255)
+                colorIndex = 255; // safety cap
+            x_old = x_new;
+            y_old = y_new;
+            x_new = (x_center + radius * cos(sliceAngle));
+            y_new = (y_center + radius * sin(sliceAngle));
+            tft.fillTriangle(x_center, y_center, x_new, y_new, x_old, y_old, (lookupTable[colorIndex]));
+        }
+
+        angle_old = angle_new;
+        smallDial();
+        break;
+    }
+}
+
+void smallDial()
+{ // petit numerical dial
+
+    tft.fillCircle(120, 40, 20, GREY);
+    tft.drawCircle(120, 40, 20, CYAN);
+    tft.setCursor(110, 35);
+    tft.setTextSize(2);
+    tft.setTextColor(WHITE);
+    tft.print(pieParameter, 0);
 }
 
 #endif
 
-#ifdef Six_Watch_Gauges
-#include <TFT_eSPI.h>
-#include "gauge1.h"
-#include "gauge2.h"
-// #include "gauge3.h"
-// #include "gauge4.h"
-// #include "gauge5.h"
-// #include "gauge6.h"
-#include "font.h"
-#define NEEDLE_LENGTH 35         // Visible length
-#define NEEDLE_WIDTH 5           // Width of needle - make it an odd number
-#define NEEDLE_RADIUS 90         // Radius at tip
-#define NEEDLE_COLOR1 TFT_MAROON // Needle periphery colour
-#define NEEDLE_COLOR2 TFT_RED    // Needle centre colour
-#define DIAL_CENTRE_X 120
-#define DIAL_CENTRE_Y 120
-TFT_eSPI tft = TFT_eSPI(240, 240);
-TFT_eSprite img = TFT_eSprite(&tft);
-TFT_eSprite ln = TFT_eSprite(&tft);
+#ifdef tachometer
+// GC9A01_Nano_tachometer
+//
+// microcontroller: Arduino Nano
+// display 240*240 circular SPI 3.3V TFT with GC9A01 controller
+//
+// purpose: simple needle meter - without flicker
+//
+// note: for demonstration purposes the speed accelarates to 'stopper'and then decelerates
+// stopper is at 90 because speed is twice iteration here
+//
+// GC9A01       Nano
+//  RST -------- NC
+//  CST -------- 10
+//  DC ---------  9
+//  SDA -------- 11 - green wire
+//  SCL -------- 13 - yellow wire
+//
+// thanks to everybody who provided inspiration
+// Floris Wouterlood
+// September 1, 2023
+// public domain
 
-double rad = 0.01745;
-int angle;
+#include "SPI.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_GC9A01A.h"
 
-int sx = 120;
-int sy = 120;
-int r = 76;
+#define TFT_DC 0
+#define TFT_CS 5
 
-float x[360];
-float y[360];
-float x2[360];
-float y2[360];
+Adafruit_GC9A01A tft(TFT_CS, TFT_DC);
 
-const int pwmFreq = 5000;
-const int pwmResolution = 8;
-const int pwmLedChannelTFT = 0;
+// some principal color definitions
+// RGB 565 color picker at https://ee-programming-notepad.blogspot.com/2016/10/16-bit-color-generator-picker.html
+#define WHITE 0xFFFF
+#define BLACK 0x0000
+#define BLUE 0x001F
+#define RED 0xF800
+#define GREEN 0x07E0
+#define CYAN 0x07FF
+#define MAGENTA 0xF81F
+#define YELLOW 0xFFE0
+#define GREY 0x2108
+#define TEXT_COLOR 0xFFFF
 
-int chosenOne = 0;
-int minValue[6] = {0, 20, 0, 0, 0, 80};
-int maxValue[6] = {40, 100, 60, 80, 70, 160};
-int dbounce = 0;
+#define DEG2RAD 0.0174532925
 
-void setup()
+// note: all coordinates relative to center_x, center_y
+
+float center_x = 120; // center x of tachometer - 240x240 TFT
+float center_y = 120; // center y of tachometer - 240x240 TFT
+float edge_x = 0;
+float edge_y = 0;
+float edge_x_old = 0;
+float edge_y_old = 0;
+float edge_x_out = 0;
+float edge_y_out = 0;
+
+float needletail_x = 0;
+float needletail_y = 0;
+float needletail_x_old = 0;
+float needletail_y_old = 0;
+
+int j;
+float angle = 0;
+int radius = 87;
+float angle_circle = 0;
+float angle_needle = 0;
+int iteration = 0;
+int stopper = 90;   // moment to reverse direction
+int v = 1;          // needle in accerator or decelerator mode
+                    // for for-next loops
+float needle_x = 0; // needle pivot = center
+float needle_y = 0; // needle pivot = center
+float needle_x_old = 120;
+float needle_y_old = 120;
+int tachoSpeed = 0;
+int cycleTime = 200;
+
+void numericDial();
+void serial_print_stuff();
+void needle();
+void drawBigDial();
+void setup(void)
 {
 
-    ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
-    ledcAttachPin(5, pwmLedChannelTFT);
-    ledcWrite(pwmLedChannelTFT, 90);
-
-    pinMode(12, INPUT_PULLUP);
-
-    tft.init();
-    tft.setRotation(0);
-    tft.setSwapBytes(true);
-    img.setSwapBytes(true);
-    tft.fillScreen(TFT_ORANGE);
-    img.createSprite(240, 240);
-
-    tft.setPivot(60, 60);
-    img.setTextDatum(4);
-    img.setTextColor(TFT_BLACK, 0xAD55);
-    img.setFreeFont(&Orbitron_Medium_28);
-
-    int i = 0;
-    int a = 136;
-
-    while (a != 44)
-    {
-        x[i] = r * cos(rad * a) + sx;
-        y[i] = r * sin(rad * a) + sy;
-        x2[i] = (r - 20) * cos(rad * a) + sx;
-        y2[i] = (r - 20) * sin(rad * a) + sy;
-        i++;
-        a++;
-        if (a == 360)
-            a = 0;
-    }
+    Serial.begin(9600);
+    tft.begin();
+    tft.fillScreen(BLACK);
+    tft.setRotation(0); // display in portrait
+    tft.fillScreen(GREY);
+    drawBigDial();
+    needle();
+    numericDial();
 }
-
-// min angle 136 or 137
-// max angle 43
-
-int a1, a2;
-int result = 0;
 
 void loop()
 {
 
-    if (digitalRead(12) == 0)
+    if (iteration == 0)
     {
-        if (dbounce == 0)
-        {
-            dbounce = 1;
-            chosenOne++;
-            if (chosenOne >= 6)
-                chosenOne = 0;
-        }
+        v = +1;
+        delay(5 * cycleTime);
+    }
+    iteration = iteration + v;
+    tachoSpeed = iteration * 2;
+    serial_print_stuff();
+    needle();
+    numericDial();
+
+    if (iteration == stopper)
+    {
+        v = -1;
+        delay(5 * cycleTime);
+    }
+
+    delay(cycleTime);
+}
+
+void drawBigDial()
+{
+
+    tft.drawCircle(center_x, center_y, radius + 10, MAGENTA); // outer margin ring
+    tft.drawCircle(center_x, center_y, radius + 8, BLUE);     // outer margin ring
+    tft.drawCircle(center_x, center_y, radius + 7, CYAN);     // outer margin ring
+
+    for (j = 0; j < 360; j = (j + 6)) // scale markers set 6 degrees apart
+    {
+        angle_circle = (j * DEG2RAD);
+        edge_x = (center_x + (radius * cos(angle_circle)));
+        edge_y = (center_y + (radius * sin(angle_circle)));
+        edge_x_out = (center_x + ((radius + 8) * cos(angle_circle)));
+        edge_y_out = (center_y + ((radius + 8) * sin(angle_circle)));
+        tft.drawLine(edge_x, edge_y, edge_x_out, edge_y_out, WHITE);
+    }
+
+    for (j = 0; j < 271; j = (j + 90)) // scale markers set 6 degrees apart
+    {
+        angle_circle = (j * DEG2RAD);
+        edge_x = (center_x + ((radius - 5) * cos(angle_circle)));
+        edge_y = (center_y + ((radius - 5) * sin(angle_circle)));
+        edge_x_out = (center_x + ((radius - 1) * cos(angle_circle)));
+        edge_y_out = (center_y + ((radius - 1) * sin(angle_circle)));
+
+        tft.fillCircle(edge_x, edge_y, 3, GREEN);
+        tft.drawLine(edge_x, edge_y, edge_x_out, edge_y_out, GREEN);
+    }
+
+    tft.setTextSize(1);
+    tft.setTextColor(WHITE);
+    tft.setCursor(center_x - 110, center_y - 5);
+    tft.print("0");
+    tft.setCursor(center_x - 5, center_y - 111);
+    tft.print("50");
+    tft.setCursor(center_x + 100, center_y - 5);
+    tft.print("100");
+    tft.setCursor(center_x - 10, center_y + 104);
+    tft.print("150");
+    tft.setCursor(center_x - 100, center_y + 50);
+    tft.print("180");
+    tft.fillCircle(center_x - 70, center_y + 50, 3, GREEN);
+    tft.drawRoundRect((center_x - 100), (center_y + 5), 50, 22, 3, CYAN); // small numeric tacho dial
+}
+
+void needle()
+{
+
+    if (tachoSpeed > 180)
+        tachoSpeed = 180; // needle limiter
+
+    tft.drawLine(needle_x_old, needle_y_old, needletail_x_old, needletail_y_old, GREY);
+
+    angle_needle = (((tachoSpeed)*DEG2RAD * 1.8) - 3.14); // unit of angle is radian
+
+    needle_x = (center_x + ((radius - 10) * cos(angle_needle)));
+    needle_y = (center_y + ((radius - 10) * sin(angle_needle)));
+    needletail_x = (center_x - ((radius - 60) * cos(angle_needle - 6.28)));
+    needletail_y = (center_x - ((radius - 60) * sin(angle_needle - 6.28)));
+
+    needle_x_old = needle_x; // remember previous needle position
+    needle_y_old = needle_y;
+    needletail_x_old = needletail_x;
+    needletail_y_old = needletail_y;
+
+    tft.drawLine(needle_x, needle_y, needletail_x, needletail_y, RED);
+    tft.fillCircle(center_x, center_y, 6, GREY); // restore needle pivot
+    tft.drawCircle(center_x, center_y, 6, RED);  // restore needle pivot
+}
+
+void serial_print_stuff()
+{
+
+    if (tachoSpeed < 100)
+        Serial.print("speed:  ");
+    if (tachoSpeed >= 100)
+        Serial.print("speed: ");
+    Serial.print(tachoSpeed);
+    Serial.println(" km/h");
+}
+
+void numericDial()
+{
+
+    tft.fillRect((center_x - 93), (center_y + 9), 40, 16, GREY);
+    tft.setTextColor(YELLOW, BLACK);
+    tft.setTextSize(2);
+
+    if (tachoSpeed > 99)
+    {
+        tft.setCursor(center_x - 93, center_y + 9);
     }
     else
-        dbounce = 0;
-    result = map(analogRead(14), 0, 4095, minValue[chosenOne], maxValue[chosenOne]);
-    angle = map(result, minValue[chosenOne], maxValue[chosenOne], 0, 267);
+        tft.setCursor(center_x - 83, center_y + 9);
 
-    if (chosenOne == 0)
-        img.pushImage(0, 0, 240, 240, gauge1);
-    if (chosenOne == 1)
-        img.pushImage(0, 0, 240, 240, gauge2);
-    // if (chosenOne == 2)
-    //     img.pushImage(0, 0, 240, 240, gauge3);
-    // if (chosenOne == 3)
-    //     img.pushImage(0, 0, 240, 240, gauge4);
-    // if (chosenOne == 4)
-    //     img.pushImage(0, 0, 240, 240, gauge5);
-    // if (chosenOne == 5)
-    //     img.pushImage(0, 0, 240, 240, gauge6);
-
-    if (chosenOne == 5)
-        img.drawFloat(result / 10.00, 2, 120, 114);
-    else if (chosenOne == 4)
-        img.drawString(String(result * 100), 120, 114);
-    else
-        img.drawString(String(result), 120, 114);
-    // img.drawString(String(analogRead(22)), 30,10,2);
-
-    a1 = angle - 4;
-    a2 = angle + 4;
-
-    if (a1 < 0)
-        a1 = angle - 4 + 359;
-    if (a2 >= 359)
-        a2 = angle + 4 - 359;
-
-    if (result <= minValue[chosenOne] + 4)
-        img.fillTriangle(x[angle], y[angle], x2[angle], y2[angle], x2[a2 + 2], y2[a2 + 2], TFT_RED);
-    else if (result >= maxValue[chosenOne] - 4)
-        img.fillTriangle(x[angle], y[angle], x2[a1 - 2], y2[a1 - 2], x2[angle], y2[angle], TFT_RED);
-    else
-        img.fillTriangle(x[angle], y[angle], x2[a1], y2[a1], x2[a2], y2[a2], TFT_RED);
-
-    img.pushSprite(0, 0);
+    tft.print(tachoSpeed, 1);
 }
+
+#endif
+
+#ifdef voltage
+// GCA901_Nano_voltage_meter
+//
+// grid voltage variation monitor (230V - 250V AC)
+// rolling averaged voltage (of 10 readings) is sent to display
+// NOTE: here voltage generated with random function
+//
+// microcontroller: Arduino Nano
+// display 240*240 circular SPI 3.3V TFT with GC9A01 controller
+//
+// note: random function drives fluctuations of the parameter named 'volt'
+// CG9A01    Arduino Nano
+//  RST -------- NC
+//  CST -------- 10
+//  DC ---------  9
+//  SDA -------- 11 - green wire
+//  SCL -------- 13 - yellow wire
+//
+// Floris Wouterlood
+// September 1, 2023
+// public domain
+
+// made for a 240*240 pixel circular display
+// all x-y-coordinates relative to center = x = 120 and y = 120
+
+#include "SPI.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_GC9A01A.h"
+
+#define TFT_DC 0
+#define TFT_CS 5
+
+Adafruit_GC9A01A tft(TFT_CS, TFT_DC);
+
+#define BLACK 0x0000 // some extra colors
+#define BLUE 0x001F
+#define RED 0xF800
+#define GREEN 0x07E0
+#define CYAN 0x07FF
+#define MAGENTA 0xF81F
+#define YELLOW 0xFFE0
+#define WHITE 0xFFFF
+#define ORANGE 0xFBE0
+#define GREY 0x84B5
+#define BORDEAUX 0xA000
+#define AFRICA 0xAB21 // current dial color
+
+#define DEG2RAD 0.0174532925
+
+int multiplier;
+int frametime = 1000;
+int x_pos;
+int y_pos;
+int center_x = 120; // center x of dial on 240*240 TFT display
+int center_y = 120; // center y of dial on 240*240 TFT display
+float pivot_x, pivot_y, pivot_x_old, pivot_y_old;
+float p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, p5_x, p5_y;
+float p1_x_old, p1_y_old, p2_x_old, p2_y_old, p3_x_old, p3_y_old;
+float p4_x_old, p4_y_old, p5_x_old, p5_y_old;
+float angleOffset = 3.14;
+float arc_x;
+float arc_y;
+int radius = 120; // center y of circular scale
+float angle_circle = 0;
+float needleAngle = 0;
+int iteration = 0;
+int j;
+float volt = 220;
+int needle_multiplier = 1;
+float needle_setter;
+
+// voltage rolling averaging stuff
+const byte nvalues = 10; // rolling average window size
+static byte current = 0; // index for current value
+static byte cvalues = 0; // count of values read (<= nvalues)
+static float sum = 0;    // rolling sum
+static float values[nvalues];
+float averagedVoltage = 235; // to start with
+
+float movingAverage(float value);
+void displayNumerical();
+void draw_pivot();
+void create_dial();
+void needle();
+
+void setup()
+{
+
+    randomSeed(analogRead(0));
+
+    tft.begin();
+    Serial.begin(9600);
+    Serial.println("");
+    Serial.println("");
+    tft.setRotation(0);
+
+    tft.fillScreen(BLACK);
+    tft.drawCircle(center_x, center_y, 120, BLACK);
+    pivot_x = center_x;
+    pivot_y = center_y + 50;
+
+    p1_x_old = center_x;
+    p1_y_old = center_y + 50;
+    p2_x_old = center_x;
+    p2_y_old = center_y + 50;
+    p3_x_old = center_x;
+    p3_y_old = center_y + 50;
+    p4_x_old = center_x;
+    p4_y_old = center_y + 50;
+    p5_x_old = center_x;
+    p5_y_old = center_y + 50;
+
+    volt = 240; // initial value setting the needle
+    create_dial();
+    needle_setter = volt;
+    needleAngle = (((needle_setter)*DEG2RAD * 1.8) - 3.14);
+    needle();
+    draw_pivot();
+}
+
+void loop()
+{
+
+    iteration++;
+    Serial.println();
+    Serial.print("iteration ");
+    Serial.println(iteration);
+    volt = random(230, 250); // voltage simulator
+    Serial.print("volt out of smpt01B: ");
+    Serial.println(volt);
+    averagedVoltage = movingAverage(volt);
+    Serial.print("averaged volt =      ");
+    Serial.println(averagedVoltage);
+    Serial.println();
+    Serial.println();
+
+    displayNumerical();
+    needle_setter = averagedVoltage;
+    needle();
+    draw_pivot();
+
+    delay(frametime);
+}
+
+void needle()
+{ // dynamic needle management
+
+    tft.drawLine(pivot_x, pivot_y, p1_x_old, p1_y_old, AFRICA);                           // remove old needle
+    tft.fillTriangle(p1_x_old, p1_y_old, p2_x_old, p2_y_old, p3_x_old, p3_y_old, AFRICA); // remove old arrow head
+    tft.fillTriangle(pivot_x, pivot_y, p4_x_old, p4_y_old, p5_x_old, p5_y_old, AFRICA);   // remove old arrow head
+
+    needleAngle = (((needle_setter) * 0.01745331 * 1.8) - 3.14);
+    p1_x = (pivot_x + ((radius)*cos(needleAngle))); // needle tip
+    p1_y = (pivot_y + ((radius)*sin(needleAngle)));
+
+    p2_x = (pivot_x + ((radius - 15) * cos(needleAngle - 0.05))); // needle triange left
+    p2_y = (pivot_y + ((radius - 15) * sin(needleAngle - 0.05)));
+
+    p3_x = (pivot_x + ((radius - 15) * cos(needleAngle + 0.05))); // needle triange right
+    p3_y = (pivot_y + ((radius - 15) * sin(needleAngle + 0.05)));
+
+    p4_x = (pivot_x + ((radius - 90) * cos(angleOffset + (needleAngle - 0.2)))); // needle triange left
+    p4_y = (pivot_y + ((radius - 90) * sin(angleOffset + (needleAngle - 0.2))));
+
+    p5_x = (pivot_x + ((radius - 90) * cos(angleOffset + (needleAngle + 0.2)))); // needle triange right
+    p5_y = (pivot_y + ((radius - 90) * sin(angleOffset + (needleAngle + 0.2))));
+
+    p1_x_old = p1_x;
+    p1_y_old = p1_y; // remember previous needle position
+    p2_x_old = p2_x;
+    p2_y_old = p2_y;
+    p3_x_old = p3_x;
+    p3_y_old = p3_y;
+
+    p4_x_old = p4_x;
+    p4_y_old = p4_y; // remember previous needle counterweight position
+    p5_x_old = p5_x;
+    p5_y_old = p5_y;
+
+    tft.drawLine(pivot_x, pivot_y, p1_x, p1_y, BLACK);                               // create needle
+    tft.fillTriangle(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, BLACK);                     // create needle tip pointer
+    tft.drawLine(center_x - 80, center_y + 70, center_x + 80, center_y + 70, WHITE); // repair floor
+    tft.fillTriangle(pivot_x, pivot_y, p4_x, p4_y, p5_x, p5_y, BLACK);               // create needle counterweight
+}
+
+void create_dial()
+{
+
+    tft.fillCircle(center_x, center_y, 120, AFRICA); // general dial field
+    tft.drawCircle(center_x, center_y, 118, GREY);
+    tft.drawCircle(center_x, center_y, 117, BLACK);
+    tft.drawCircle(center_x, center_y, 116, BLACK);
+    tft.drawCircle(center_x, center_y, 115, GREY);
+
+    for (j = 30; j < 75; j += 5)
+    {
+        needleAngle = ((j * DEG2RAD * 1.8) - 3.14);
+        arc_x = (pivot_x + ((radius + 15) * cos(needleAngle))); // needle tip
+        arc_y = (pivot_y + ((radius + 15) * sin(needleAngle)));
+        tft.drawPixel(arc_x, arc_y, BLACK);
+        tft.fillCircle(arc_x, arc_y, 2, BLACK);
+    }
+
+    tft.setTextColor(BLACK, AFRICA);
+    tft.setTextSize(2);
+    tft.setCursor(center_x + 15, center_y + 40);
+    tft.print("V - AC");
+    tft.drawLine(center_x - 80, center_y + 70, center_x + 80, center_y + 70, WHITE); // create floor
+}
+
+void draw_pivot()
+{
+
+    tft.fillCircle(pivot_x, pivot_y, 8, RED);
+    tft.drawCircle(pivot_x, pivot_y, 8, BLACK);
+    tft.drawCircle(pivot_x, pivot_y, 3, BLACK);
+}
+
+void displayNumerical()
+{
+
+    tft.fillRect(center_x - 82, center_y + 40, 62, 16, AFRICA);
+    tft.setTextColor(BLACK);
+    tft.setTextSize(2);
+    tft.setCursor(center_x - 80, center_y + 40);
+    tft.print(averagedVoltage, 1);
+}
+
+float movingAverage(float value)
+{
+
+    sum += value;
+    if (cvalues == nvalues) // if the window is full, adjust the sum by deleting the oldest value
+        sum -= values[current];
+
+    values[current] = value; // replace the oldest with the latest
+
+    if (++current >= nvalues)
+        current = 0;
+
+    if (cvalues < nvalues)
+        cvalues += 1;
+
+    return sum / cvalues;
+}
+
+#endif
+
+#ifdef myclock
+// internet_clock_GC9A010_ESP8266
+// platform: ESP8266 Wemos d1 mini
+// display: GC9A010 driven circular display 240*240 pixels
+//
+// clock by Bodmer - Clock example in TFT_eSPI library
+//
+// adapted and modified
+// Floris Wouterlood
+// November 1, 2022
+// public domain
+
+#include "SPI.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_GC9A01A.h"
+
+const char *ssid = "xxxxxxxxxxxxxxxx";     // network wifi credentials  - fill in your wifi network name
+const char *password = "xxxxxxxxxxxxxxxx"; // network wifi credentials  - fill in your wifi key
+
+const long utcOffsetInSeconds = 3600; // 3600 = western europe winter time - 7200 = western europe summer time
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
+#define TFT_DC 0
+#define TFT_CS 5
+#define DEG2RAD 0.0174532925
+
+// some extra colors
+#define BLACK 0x0000
+#define BLUE 0x001F
+#define RED 0xF800
+#define GREEN 0x07E0
+#define CYAN 0x07FF
+#define MAGENTA 0xF81F
+#define YELLOW 0xFFE0
+#define WHITE 0xFFFF
+#define ORANGE 0xFBE0
+#define GREY 0x84B5
+#define BORDEAUX 0xA000
+
+Adafruit_GC9A01A tft(TFT_CS, TFT_DC);
+
+float sx = 0, sy = 1, mx = 1, my = 0, hx = -1, hy = 0; // saved H, M, S x & y multipliers
+float sdeg = 0, mdeg = 0, hdeg = 0;
+uint16_t osx = 120, osy = 120, omx = 120, omy = 120, ohx = 120, ohy = 120; // saved H, M, S x & y coords
+uint16_t x0 = 0, x1 = 0, yy0 = 0, yy1 = 0;
+uint32_t targetTime = 0; // for next 1 second timeout
+
+int hh = 0; // hours variable
+int mm = 0; // minutes variable
+int ss = 0; // seconds variable
+
+// WiFiUDP ntpUDP; // define NTP client to get time
+// NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
+
+bool initial = 1;
+
+void createDial();
+
+void setup(void)
+{
+    tft.begin();
+    tft.setRotation(2);
+    tft.fillScreen(BLACK);
+    delay(200);
+    tft.fillScreen(RED);
+    delay(200);
+    tft.fillScreen(GREEN);
+    delay(200);
+    tft.fillScreen(BLUE);
+    delay(200);
+    tft.fillScreen(BLACK);
+    delay(200);
+    tft.fillScreen(GREY);
+
+    createDial();
+
+    Serial.begin(9600);
+    Serial.println();
+    Serial.println();
+    // WiFi.begin(ssid, password);
+
+    // while (WiFi.status() != WL_CONNECTED)
+    // {
+    //     delay(500);
+    //     Serial.print(".");
+    // }
+    Serial.print("connection with ");
+    Serial.println(ssid);
+    Serial.println("-------------------------------");
+
+    // timeClient.begin();
+    // timeClient.update();
+    Serial.print("internet server time: ");
+    // Serial.println(timeClient.getFormattedTime());
+    Serial.println("2024-4-14 1:54:00");
+
+    // hh = timeClient.getHours();
+    // mm = timeClient.getMinutes();
+    // ss = timeClient.getSeconds();
+
+    hh = 1;
+    mm = 54;
+    ss = 0;
+}
+
+void loop()
+{
+    if (targetTime < millis())
+    {
+        targetTime += 1000;
+        ss++; // advance second
+        if (ss == 60)
+        {
+            ss = 0;
+            mm++; // advance minute
+            if (mm > 59)
+            {
+                mm = 0;
+                hh++; // advance hour
+                if (hh > 23)
+                {
+                    hh = 0;
+                    // timeClient.update(); // update at midnight
+                }
+            }
+        }
+
+        // pre-compute hand degrees, x & y coords for a fast screen update
+        sdeg = ss * 6;                     // 0-59 -> 0-354
+        mdeg = mm * 6 + sdeg * 0.01666667; // 0-59 -> 0-360 - includes seconds
+        hdeg = hh * 30 + mdeg * 0.0833333; // 0-11 -> 0-360 - includes minutes and seconds
+        hx = cos((hdeg - 90) * DEG2RAD);
+        hy = sin((hdeg - 90) * DEG2RAD);
+        mx = cos((mdeg - 90) * DEG2RAD);
+        my = sin((mdeg - 90) * DEG2RAD);
+        sx = cos((sdeg - 90) * DEG2RAD);
+        sy = sin((sdeg - 90) * DEG2RAD);
+
+        if (ss == 0 || initial)
+        {
+            initial = 0;
+            tft.drawLine(ohx, ohy, 120, 121, BLACK); // erase hour and minute hand positions every minute
+            ohx = hx * 62 + 121;
+            ohy = hy * 62 + 121;
+            tft.drawLine(omx, omy, 120, 121, BLACK);
+            omx = mx * 84 + 120;
+            omy = my * 84 + 121;
+        }
+
+        tft.drawLine(osx, osy, 120, 121, BLACK); // redraw new hand positions, hour and minute hands not erased here to avoid flicker
+        osx = sx * 90 + 121;
+        osy = sy * 90 + 121;
+        tft.drawLine(osx, osy, 120, 121, RED);
+        tft.drawLine(ohx, ohy, 120, 121, WHITE);
+        tft.drawLine(omx, omy, 120, 121, WHITE);
+        tft.drawLine(osx, osy, 120, 121, RED);
+        tft.fillCircle(120, 121, 3, RED);
+    }
+}
+
+void createDial()
+{
+
+    tft.setTextColor(WHITE, GREY);
+    tft.fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
+    tft.fillCircle(120, 120, 110, BLACK);
+
+    for (int i = 0; i < 360; i += 30) // draw 12 line segments at the outer ring
+    {
+        sx = cos((i - 90) * DEG2RAD);
+        sy = sin((i - 90) * DEG2RAD);
+        x0 = sx * 114 + 120;
+        yy0 = sy * 114 + 120;
+        x1 = sx * 100 + 120;
+        yy1 = sy * 100 + 120;
+        tft.drawLine(x0, yy0, x1, yy1, GREEN);
+    }
+
+    for (int i = 0; i < 360; i += 6) // draw 60 dots - minute markers
+    {
+        sx = cos((i - 90) * DEG2RAD);
+        sy = sin((i - 90) * DEG2RAD);
+        x0 = sx * 102 + 120;
+        yy0 = sy * 102 + 120;
+        tft.drawPixel(x0, yy0, WHITE);
+
+        if (i == 0 || i == 180)
+            tft.fillCircle(x0, yy0, 2, WHITE); // draw main quadrant dots
+        if (i == 90 || i == 270)
+            tft.fillCircle(x0, yy0, 2, WHITE);
+    }
+
+    tft.fillCircle(120, 121, 3, WHITE); // pivot
+    targetTime = millis() + 1000;
+}
+
+#endif
+
+#ifdef myCompass
+
+#include "SPI.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_GC9A01A.h"
+
+const char *ssid = "xxxxxxxxxxxxxxxx";     // network wifi credentials  - fill in your wifi network name
+const char *password = "xxxxxxxxxxxxxxxx"; // network wifi credentials  - fill in your wifi key
+
+const long utcOffsetInSeconds = 3600; // 3600 = western europe winter time - 7200 = western europe summer time
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
+#define TFT_DC 0
+#define TFT_CS 5
+#define DEG2RAD 0.0174532925
+
+// some extra colors
+#define BLACK 0x0000
+#define BLUE 0x001F
+#define RED 0xF800
+#define GREEN 0x07E0
+#define CYAN 0x07FF
+#define MAGENTA 0xF81F
+#define YELLOW 0xFFE0
+#define WHITE 0xFFFF
+#define ORANGE 0xFBE0
+#define GREY 0x84B5
+#define BORDEAUX 0xA000
+
+Adafruit_GC9A01A tft(TFT_CS, TFT_DC);
+
+float sx = 0, sy = 1, mx = 1, my = 0, hx = -1, hy = 0; // saved H, M, S x & y multipliers
+float ox = 0, oy = 0, px = 0, py = 0, qx = 0, qy = 0, rx = 0, ry = 0;
+float D1x = 0, D1y = 0, D2x = 0, D2y = 0, D3x = 0, D3y = 0;
+float DDD = 33.3;
+float sdeg = 0, mdeg = 0, hdeg = 0;
+uint16_t osx = 120, osy = 120, omx = 120, omy = 120, ohx = 120, ohy = 120; // saved H, M, S x & y coords
+uint16_t x0 = 0, x1 = 0, yy0 = 0, yy1 = 0;
+uint32_t targetTime = 0; // for next 1 second timeout
+float destination_Declination = 30;
+int hh = 0; // hours variable
+int mm = 0; // minutes variable
+int ss = 0; // seconds variable
+
+// WiFiUDP ntpUDP; // define NTP client to get time
+// NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
+
+bool initial = 1;
+
+void createDial();
+
+void Draw_green_ticks_bevels();
+void Draw_points_azimuths();
+void Draw_Destination(float);
+void Draw_Compass(float);
+
+void setup(void)
+{
+    // Serial.begin(9600);
+    // 开启
+    tft.begin();
+    // 设置旋转
+    tft.setRotation(0);
+    tft.fillScreen(BLACK); // 全屏幕显示黑色
+    delay(200);
+    tft.fillScreen(RED); // 全屏幕显示红色
+    delay(200);
+    tft.fillScreen(GREEN); // 全屏幕显示绿色
+    delay(200);
+    tft.fillScreen(BLUE); // 全屏幕显示蓝色
+    delay(200);
+    tft.fillScreen(BLACK); // 全屏幕显示黑色
+    delay(200);
+    tft.fillScreen(GREY); // 全屏幕显示灰色
+
+    createDial(); // 绘制表盘
+
+    Serial.begin(9600);
+    Serial.println();
+    Serial.println();
+    // WiFi.begin(ssid, password);
+
+    // while (WiFi.status() != WL_CONNECTED)
+    // {
+    //     delay(500);
+    //     Serial.print(".");
+    // }
+    Serial.print("connection with ");
+    Serial.println(ssid);
+    Serial.println("-------------------------------");
+
+    // timeClient.begin();
+    // timeClient.update();
+    Serial.print("internet server time: ");
+    // Serial.println(timeClient.getFormattedTime());
+    Serial.println("2024-4-14 1:54:00");
+
+    // hh = timeClient.getHours();
+    // mm = timeClient.getMinutes();
+    // ss = timeClient.getSeconds();
+
+    hh = 1;
+    mm = 54;
+    ss = 0;
+}
+
+void loop()
+{
+
+    // if (targetTime < millis())
+    // {
+    //     targetTime += 1000;
+    ss++; // clockwise second
+    // ss--; // anticlock second
+    if (ss == 60)
+    {
+        ss = 0;
+        // mm++; // advance minute
+        // if (mm > 59)
+        // {
+        //     mm = 0;
+        //     hh++; // advance hour
+        //     if (hh > 23)
+        //     {
+        //         hh = 0;
+        //         // timeClient.update(); // update at midnight
+        //     }
+        // }
+    }
+
+    // 通过角度来决定指针的朝向
+    sdeg = ss * 6; // 0-59 -> 0-354
+                   // sx = cos((sdeg - 90) * DEG2RAD);
+                   // sy = sin((sdeg - 90) * DEG2RAD);
+
+    /*--------------------------------秒针   works!-----------------------------------*/
+    // tft.drawLine(osx, osy, 120, 121, BLACK); // redraw new hand positions, hour and minute hands not erased here to avoid flicker
+    // osx = sx * 90 + 121;
+    // osy = sy * 90 + 121;
+    // tft.drawLine(osx, osy, 120, 121, RED);
+    // tft.fillCircle(120, 121, 3, RED);
+    /*---------------------------------秒针  works!----------------------------------*/
+    // 清除上一次画的阴影
+    tft.fillTriangle(ox, oy, px, py, rx, ry, BLACK);
+    tft.fillTriangle(qx, qy, px, py, rx, ry, BLACK);
+    tft.fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, BLACK);
+    Draw_points_azimuths();
+    Draw_green_ticks_bevels();
+    Draw_Compass(sdeg);
+    Draw_Destination(60);
+    /*---------------------------------画一个菱形----------------------------------*/
+    /*
+        已知变量：
+            圆点x坐标：120
+            圆点y坐标：120
+            r1：60
+            r2：15
+        未知变量：
+            角度1：方向角
+            角度2：角度1+90
+        一个菱形由两个三角形组成，一共需要知道4个点的坐标
+        A - B - C - D
+        A : 上顶点
+        B ：右顶点
+        C ：下顶点
+        D ：左顶点
+
+
+    */
+
+    // tft.fillCircle(D1x, D1y, 3, BLACK);
+    // tft.fillCircle(D2x, D2y, 3, BLACK);
+    // tft.fillCircle(D3x, D3y, 3, BLACK);
+
+    // 重新画一遍方位字母和绿色刻度
+    // 360/30 = 12，每22.5度，画一个刻度
+    // for (float i = 0; i < 360; i += 22.5) // draw 16 line segments at the outer ring
+    // {
+    //     sx = cos((i - 90) * DEG2RAD);
+    //     sy = sin((i - 90) * DEG2RAD);
+    //     x0 = sx * 114 + 120;
+    //     yy0 = sy * 114 + 120;
+    //     x1 = sx * 100 + 120;
+    //     yy1 = sy * 100 + 120;
+    //     tft.drawLine(x0, yy0, x1, yy1, GREEN);
+
+    //     if (i == 45)
+    //     {
+    //         // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+    //         tft.setTextSize(2);
+    //         tft.setTextColor(WHITE);
+    //         tft.setCursor(x0 - 24, yy0 + 14);
+    //         tft.print("NE");
+    //     }
+    //     else if (i == 135)
+    //     {
+    //         // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+    //         tft.setTextSize(2);
+    //         tft.setTextColor(WHITE);
+    //         tft.setCursor(x0 - 24, yy0 - 30);
+    //         tft.print("SE");
+    //     }
+    //     else if (i == 225)
+    //     {
+    //         tft.setTextSize(2);
+    //         tft.setTextColor(WHITE);
+    //         tft.setCursor(x0 + 14, yy0 - 30);
+    //         tft.print("SW");
+    //     }
+    //     else if (i == 315)
+    //     {
+    //         tft.setTextSize(2);
+    //         tft.setTextColor(WHITE);
+    //         tft.setCursor(x0 + 14, yy0 + 14);
+    //         tft.print("NW");
+    //     }
+    // }
+
+    // for (int i = 0; i < 360; i += 6) // draw 60 dots - minute markers
+    // {
+    //     sx = cos((i - 90) * DEG2RAD);
+    //     sy = sin((i - 90) * DEG2RAD);
+    //     x0 = sx * 102 + 120;
+    //     yy0 = sy * 102 + 120;
+    //     tft.drawPixel(x0, yy0, WHITE);
+
+    //     if (i == 0)
+    //     {
+    //         // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+    //         tft.setTextSize(3);
+    //         tft.setTextColor(WHITE);
+    //         tft.setCursor(x0 - 7, yy0);
+    //         tft.print("N");
+    //     }
+
+    //     if (i == 90)
+    //     {
+    //         tft.setTextSize(3);
+    //         tft.setTextColor(WHITE);
+    //         tft.setCursor(x0 - 15, yy0 - 10);
+    //         tft.print("E");
+    //     }
+    //     if (i == 180)
+    //     {
+    //         tft.setTextSize(3);
+    //         tft.setTextColor(WHITE);
+    //         tft.setCursor(x0 - 7, yy0 - 20);
+    //         tft.print("S");
+    //     }
+    //     if (i == 270)
+    //     {
+    //         tft.setTextSize(3);
+    //         tft.setTextColor(WHITE);
+    //         tft.setCursor(x0 + 5, yy0 - 10);
+    //         tft.print("O");
+    //     }
+    // }
+
+    // // 先画点A
+    // // tft.drawLine(ox, oy, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    // ox = (120 + (70 * sin((-sdeg) * DEG2RAD)));
+    // oy = (120 + (70 * cos((-sdeg) * DEG2RAD)));
+    // // tft.drawLine(ox, oy, 120, 121, GREEN);
+
+    // // 再画点B
+    // // tft.drawLine(px, py, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    // px = (120 + 15 * sin((90 - sdeg) * DEG2RAD));
+    // py = (120 + 15 * cos((90 - sdeg) * DEG2RAD));
+    // // tft.drawLine(px, py, 120, 121, YELLOW);
+
+    // // 再画点C
+    // // tft.drawLine(qx, qy, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    // qx = (120 + 70 * sin((180 - sdeg) * DEG2RAD));
+    // qy = (120 + 70 * cos((180 - sdeg) * DEG2RAD));
+    // // tft.drawLine(qx, qy, 120, 121, GREEN);
+
+    // // 再画点D
+    // // tft.drawLine(rx, ry, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    // rx = (120 + 15 * sin((270 - sdeg) * DEG2RAD));
+    // ry = (120 + 15 * cos((270 - sdeg) * DEG2RAD));
+    // // tft.drawLine(rx, ry, 120, 121, YELLOW);
+
+    // // tft.drawTriangle(ox, oy, px, py, rx, ry, RED);
+    // tft.fillTriangle(ox, oy, px, py, rx, ry, RED);
+    // // tft.drawTriangle(qx, qy, px, py, rx, ry, BLUE);
+    // tft.fillTriangle(qx, qy, px, py, rx, ry, BLUE);
+    // tft.fillCircle(120, 121, 3, RED);
+    /*---------------------------------画一个菱形----------------------------------*/
+
+    /*---------------------------------画目的地方向----------------------------------*/
+    // 画出目的地的相对方向
+    /*
+        假设目的地方位与当前朝向的夹角为DDD
+        就相当于从罗盘正N开始，顺时针+DDD的角度为当前目的地方向，顺时针累加
+        需要分别计算三个点
+        顶点A：
+            x =  (120 + (110 * sin((-sdeg) * DEG2RAD)));
+            y = (120 + (110 * cos((-sdeg) * DEG2RAD)));
+        点B：
+        点C：
+
+    */
+
+    // D1x = (120 + (100 * sin((-(sdeg + DDD)) * DEG2RAD)));
+    // D1y = (120 + (100 * cos((-(sdeg + DDD)) * DEG2RAD)));
+
+    // D2x = (120 + (80 * sin((-(sdeg - 7 + DDD)) * DEG2RAD)));
+    // D2y = (120 + (80 * cos((-(sdeg - 7 + DDD)) * DEG2RAD)));
+
+    // D3x = (120 + (80 * sin((-(7 + sdeg + DDD)) * DEG2RAD)));
+    // D3y = (120 + (80 * cos((-(7 + sdeg + DDD)) * DEG2RAD)));
+
+    // // DDD 3顶点
+    // // tft.fillCircle(D1x, D1y, 3, RED);
+    // // tft.fillCircle(D2x, D2y, 3, BLUE);
+    // // tft.fillCircle(D3x, D3y, 3, GREEN);
+
+    // tft.fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, GREEN);
+    // }
+    delay(100);
+}
+
+void createDial()
+{
+
+    tft.setTextColor(WHITE, GREY);
+    tft.fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
+    tft.fillCircle(120, 120, 110, BLACK);
+
+    // 360/22.5 = 16，每22.5度，画一个刻度
+    for (float i = 0; i < 360; i += 22.5) // draw 16 line segments at the outer ring
+    {
+        sx = cos((i - 90) * DEG2RAD);
+        sy = sin((i - 90) * DEG2RAD);
+        x0 = sx * 114 + 120;
+        yy0 = sy * 114 + 120;
+        x1 = sx * 100 + 120;
+        yy1 = sy * 100 + 120;
+        tft.drawLine(x0, yy0, x1, yy1, GREEN);
+
+        if (i == 45)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            tft.setTextSize(2);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 - 24, yy0 + 14);
+            tft.print("NE");
+        }
+        else if (i == 135)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            tft.setTextSize(2);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 - 24, yy0 - 30);
+            tft.print("SE");
+        }
+        else if (i == 225)
+        {
+            tft.setTextSize(2);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 + 14, yy0 - 30);
+            tft.print("SW");
+        }
+        else if (i == 315)
+        {
+            tft.setTextSize(2);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 + 14, yy0 + 14);
+            tft.print("NW");
+        }
+    }
+
+    for (int i = 0; i < 360; i += 6) // draw 60 dots - minute markers
+    {
+        sx = cos((i - 90) * DEG2RAD);
+        sy = sin((i - 90) * DEG2RAD);
+        x0 = sx * 102 + 120;
+        yy0 = sy * 102 + 120;
+        tft.drawPixel(x0, yy0, WHITE);
+
+        if (i == 0)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            tft.setTextSize(3);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 - 7, yy0);
+            tft.print("N");
+        }
+
+        if (i == 90)
+        {
+            tft.setTextSize(3);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 - 15, yy0 - 10);
+            tft.print("E");
+        }
+        if (i == 180)
+        {
+            tft.setTextSize(3);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 - 7, yy0 - 20);
+            tft.print("S");
+        }
+        if (i == 270)
+        {
+            tft.setTextSize(3);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 + 5, yy0 - 10);
+            tft.print("O");
+        }
+    }
+
+    tft.fillCircle(120, 121, 3, WHITE); // pivot  中心圆点
+    targetTime = millis() + 1000;
+}
+
+void Draw_green_ticks_bevels()
+{
+    for (float i = 0; i < 360; i += 22.5) // draw 16 line segments at the outer ring
+    {
+        sx = cos((i - 90) * DEG2RAD);
+        sy = sin((i - 90) * DEG2RAD);
+        x0 = sx * 114 + 120;
+        yy0 = sy * 114 + 120;
+        x1 = sx * 100 + 120;
+        yy1 = sy * 100 + 120;
+        tft.drawLine(x0, yy0, x1, yy1, GREEN);
+
+        if (i == 45)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            tft.setTextSize(2);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 - 24, yy0 + 14);
+            tft.print("NE");
+        }
+        else if (i == 135)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            tft.setTextSize(2);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 - 24, yy0 - 30);
+            tft.print("SE");
+        }
+        else if (i == 225)
+        {
+            tft.setTextSize(2);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 + 14, yy0 - 30);
+            tft.print("SW");
+        }
+        else if (i == 315)
+        {
+            tft.setTextSize(2);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 + 14, yy0 + 14);
+            tft.print("NW");
+        }
+    }
+}
+
+void Draw_points_azimuths()
+{
+    for (int i = 0; i < 360; i += 6) // draw 60 dots - minute markers
+    {
+        sx = cos((i - 90) * DEG2RAD);
+        sy = sin((i - 90) * DEG2RAD);
+        x0 = sx * 102 + 120;
+        yy0 = sy * 102 + 120;
+        tft.drawPixel(x0, yy0, WHITE);
+
+        if (i == 0)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            tft.setTextSize(3);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 - 7, yy0);
+            tft.print("N");
+        }
+
+        if (i == 90)
+        {
+            tft.setTextSize(3);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 - 15, yy0 - 10);
+            tft.print("E");
+        }
+        if (i == 180)
+        {
+            tft.setTextSize(3);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 - 7, yy0 - 20);
+            tft.print("S");
+        }
+        if (i == 270)
+        {
+            tft.setTextSize(3);
+            tft.setTextColor(WHITE);
+            tft.setCursor(x0 + 5, yy0 - 10);
+            tft.print("O");
+        }
+    }
+}
+void Draw_Destination(float dest)
+{
+    D1x = (120 + (100 * sin((-(sdeg + dest)) * DEG2RAD)));
+    D1y = (120 + (100 * cos((-(sdeg + dest)) * DEG2RAD)));
+
+    D2x = (120 + (80 * sin((-(sdeg - 7 + dest)) * DEG2RAD)));
+    D2y = (120 + (80 * cos((-(sdeg - 7 + dest)) * DEG2RAD)));
+
+    D3x = (120 + (80 * sin((-(7 + sdeg + dest)) * DEG2RAD)));
+    D3y = (120 + (80 * cos((-(7 + sdeg + dest)) * DEG2RAD)));
+
+    // DDD 3顶点
+    // tft.fillCircle(D1x, D1y, 3, RED);
+    // tft.fillCircle(D2x, D2y, 3, BLUE);
+    // tft.fillCircle(D3x, D3y, 3, GREEN);
+
+    tft.fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, GREEN);
+}
+
+void Draw_Compass(float degree)
+{
+
+    // 先画点A
+    // tft.drawLine(ox, oy, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    ox = (120 + (70 * sin((-degree) * DEG2RAD)));
+    oy = (120 + (70 * cos((-degree) * DEG2RAD)));
+    // tft.drawLine(ox, oy, 120, 121, GREEN);
+
+    // 再画点B
+    // tft.drawLine(px, py, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    px = (120 + 15 * sin((90 - degree) * DEG2RAD));
+    py = (120 + 15 * cos((90 - degree) * DEG2RAD));
+    // tft.drawLine(px, py, 120, 121, YELLOW);
+
+    // 再画点C
+    // tft.drawLine(qx, qy, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    qx = (120 + 70 * sin((180 - degree) * DEG2RAD));
+    qy = (120 + 70 * cos((180 - degree) * DEG2RAD));
+    // tft.drawLine(qx, qy, 120, 121, GREEN);
+
+    // 再画点D
+    // tft.drawLine(rx, ry, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    rx = (120 + 15 * sin((270 - degree) * DEG2RAD));
+    ry = (120 + 15 * cos((270 - degree) * DEG2RAD));
+    // tft.drawLine(rx, ry, 120, 121, YELLOW);
+
+    // tft.drawTriangle(ox, oy, px, py, rx, ry, RED);
+    tft.fillTriangle(ox, oy, px, py, rx, ry, RED);
+    // tft.drawTriangle(qx, qy, px, py, rx, ry, BLUE);
+    tft.fillTriangle(qx, qy, px, py, rx, ry, BLUE);
+}
+
 #endif

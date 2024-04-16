@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
-/*__________________________________________________________________________________________*/
+
+/*----- DEBUG -----*/
 #ifndef DEBUG
 #define DEBUG false
 #define DEBUG_STRING(Debug_Type, Valeur)
@@ -17,14 +18,25 @@
         Serial.println(Valeur);             \
     };
 #endif
-/*__________________________________________________________________________________________*/
 
-// /*----- DEBUG -----*/
-// #define DEBUG_BUTTONS false
-// #define DEBUG_GSM false
+// Debug_Type : true = affiche les messages de debug, false = n'affiche pas les messages de debug
+#define DEBUG_TS_BUTTONS DEBUG && false
+#define DEBUG_TS_BUTTONS_HARDCORE DEBUG && false
+#define DEBUG_TS_SCREEN DEBUG && true
+#define DEBUG_TS_GSM DEBUG && true
+#define DEBUG_TS_GPS DEBUG && false
+#define DEBUG_TS_GPS_HARDCORE DEBUG && false
+#define DEBUG_TS_SDCARD DEBUG && true
+#define DEBUG_TS_BLE DEBUG && false
+#define DEBUG_TS_BATTERY DEBUG && false
+#define DEBUG_TS_BUZZER DEBUG && false
+#define DEBUG_TS_ACCELEROMETER DEBUG && false
+#define DEBUG_TS_COMPASS DEBUG && false
+#define DEBUG_TS_GYROSCOPE DEBUG && false
+#define DEBUG_TS_CORE DEBUG && false
 
 /*----- Screen -----*/
-#define SPI_TFCard 0 // 1 = SPI, 0 = VSPI
+#define SPI_TFCard 0 // 1 = SPI, 0 = VSPI // ALWAYS USE VSPI, NEVER USE SPI. Our connections are bad on our V1.0 PCB and we can't use SPI_TFCard.
 
 #if SPI_TFCard
 // Ne pas considérer cette possibilité de connexion de l'écran. Aucune chance que ça fonctionne. Le PCB peut être modifié à l'avenir.
@@ -36,11 +48,11 @@
 #define TFT_CLK 14  // In some display driver board, it might be written as "SCL" and so on.
 #define TFT_MISO 2  // Ne semble pas être utile, car non tactile
 
-#else // VSPI
-
-#define TFT_BLK -1  // 12 // LED back-light. "BLK" or "BLK"
-#define TFT_CS 5    // 25     // Chip select control pin. "CS" or "SS"
-#define TFT_DC 0    // 19        // Data Command control pin
+#else               // VSPI
+// ATTENTION : La PIN 25 TFT_BLK semble utilisée par le GPS selon le site officiel Lilygo. Mais elle ne semble pas utilisée par le GPS dans notre cas... Sert pour le mode veille !
+#define TFT_BLK 25  // LED back-light. "BLK" or "BLK"
+#define TFT_CS 5    // Chip select control pin. "CS" or "SS"
+#define TFT_DC 0    // Data Command control pin
 #define TFT_RST -1  // Reset pin (could connect to Arduino RESET pin) "RST" or "RST"
 #define TFT_MOSI 23 // In some display driver board, it might be written as "SDA" and so on. "DIN" or "MOSI
 #define TFT_CLK 18  // In some display driver board, it might be written as "SCL" and so on. "CLK" or "SCK"
@@ -50,7 +62,6 @@
 
 #define TFT_WIDTH 240
 #define TFT_HEIGHT 240
-// #define TFT_INIT_ROTATION 0
 #define TFT_LIGHT_MODE_BACKGROUND_COLOR GC9A01A_WHITE
 #define TFT_LIGHT_MODE_TEXT_COLOR GC9A01A_BLACK
 #define TFT_DARK_MODE_BACKGROUND_COLOR GC9A01A_BLACK
@@ -91,21 +102,19 @@
 #define INIT_TS_PAGE_ID -1
 #define ENDING_RIDE_PAGE_ID -2
 #define ERROR_PAGE_ID -3
-/*___________________________________________________*/
+
 /*----- ESP32 -----*/
 #define PIN_LED 12
 // setting PWM properties
 #define LEDC_FREQ 5000
 #define LEDC_CHANNEL_0 0
 #define LEDC_RESOLUTION 8
-/*___________________________________________________*/
 
 /*----- SD Card -----*/
 #define PIN_SDCARD_MOSI 15
 #define PIN_SDCARD_SCLK 14
 #define PIN_SDCARD_CS 13
 #define PIN_SDCARD_MISO 2
-#define PIN_LED 12
 
 #define SDCARD_ROOT_PATH "/cr"
 #define SDCARD_FILE_EXTENSION ".csv"
@@ -134,19 +143,26 @@
 /*----- I2C : Accelerometer, Gyroscope, Compass, Temperature -----*/
 #define PIN_GY87_SDA 21
 #define PIN_GY87_SCL 22
-// #define PIN_GY87_INTA 39
+
 /*----- Buzzer -----*/
 #define PIN_BUZZER 32
-// #define PIN_BUZZER 39
 
 /*----- Battery -----*/
+// How to calculate Voltage : https://github.com/Xinyuan-LilyGO/LilyGO-T-SIM7000G/issues/104#issuecomment-833887214
 #define PIN_BATTERY 35
+#define BATTERY_VOLTAGE_MIN 3.0
+#define BATTERY_VOLTAGE_MAX 4.2
+#define BATTERY_PERCENTAGE_MIN 0
+#define BATTERY_PERCENTAGE_MAX 100
+#define BATTERY_NB_READS 15 // number of voltage readings before choosing a median, keep this number odd
+#define BATTERY_VREF 1100   // ADC reference voltage, change this to 1100 if using ESP32 ADC
 
 /*----- Buttons -----*/
 #define PIN_BUTTON1 33
 #define PIN_BUTTON2 34
 #define BUTTON_LONG_PRESS_DURATION_MS 2000
 #define BUTTON_INACTIVITY_TIME_MS 300000 // 5 minutes
+// #define BUTTON_INACTIVITY_TIME_MS 5000 // 10 secondes
 
 /*----- BLE -----*/
 #define BLE_DEVICE_NAME "TrackSense"
@@ -162,14 +178,22 @@
 // Service et caracterisiques pour CompletedRide
 #define BLE_COMPLETED_RIDE_SERVICE_UUID "62ffab64-3646-4fb9-88d8-541deb961192"
 
-#define BLE_COMPLETED_RIDE_CARACTRISTIC_DATA "51656aa8-b795-427f-a96c-c4b6c57430dd"
+#define BLE_COMPLETED_RIDE_CHARACTRISTIC_DATA "51656aa8-b795-427f-a96c-c4b6c57430dd"
 #define BLE_COMPLETED_RIDE_DESCRIPTOR_DATA_NAME "Completed Ride Stats"
 #define BLE_COMPLETED_RIDE_DESCRIPTOR_DATA_UUID "5a2b4a0f-8ddd-4c69-a825-dbab5822ba0e"
 
-#define BLE_COMPLETED_RIDE_NOTIFICATION_CARACTRISTIC "61656aa8-b795-427f-a96c-c4b6c57430dd"
+#define BLE_COMPLETED_RIDE_NOTIFICATION_CHARACTRISTIC "61656aa8-b795-427f-a96c-c4b6c57430dd"
 #define BLE_COMPLETED_RIDE_DESCRIPTOR_NOTIF_NAME "Notification"
 #define BLE_COMPLETED_RIDE_DESCRIPTOR_NOTIFICATION_UUID "6a2b4a0f-8ddd-4c69-a825-dbab5822ba0e"
 
-// seuil pour detecter la chute
-#define pitch_threshold 30
-#define roll_threshold 30
+#define BLE_SCREEN_SERVICE_UUID "68c50cff-e5ad-4cb8-9541-997d42925f27"
+
+#define BLE_SCREEN_CHARACTRISTIC_ROTATE "65000b05-c1a9-4dfb-a173-bdaa4a029bf6"
+#define BLE_SCREEN_DESCRIPTOR_ROTATE_NAME "Rotate screen"
+#define BLE_SCREEN_DESCRIPTOR_ROTATE_UUID "65000b05-c1a9-4dfb-a173-bdaa4a029bf7"
+
+/*----- Configuration file -----*/
+#define PATH_CONFIGURATION_FILE "/Configuration.json"
+#define DYNAMIQUE_JSON_DOCUMENT_SIZE 4096
+
+#define FIELD_SCREEN_ROTATION "Screen_Rotation"

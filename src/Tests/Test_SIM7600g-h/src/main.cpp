@@ -204,7 +204,6 @@ void displayInfo()
 #endif
 
 #ifdef GPS_Tracking_System
-
 #define TINY_GSM_MODEM_SIM7600
 
 #define TINY_GSM_RX_BUFFER 1024 // Set RX buffer to 1Kb
@@ -246,15 +245,11 @@ String mylong = ""; // for storing the longittude value
 String mylati = ""; // for storing the latitude value
 String textForSMS;
 char buff[10];
-// #define SMS_TARGET "+923339218213" // telephone number
-// #define SMS_TARGET "+15819785858" // telephone number
-#define SMS_TARGET "+14182558849" // TrackSense send sms to this telephone
+#define SMS_TARGET "+14182558849"
 
 void gpslocation();
-
 void setup()
 {
-  // SerialMon.begin(115200);
   SerialMon.begin(9600);
   SerialMon.println("Place your board outside to catch satelite signal");
 
@@ -270,11 +265,9 @@ void setup()
 
   delay(1000);
 
-  // Set module baud rate and UART pins
   SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
   fonaSerial->begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX, false);
-  // Restart takes quite some time
-  // To skip it, call init() instead of restart()
+
   SerialMon.println("Initializing modem...");
   if (!modem.restart())
   {
@@ -290,9 +283,6 @@ void setup()
   delay(500);
   SerialMon.println("Modem Info: " + modemInfo);
 
-  // Set SIM7000G GPIO4 HIGH ,turn on GPS power
-  // CMD:AT+SGPIO=0,4,1,1
-  // Only in version 20200415 is there a function to control GPS power
   modem.sendAT("+SGPIO=0,4,1,1");
   if (modem.waitResponse(10000L) != 1)
   {
@@ -367,23 +357,6 @@ void loop()
         //        //fona.sendSMS(callerIDbuffer,textForSMS );
         //        Serial.println("SMS send");
         //     textForSMS="";
-        /*
-
-        Latitude: 46.78777695   Longitude: -71.26206970
-        Speed: 0.00     Altitude: 88.50
-        Visible Satellites: 0   Used Satellites: 0
-        Accuracy: 1.10
-        Year: 2024      Month: 4        Day: 7
-        Hour: 19        Minute: 24      Second: 8
-
-        Retrieving GPS/GNSS/GLONASS location again as a string
-        GPS/GNSS Based Location String:
-          2,07,06,00,
-          4647.267214,N,
-          07115.726547,W,
-          070424,192413.0,81.1,0.0,,1.2,0.9,0.8
-
-        */
       }
       if (fona.deleteSMS(slot))
       {
@@ -508,7 +481,8 @@ void setup()
   pinMode(pot, INPUT);
   // Set LED OFF
 
-  // Turn on the modem
+  // Turn on the modem ?? 为什么先高后底？？
+
   pinMode(PWR_PIN, OUTPUT);
   digitalWrite(PWR_PIN, HIGH);
   delay(300);

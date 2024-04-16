@@ -36,6 +36,7 @@ private:
     void setStatsToSend();
     void setPointsToSendFromFile();
     void deleteCurrentRideFiles();
+    void deleteCurrentRideSentFiles();
 
 public:
     SDCard(TSProperties *TSProperties);

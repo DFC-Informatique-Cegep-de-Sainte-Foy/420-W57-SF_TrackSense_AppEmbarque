@@ -6,14 +6,14 @@
 
 #include "Modules/ScreenGC9A01.h"
 
-
-
 class ControlerScreen : public IControlerScreen
 {
 private:
     TSProperties *_TSProperties;
     ScreenGC9A01 *_screen;
     unsigned long _timeToDisplayEndingRidePageMS;
+
+    SemaphoreHandle_t _xMutex; // Create a mutex object
 
     /* Pages */
     void drawInitTSPage() override;
@@ -26,11 +26,6 @@ private:
     void drawRideStatisticsPage() override;
     void drawEndingRidePage() override;
     void drawErrorPage() override;
-
-    /* Showing modes */
-    // void setRotation(u_int8_t rotation) override;
-    // void setBackgroudColor(uint16_t darkModeColor = TFT_DARK_MODE_BACKGROUND_COLOR, uint16_t lightModeColor = TFT_LIGHT_MODE_BACKGROUND_COLOR) override;
-    int arrondiPourcentageAux5UnitesPres(int pourcentage);
 
 public:
     ControlerScreen(TSProperties *TSProperties);
@@ -60,5 +55,5 @@ public:
         -3 : Page Erreur
     */
     void tick() override;
-
+    void drawOnScreen() override;
 };

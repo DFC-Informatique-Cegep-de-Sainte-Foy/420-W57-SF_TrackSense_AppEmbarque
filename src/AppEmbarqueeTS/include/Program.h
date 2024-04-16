@@ -12,6 +12,7 @@
 #include "Modules/CompassHMC5883L.h"
 #include "Modules/AccelerometerMPU6050.h"
 #include "Modules/BLE.h"
+#include "Modules/Battery.h"
 #include "Modules/ScreenGC9A01.h"
 #include "Modules/Buzzer.h"
 #include "Modules/MPU6050.h"
@@ -28,6 +29,7 @@ private:
     IAccelerometer *_accelerometer;
     IBLE *_ble;
     IBuzzer *_buzzer;
+    IBattery *_battery;
     ControlerButtons *_controlerButtons;
     IControlerScreen *_controlerScreen;
     MPU6050 *_MPU6050;
@@ -39,4 +41,6 @@ public:
     ~Program();
 
     void execute();
+    void executeCore1();
+    void executeCore0();
 };

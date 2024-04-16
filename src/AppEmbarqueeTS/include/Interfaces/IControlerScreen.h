@@ -6,7 +6,9 @@ class IControlerScreen
 {
 public:
     virtual void tick() = 0;
-    
+    virtual void drawOnScreen() = 0;
+
+private:
     /*
         Draw Pages
     */
@@ -20,5 +22,4 @@ public:
     virtual void drawRideStatisticsPage() = 0;
     virtual void drawEndingRidePage() = 0;
     virtual void drawErrorPage() = 0;
-
 };

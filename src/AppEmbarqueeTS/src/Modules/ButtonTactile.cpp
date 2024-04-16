@@ -44,10 +44,10 @@ int ButtonTactile::getFinalState()
 
         /* Manque gestion des double pressions longues et courtes ...  */
 
-#if DEBUG_BUTTONS == true
+#if DEBUG_TS_BUTTONS_HARDCORE == true
         if (this->_pinButton == 33)
         {
-            Serial.println("==================START===================");
+            Serial.println("================== START DEBUG BUTTON ===================");
             Serial.print("actualTime = ");
             Serial.println(actualTime);
             Serial.print("_lastDateChange = ");
@@ -60,7 +60,7 @@ int ButtonTactile::getFinalState()
             Serial.println(this->_lastStableStateButton);
             Serial.print("finalState = ");
             Serial.println(finalState);
-            Serial.println("===================END==================");
+            Serial.println("=================== END DEBUG BUTTON ==================");
         }
 #endif
 
