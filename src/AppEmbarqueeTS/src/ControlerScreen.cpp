@@ -42,6 +42,8 @@ ControlerScreen::~ControlerScreen()
 */
 void ControlerScreen::tick()
 {
+    // Serial.println("4---ScreenControl --> tick");
+
     // if (xSemaphoreTake(_xMutex, portMAX_DELAY))
     if (xSemaphoreTake(_xMutex, (150 * portTICK_PERIOD_MS)))
     {
@@ -66,18 +68,19 @@ void ControlerScreen::tick()
             }
 
             DEBUG_STRING_LN(DEBUG_TS_SCREEN, "Active Screen : " + String(this->_TSProperties->PropertiesScreen.ActiveScreen));
+            // Serial.println("Active Screen" + String(this->_TSProperties->PropertiesScreen.ActiveScreen));
 
             switch (this->_TSProperties->PropertiesScreen.ActiveScreen)
             {
-            case INIT_TS_PAGE_ID: // -1
-                this->drawInitTSPage();
+            case INIT_TS_PAGE_ID:       // -1
+                this->drawInitTSPage(); // initialisation
                 break;
 
-            case HOME_PAGE_ID: // 0
-                this->drawHomePage();
+            case HOME_PAGE_ID:        // 0
+                this->drawHomePage(); // 待机状态，显示电量和红色方块
                 break;
 
-            case RIDE_PAGE_ID: // 1
+            case RIDE_PAGE_ID: // 1  进入trajet中
                 if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted)
                 {
                     this->drawRidePage();
@@ -88,7 +91,7 @@ void ControlerScreen::tick()
                 }
                 break;
 
-            case RIDE_STATISTICS_PAGE_ID: // 2
+            case RIDE_STATISTICS_PAGE_ID: // 2  在trajet中显示Static
                 if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted)
                 {
                     this->drawRideStatisticsPage();
@@ -99,19 +102,19 @@ void ControlerScreen::tick()
                 }
                 break;
 
-            case COMPASS_PAGE_ID: // 3
+            case COMPASS_PAGE_ID: // 3 compass
                 this->drawCompassPage();
                 break;
 
-            case RIDE_DIRECTION_PAGE_ID: // 4
+            case RIDE_DIRECTION_PAGE_ID: // 4 Direction
                 this->drawRideDirectionPage();
                 break;
 
-            case GLOBAL_STATISTICS_PAGE_ID: // 5
+            case GLOBAL_STATISTICS_PAGE_ID: // 5 Global
                 this->drawGlobalStatisticsPage();
                 break;
 
-            case GO_HOME_PAGE_ID: // 6
+            case GO_HOME_PAGE_ID: // 6  backhome
                 this->drawGoHomePage();
                 break;
 
@@ -128,7 +131,7 @@ void ControlerScreen::tick()
                 break;
 
             default: // -3
-                this->drawErrorPage();
+                // this->drawErrorPage();
                 break;
             }
         }
@@ -149,6 +152,28 @@ void ControlerScreen::drawOnScreen()
     }
 }
 
+float ControlerScreen::calculerDirectionDegree()
+{
+    double newDirectionDestinationRAD = 0.0;
+    float newDirectionDestinationDegree = 0.0;
+
+    float newHeading = _TSProperties->PropertiesCompass.heading;
+    float DX = _TSProperties->PropertiesCurrentRide.longitude_destination; // 目的地经度
+    float DY = _TSProperties->PropertiesCurrentRide.latitude_destination;  // 目的地维度
+    float OX = _TSProperties->PropertiesGPS.Longitude;                     // 当前经度
+    float OY = _TSProperties->PropertiesGPS.Latitude;                      // 当前维度
+
+    float param1 = (90 - OY) * (DY - OY);
+    float param2 = sqrt((90 - DY) * (90 - DY));
+    float param3 = sqrt((DX - OX) * (DX - OX) + (DY - OY) * (DY - OY));
+    newDirectionDestinationRAD = cos(param1 / (param2 * param3));
+    newDirectionDestinationDegree = newDirectionDestinationRAD * RAD2DEG;
+    newDirectionDestinationDegree += 180;
+    newDirectionDestinationDegree += _TSProperties->PropertiesCompass.heading;
+    Serial.println("Degree---->" + String(newDirectionDestinationDegree));
+    return newDirectionDestinationDegree;
+}
+
 /*
 
 
@@ -161,7 +186,6 @@ void ControlerScreen::drawOnScreen()
 void ControlerScreen::drawInitTSPage()
 {
     this->_screen->drawLogoTS();
-
     this->_screen->setTextColor();
     this->_screen->setTextSize(1);
     this->_screen->setFont(3);
@@ -198,12 +222,48 @@ void ControlerScreen::drawHomePage()
 
 void ControlerScreen::drawCompassPage()
 {
-    ;
+    // TODO
+    float newHeading = _TSProperties->PropertiesCompass.heading;
+    // double newDirectionDestinationRAD = atan((_TSProperties->PropertiesCurrentRide.latitude_destination - _TSProperties->PropertiesGPS.Latitude) / (_TSProperties->PropertiesCurrentRide.longitude_destination - _TSProperties->PropertiesGPS.Longitude)); // 23.08
+    // Serial.println("New Direction --> " + String(newDirectionDestinationRAD * RAD2DEG));                                                                                                                                                                   // 0.40弧度
+    // // 弧度转角度
+    // float newDirectionDestinationDegree = newDirectionDestinationRAD * RAD2DEG;
+    // 如果第一次画，渲染表盘
+    // 如果数据有改变，先清除原始阴影，再画指针
+    // if (!entreCompass)
+    // {
+    //     Serial.println("第一次进入Compass");
+    //     // 第一次画表盘
+    //     this->_screen->Draw_Cadran_Compass();
+    //     entreCompass = true;
+    //     delayMicroseconds(1000);
+    //     Serial.println("表盘绘制完成");
+    // }
+
+    this->_screen->Draw_Cadran_Compass();
+
+    // 有新数据，清屏并更新
+    if (lastDegree != newHeading)
+    {
+        // 清屏上一次的指针
+        this->_screen->cleanNeedleCompass();
+        // 更新指针方位
+        this->_screen->Draw_Compass(newHeading);
+        // 更新目的地方位
+        this->_screen->Draw_Destination(calculerDirectionDegree()); // 23.05  63.64
+        lastDegree = newHeading;
+    }
+    // this->_screen->drawCompass(_TSProperties->PropertiesCompass.heading);
+
+    // this->_screen->drawCompass(120);
 }
 
 void ControlerScreen::drawRideDirectionPage()
 {
-    ;
+    // TODO
+    this->_screen->setTextSize(1);
+    this->_screen->setFont(1);
+    this->_screen->printText("Direction", 100, 100);
 }
 
 void ControlerScreen::drawRidePage()
@@ -234,17 +294,23 @@ void ControlerScreen::drawRidePage()
     if (this->_TSProperties->PropertiesGPS.IsFixValid && this->_TSProperties->PropertiesGPS.IsGPSFixed)
     {
         this->_screen->setTextColor();
-        speed = String(this->_TSProperties->PropertiesGPS.Speed, 1);
+        // speed = String(this->_TSProperties->PropertiesGPS.Speed, 1);
+        // tester pour GPS DATA
+        speed = String(this->_TSProperties->PropertiesGPS.Altitude, 1);
     }
     else if (!this->_TSProperties->PropertiesGPS.IsFixValid && this->_TSProperties->PropertiesGPS.IsGPSFixed)
     {
         this->_screen->setTextColor(GC9A01A_YELLOW, GC9A01A_BLACK, GC9A01A_YELLOW, GC9A01A_WHITE);
-        speed = String(this->_TSProperties->PropertiesGPS.Speed, 1);
+        // speed = String(this->_TSProperties->PropertiesGPS.Speed, 1);
+        // tester pour GPS DATA
+        speed = String(this->_TSProperties->PropertiesGPS.Altitude, 1);
     }
     else
     {
         this->_screen->setTextColor();
-        speed = "---";
+        speed = String(this->_TSProperties->PropertiesGPS.Altitude, 1);
+
+        // speed = "---";
     }
 
     this->_screen->setFont(2);
@@ -262,12 +328,18 @@ void ControlerScreen::drawRidePage()
 
 void ControlerScreen::drawGlobalStatisticsPage()
 {
-    ;
+    // TODO
+    this->_screen->setTextSize(1);
+    this->_screen->setFont(1);
+    this->_screen->printText("Global", 100, 100);
 }
 
 void ControlerScreen::drawGoHomePage()
 {
-    ;
+    // TODO
+    this->_screen->setTextSize(1);
+    this->_screen->setFont(1);
+    this->_screen->printText("Back Home", 100, 100);
 }
 
 void ControlerScreen::drawRideStatisticsPage()

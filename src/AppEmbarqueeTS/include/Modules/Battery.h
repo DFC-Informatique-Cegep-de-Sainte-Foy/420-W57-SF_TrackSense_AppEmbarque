@@ -11,7 +11,7 @@ private:
     float _batteryPercentage;
     float _batteryVoltage;
     const int _voltageReads; // number of voltage readings before choosing a median, keep this number odd
-    int vref;                // ADC reference voltage, change this to 1100 if using ESP32 ADC
+    int vref;       // ADC reference voltage, change this to 1100 if using ESP32 ADC
 
     void readBatteryVoltage();
     void readBatteryPercentage();

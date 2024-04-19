@@ -50,6 +50,8 @@ void SDCard::init()
 
 void SDCard::tick()
 {
+    // Serial.println("7---SDCard --> tick");
+
     if (this->_TSProperties->PropertiesSDCard.IsSDCardConnected)
     {
         this->processCurrentRide();

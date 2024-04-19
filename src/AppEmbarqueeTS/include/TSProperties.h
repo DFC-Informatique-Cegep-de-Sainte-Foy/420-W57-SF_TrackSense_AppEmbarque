@@ -17,9 +17,15 @@ public:
     /* datas Current ride */
     struct TSPropertiesCurrentRide
     {
+        double latitude_destination;  // 维度，y
+        double longitude_destination; // 经度，x
+        double latitude_point_depart;
+        double longitude_point_depart;
+
         bool IsRideStarted;
         bool IsRidePaused;
         bool IsRideFinished;
+        bool estArrive;
 
         String CompletedRideId;
         String PlannedRideId;
@@ -36,7 +42,7 @@ public:
         String CurrentPoint;
         int NbPoints;
         int PointID;
-        int NbFalls;
+        int NbFalls; //??nombre de chute?
         bool IsRideReadyToSave;
         bool IsPointReadyToSave;
         float Temperature;
@@ -63,6 +69,9 @@ public:
 
         void resetCurrentRide()
         {
+            latitude_destination = 0;
+            longitude_destination = 0;
+
             this->IsRideStarted = false;
             this->IsRidePaused = false;
             this->IsRideFinished = false;
@@ -107,6 +116,8 @@ public:
         int Seconde;
         bool IsFixValid;
         bool IsGPSFixed;
+        bool estChute;
+        bool estEnvoyerSMS;
 
         int CounterGoodValue;
         int CounterTotal;
@@ -132,6 +143,8 @@ public:
             this->CounterGoodValue = 0;
             this->CounterTotal = 0;
             this->IsFixValid = false;
+            this->estChute = false;
+            this->estEnvoyerSMS = false;
         }
     } PropertiesGPS;
 
@@ -216,11 +229,40 @@ public:
     /* datas Compass */
     struct TSPropertiesCompass
     {
-        // double Heading_angle; // PositionNord
-        // double DeclinationAngle;
-        // double CalibrationCompassX;
-        // double CalibrationCompassY;
-        // double CalibrationCompassZ;
+        // datas brute Compass
+        float Acc_X;
+        float Acc_Y;
+        float Acc_Z;
+        float Gyro_X;
+        float Gyro_Y;
+        float Gyro_Z;
+        float Mag_X;
+        float Mag_Y;
+        float Mag_Z;
+
+        float heading;
+        float pitch;
+        float roll;
+        float yaw;
+        void resetCompassValues()
+        {
+            // data raw
+            this->Acc_X;
+            this->Acc_Y;
+            this->Acc_Z;
+            this->Gyro_X;
+            this->Gyro_Y;
+            this->Gyro_Z;
+            this->Mag_X;
+            this->Mag_Y;
+            this->Mag_Z;
+            // data normalise
+            this->heading;
+            this->pitch;
+            this->roll;
+            this->yaw;
+        }
+
     } PropertiesCompass;
 
     /* datas Gyroscope */

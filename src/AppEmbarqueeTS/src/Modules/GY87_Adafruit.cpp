@@ -1,15 +1,18 @@
 #include "Modules/GY87_Adafruit.h"
 
 GY87_Adafruit::GY87_Adafruit(TSProperties *p_tsProperties)
-    : _TSProperties(p_tsProperties)
+    : _TSProperties(p_tsProperties),
+      _timeSpamBuzzerChute(0)
 {
-    this->bootTime = esp_timer_get_time();
-    Serial.println("-----> 1 <-----");
     // initialiser les MPU6050 ET HMC5883L
     this->_mpu = new Adafruit_MPU6050();
     this->_compass = new Adafruit_HMC5883_Unified(12345);
-    this->sensor_compass = new sensor_t();
-    /*---------------------------------Initialiser MPU---------------------------------------*/
+    // creer sensors events
+    this->evt_acce = new sensors_event_t();
+    this->evt_gyro = new sensors_event_t();
+    this->evt_tem = new sensors_event_t();
+    this->evt_compass = new sensors_event_t();
+
     Serial.println("MPU6050 6 accelerator et gyroscoper Test");
     Serial.println("");
     // Stand By Mpu6050
@@ -24,10 +27,19 @@ GY87_Adafruit::GY87_Adafruit(TSProperties *p_tsProperties)
     {
         Serial.println("MPU6050 Stand By...");
     }
+    // // initialiser les sensors apres mpu6050 stand By
+    this->mpu_accel = _mpu->getAccelerometerSensor();
+    this->mpu_gyro = _mpu->getGyroSensor();
+    this->mpu_temp = _mpu->getTemperatureSensor();
+
     // switch ON pour que ESP32 connecte directement au HMC5883L
     _mpu->setI2CBypass(true); // 开启从模式，让MPU6050失去对HMC5883L的控制，而是由当前程序的控制者ESP32控制读取HMC5883L的芯片数据
-    /*---------------------------------Initialiser Compass---------------------------------------*/
-    Serial.println("-----> 2 <-----");
+    // /*---------------------------------Initialiser sensor events---------------------------------------*/
+
+    // initailiser les sensor events
+    _compass->getEvent(this->evt_compass);
+    _mpu->getEvent(this->evt_acce, this->evt_gyro, this->evt_tem);
+
     Serial.println("HMC5883 Magnetometer Test");
     if (!_compass->begin())
     {
@@ -40,48 +52,18 @@ GY87_Adafruit::GY87_Adafruit(TSProperties *p_tsProperties)
     {
         Serial.println("HMC5883 Stand By...");
     }
-    /*---------------------------------Creer Sensors---------------------------------------*/
-    Serial.println("-----> 3 <-----");
-    Serial.println("Creer les 4 Sensors");
-    // initialiser les sensors apres mpu6050 stand By
-    this->sensor_accel = _mpu->getAccelerometerSensor();
-    this->sensor_gyro = _mpu->getGyroSensor();
-    this->sensor_temp = _mpu->getTemperatureSensor();
-    _compass->getSensor(this->sensor_compass); // 参数注意不要空指针
-    /*---------------------------------Creer Events---------------------------------------*/
-    Serial.println("-----> 4 <-----");
-    Serial.println("Creer les 4 Events");
-    // creer sensors events
-    this->evt_acce = new sensors_event_t();
-    this->evt_gyro = new sensors_event_t();
-    this->evt_tem = new sensors_event_t();
-    this->evt_compass = new sensors_event_t();
-    // lire les datas par sensor events 初始化时暂时不用读数数据
-    // _compass->getEvent(this->evt_compass);
-    // _mpu->getEvent(this->evt_acce, this->evt_gyro, this->evt_tem);
-    /*---------------------------------Sensors details---------------------------------------*/
-    Serial.println("-----> 5 <-----");
-    Serial.println("Print Sensors details");
+
     // Printer info des sensor
-    sensor_accel->printSensorDetails();
-    sensor_gyro->printSensorDetails();
-    sensor_temp->printSensorDetails();
+    mpu_accel->printSensorDetails();
+    mpu_gyro->printSensorDetails();
+    mpu_temp->printSensorDetails();
     this->displayCompassSensorDetails();
-    /*---------------------------------Configuration---------------------------------------*/
-    Serial.println("-----> 6 <-----");
-    Serial.println("Configuration Parametres pour Calibration");
-    // Configuration_MPU
+    // Configuration
     _mpu->setAccelerometerRange(MPU6050_RANGE_8_G);
     _mpu->setGyroRange(MPU6050_RANGE_500_DEG);
     _mpu->setFilterBandwidth(MPU6050_BAND_21_HZ);
-    // Calibration_Compass
-    this->calibrationHMC5883L();
-    // Declination_Compass
-    this->setMagneticDeclination(-15, 5);
-    /*---------------------------------Configuration---------------------------------------*/
-    Serial.println("-----> 7 <-----");
-    Serial.println("Print Configurations");
     // print configuration
+    this->calibrationHMC5883L();
     this->printConfiguration();
 }
 
@@ -95,62 +77,95 @@ GY87_Adafruit::~GY87_Adafruit()
 
 void GY87_Adafruit::read()
 {
+    // chaque lu va creer un nouveau event
+    sensors_event_t temp_evt_acce;
+    sensors_event_t temp_evt_gyro;
+    sensors_event_t temp_evt_tem;
+    sensors_event_t temp_evt_compass;
+    // affecter les events
+    _compass->getEvent(&temp_evt_compass);
+    _mpu->getEvent(&temp_evt_acce, &temp_evt_gyro, &temp_evt_tem);
+
     /*---------------------------------lire donnees bruits via events----------------------------------------*/
-    // Lire data bruites
-    _compass->getEvent(this->evt_compass);
-    _mpu->getEvent(this->evt_acce, this->evt_gyro, this->evt_tem);
-    /*----------------------------Appliquer les paramettres de calibration--------------------------------*/
-    // float GaX = ((evt_compass->magnetic.x) - Xoffset) * Kx;
-    // float GaY = ((evt_compass->magnetic.y) - Yoffset) * Ky;
-    /*------------------------Calculer le heading--------------------------*/
-    // float Magangle = 0;
-    /*----------------------------Appliquer la declination--------------------------------*/
-    // Magangle += _magneticDeclinationDegrees; // 先应用本地的磁偏角量，再进行三角函数计算
-    // if ((GaX > 0) && (GaY > 0))
-    //     Magangle = atan(GaY / GaX) * 57.29;
-    // else if ((GaX > 0) && (GaY < 0))
-    //     Magangle = 360 + atan(GaY / GaX) * 57.29;
-    // else if ((GaX == 0) && (GaY > 0))
-    //     Magangle = 90;
-    // else if ((GaX == 0) && (GaY < 0))
-    //     Magangle = 270;
-    // else if (GaX < 0)
-    //     Magangle = 180 + atan(GaY / GaX) * 57.29;
-    /*----------------------------Afficher les data bruites --------------------------------*/
+    float GaX = ((temp_evt_compass.magnetic.x) - Xoffset) * Kx;
+    float GaY = ((temp_evt_compass.magnetic.y) - Yoffset) * Ky;
+
+    float Magangle = 0;
+
+    if ((GaX > 0) && (GaY > 0))
+        Magangle = atan(GaY / GaX) * 57;
+    else if ((GaX > 0) && (GaY < 0))
+        Magangle = 360 + atan(GaY / GaX) * 57;
+    else if ((GaX == 0) && (GaY > 0))
+        Magangle = 90;
+    else if ((GaX == 0) && (GaY < 0))
+        Magangle = 270;
+    else if (GaX < 0)
+        Magangle = 180 + atan(GaY / GaX) * 57;
+
+    // // 应用磁偏角
+    // Magangle += _magneticDeclinationDegrees;
+    Magangle += (-15.6);
     // Serial.print("MagAngle-> ");
-    // Serial.print(Magangle);
-    // Serial.print(" ");
-    // Serial.print("Accel xyz: ");
-    // Serial.print(evt_acce->acceleration.x);
-    // Serial.print(" ");
-    // Serial.print(evt_acce->acceleration.y);
-    // Serial.print(" ");
-    // Serial.print(evt_acce->acceleration.z);
-    // Serial.print(" ");
+    // Serial.println(Magangle);
+    _TSProperties->PropertiesCompass.heading = Magangle;
+    Serial.print("Accn X: ");
+    Serial.print(temp_evt_acce.acceleration.x);
+    Serial.print(", Y: ");
+    Serial.print(temp_evt_acce.acceleration.y);
+    Serial.print(", Z: ");
+    Serial.print(temp_evt_acce.acceleration.z);
+    Serial.print(" m/s^2");
+    Serial.print("  ");
     // Rendre cohérent le système de coordonnées de l'axe d'accélération et de l'axe de vitesse angulaire
-    this->normaliseMPU(&(evt_gyro->gyro.x), &(evt_gyro->gyro.y), &(evt_gyro->gyro.z));
-    // Serial.print("Rota xyz: ");
-    // Serial.print(evt_gyro->gyro.x);
-    // Serial.print(" ");
-    // Serial.print(evt_gyro->gyro.y);
-    // Serial.print(" ");
-    // Serial.print(evt_gyro->gyro.z);
-    // // Serial.print(" rad/s");
-    // Serial.println("  ");
-    /*-------------------------------------------------------*/
-    // Serial.print("Compass XYZ: ");
-    // Serial.print(evt_compass->magnetic.x);
-    // Serial.print("  ");
-    // // Serial.print("Y: ");
-    // Serial.print(evt_compass->magnetic.y);
-    // Serial.print("  ");
-    // // Serial.print("Z: ");
-    // Serial.print(evt_compass->magnetic.z);
-    // Serial.print("  ");
-    // Serial.print("uT");
-    // // Serial.print("  ");
-    // Serial.println("  ");
-    /*-------------------------------------------------------*/
+    /*----------------------------------------Normaliser--------------------------------------------------------------------*/
+    this->normaliseMPU(&(temp_evt_gyro.gyro.x), &(temp_evt_gyro.gyro.y), &(temp_evt_gyro.gyro.z));
+    /*------------------------------------------------------------------------------------------------------------*/
+
+    Serial.print("Rot X: ");
+    Serial.print(temp_evt_gyro.gyro.x);
+    Serial.print(", Y: ");
+    Serial.print(temp_evt_gyro.gyro.y);
+    Serial.print(", Z: ");
+    Serial.print(temp_evt_gyro.gyro.z);
+    Serial.print(" rad/s");
+    Serial.print("  ");
+    /*------------------------------------------------------------------------------------------------------------*/
+    Serial.print("Mag X: ");
+    Serial.print(temp_evt_compass.magnetic.x);
+    Serial.print(", Y: ");
+    Serial.print(temp_evt_compass.magnetic.y);
+    Serial.print(", Z: ");
+    Serial.print(temp_evt_compass.magnetic.z);
+    Serial.print(" rad/s");
+    Serial.println("  ");
+    /*---------------------------------------------------maj. data raw au TR---------------------------------------------------------*/
+    this->_TSProperties->PropertiesCompass.Acc_X = temp_evt_acce.acceleration.x;
+    this->_TSProperties->PropertiesCompass.Acc_Y = temp_evt_acce.acceleration.y;
+    this->_TSProperties->PropertiesCompass.Acc_Z = temp_evt_acce.acceleration.z;
+
+    this->_TSProperties->PropertiesCompass.Gyro_X = temp_evt_gyro.gyro.x;
+    this->_TSProperties->PropertiesCompass.Gyro_Y = temp_evt_gyro.gyro.y;
+    this->_TSProperties->PropertiesCompass.Gyro_Z = temp_evt_gyro.gyro.z;
+
+    this->_TSProperties->PropertiesCompass.Mag_X = temp_evt_compass.magnetic.x;
+    this->_TSProperties->PropertiesCompass.Mag_Y = temp_evt_compass.magnetic.y;
+    this->_TSProperties->PropertiesCompass.Mag_Z = temp_evt_compass.magnetic.z;
+    /*-------------------------------------------------Immiter une chute pour tester-----------------------------------------------------------*/
+    if (this->_TSProperties->PropertiesCompass.Acc_X > 4 && this->_TSProperties->PropertiesCompass.Gyro_X > 4)
+    {
+        Serial.println("Chute Detecter!");
+        this->_TSProperties->PropertiesGPS.estChute = true;
+        _timeSpamBuzzerChute = millis();
+    }
+    if (millis() - _timeSpamBuzzerChute < 4000)
+    {
+        digitalWrite(PIN_BUZZER, HIGH);
+        delay(500);
+        digitalWrite(PIN_BUZZER, LOW);
+    }
+    /*------------------------------------------------------------------------------------------------------------*/
+
     // Serial.print("Pitch-Gyro: ");
     // Serial.print(temp_evt_gyro.gyro.pitch);
     // Serial.print(", Y: ");
@@ -159,7 +174,38 @@ void GY87_Adafruit::read()
     // Serial.print(temp_evt_gyro.gyro.z);
     // Serial.print(" rad/s");
     // Serial.print("  ");
-    /*-------------------------------------------------------*/
+
+    // Serial.print("XYZ: ");
+    // Serial.print(temp_evt_compass.magnetic.x);
+    // Serial.print("  ");
+    // // Serial.print("Y: ");
+    // Serial.print(temp_evt_compass.magnetic.y);
+    // Serial.print("  ");
+    // // Serial.print("Z: ");
+    // Serial.print(temp_evt_compass.magnetic.z);
+    // Serial.print("  ");
+    // Serial.print("uT");
+    // // Serial.print("  ");
+    // Serial.println("  ");
+    // 以上程序获得磁力计的原始数据，单位特斯拉，是单位高斯的千分之一
+    // 一下程序进行HMC原始数据校准
+    // Serial.println("Calibration HMC5883L  ");
+    // uint8_t i = 0;
+    // float GaX, GaY, GaXmax = 0, GaXmin = 0, GaYmax = 0, GaYmin = 0;
+    // while (i != 100)
+    // {
+    //     GaX = temp_evt_compass.magnetic.x;
+    //     GaY = temp_evt_compass.magnetic.y;
+
+    //     GaXmax = GaXmax < GaX ? GaX : GaXmax;
+    //     GaXmin = GaXmin > GaX ? GaX : GaXmin;
+    //     GaYmax = GaYmax < GaY ? GaY : GaYmax;
+    //     GaYmin = GaYmax < GaY ? GaY : GaYmin;
+    //     delay(200);
+    //     i++;
+    //     /* code */
+    // }
+
     // -------------------------------calcule heading----------------------------------------------
     // Hold the module so that Z is pointing 'up' and you can measure the heading with x&y
     // Calculate heading when the magnetometer is level, then correct for signs of axis.
@@ -184,15 +230,26 @@ void GY87_Adafruit::read()
 
     // Serial.print("Heading (degrees): ");
     // Serial.println(headingDegrees);
+    // -------------------------------calcule heading----------------------------------------------
+
+    // Serial.print("Pitch-Compass: ");
+    // Serial.println(temp_evt_compass.orientation.pitch);
+    // Serial.print("Roll - >");
+    // Serial.println(temp_evt_compass.orientation.roll);
+    // Serial.print("Status - >");
+    // Serial.println(temp_evt_compass.orientation.status);
+
+    // /*---------------------------------Sauvgarder donnees bruits en Json----------------------------------------*/
+
     // -------------------------------计算欧拉角----------------------------------------------
     // Serial.print("Time -> ");
     // Serial.println(esp_timer_get_time());
-    this->Now = esp_timer_get_time();
-    this->deltat = (float)((this->Now - this->lastUpdate) / 1000000.0f);
-    this->lastUpdate = this->Now;
+    // this->Now = esp_timer_get_time();
+    // this->deltat = (float)((this->Now - this->lastUpdate) / 1000000.0f);
+    // this->lastUpdate = this->Now;
 
     // 计算四元数来获取欧拉角
-    this->MadgwickQuaternionUpdate(this->evt_acce->acceleration.x, this->evt_acce->acceleration.y, this->evt_acce->acceleration.z, this->evt_gyro->gyro.x * PI / 180.0f, this->evt_gyro->gyro.y * PI / 180.0f, this->evt_gyro->gyro.z * PI / 180.0f, this->evt_compass->magnetic.x, this->evt_compass->magnetic.y, this->evt_compass->magnetic.z);
+    // this->MadgwickQuaternionUpdate(this->evt_acce->acceleration.x, this->evt_acce->acceleration.y, this->evt_acce->acceleration.z, this->evt_gyro->gyro.x * PI / 180.0f, this->evt_gyro->gyro.y * PI / 180.0f, this->evt_gyro->gyro.z * PI / 180.0f, this->evt_compass->magnetic.x, this->evt_compass->magnetic.y, this->evt_compass->magnetic.z);
     // Serial.print("Q1 : ");
     // Serial.print(this->q[0]);
     // Serial.print("  Q2 : ");
@@ -202,35 +259,43 @@ void GY87_Adafruit::read()
     // Serial.print("  Q4 : ");
     // Serial.println(this->q[3]);
 
-    this->quaternionToEuler();
-    Serial.print("Pitch : ");
-    Serial.print(this->pitch);
-    Serial.print("  Roll : ");
-    Serial.print(this->roll);
-    Serial.print("  Yaw : ");
-    Serial.println(this->yaw);
+    // this->quaternionToEuler();
+    // Serial.print("Pitch : ");
+    // Serial.print(this->pitch);
+    // Serial.print("  Roll : ");
+    // Serial.print(this->roll);
+    // Serial.print("  Yaw : ");
+    // Serial.println(this->yaw);
+
+    // if (this->pitch > 45)
+    // {
+    //     Serial.println("Chute detecter!");
+    //     this->_TSProperties->PropertiesGPS.estChute = true;
+    // }
+
     // /*---------------------------------Sauvgarder donnees bruits en Json----------------------------------------*/
 }
 
 void GY87_Adafruit::displayCompassSensorDetails(void)
 {
-    // sensor_t sensor;
-    _compass->getSensor(this->sensor_compass);
+    sensor_t sensor;
+    // _compass->getSensor(this->sensor_compass);
+    _compass->getSensor(&sensor);
     Serial.println("------------------------------------");
     Serial.print("Sensor:       ");
-    Serial.println(sensor_compass->name);
+    Serial.println(sensor.name);
     Serial.print("Driver Ver:   ");
-    Serial.println(sensor_compass->version);
+    Serial.println(sensor.version);
     Serial.print("Unique ID:    ");
-    Serial.println(sensor_compass->sensor_id);
+    Serial.println(sensor.sensor_id);
     Serial.print("Max Value:    ");
-    Serial.print(sensor_compass->max_value);
+    Serial.print(sensor.max_value);
     Serial.println(" uT");
     Serial.print("Min Value:    ");
-    Serial.print(sensor_compass->min_value);
+    Serial.print(sensor.min_value);
     Serial.println(" uT");
     Serial.print("Resolution:   ");
-    Serial.print(sensor_compass->resolution);
+    Serial.print(sensor.resolution);
     Serial.println(" uT");
     Serial.println("------------------------------------");
     Serial.println("");
@@ -407,6 +472,7 @@ void GY87_Adafruit::setMagneticDeclination(int degrees, uint8_t minutes)
 
 void GY87_Adafruit::tick()
 {
+    // Serial.println("8---GY87 --> tick");
     read();
 }
 

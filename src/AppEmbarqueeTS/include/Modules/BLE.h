@@ -11,24 +11,24 @@
 #include "Configurations.h"
 #include "TSProperties.h"
 
-class BLE
+class BLE 
     : public IBLE
 {
 private:
-    TSProperties *_TSProperties;
+    TSProperties* _TSProperties;
 
-    BLEServer *_serverBLE;
-    BLEAdvertising *_advertisingBLE;
+    BLEServer* _serverBLE;
+    BLEAdvertising* _advertisingBLE;
 
-    BLEService *_completedRideService;
-    BLECharacteristic *_CRDataCharacteristic;
-    BLECharacteristic *_CRNotificationCharacteristic;
-    BLEDescriptor *_CRDataDescriptor;
-    BLEDescriptor *_CRNotificationDescriptor;
+    BLEService* _completedRideService;
+    BLECharacteristic* _CRDataCharacteristic;
+    BLECharacteristic* _CRNotificationCharacteristic;
+    BLEDescriptor* _CRDataDescriptor;
+    BLEDescriptor* _CRNotificationDescriptor;
 
-    BLEService *_screenService;
-    BLECharacteristic *_screenRotateCharacteristic;
-    BLEDescriptor *_screenRotateDescriptor;
+    BLEService* _screenService;
+    BLECharacteristic* _screenRotateCharacteristic;
+    BLEDescriptor* _screenRotateDescriptor;
 
     unsigned long _lastTimeStatsSent;
     unsigned long _lastTimePointSent;
@@ -59,7 +59,7 @@ public:
 
     static bool isNeedToUpdateTSProperties;
 
-    BLE(TSProperties *TSProperties);
+    BLE(TSProperties* TSProperties);
     ~BLE();
 
     void tick() override;

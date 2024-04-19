@@ -12,8 +12,7 @@ private:
     TSProperties *_TSProperties;
     Adafruit_MPU6050 *_mpu;
     Adafruit_HMC5883_Unified *_compass;
-    Adafruit_Sensor *sensor_temp, *sensor_accel, *sensor_gyro;
-    sensor_t *sensor_compass;
+    Adafruit_Sensor *mpu_temp, *mpu_accel, *mpu_gyro;
     sensors_event_t *evt_acce, *evt_gyro, *evt_tem, *evt_compass;
 
     // Compass offsets et scales
@@ -23,6 +22,7 @@ private:
     float Xoffset = 0, Yoffset = 0;
     float Kx = 0, Ky = 0;
     float _magneticDeclinationDegrees = 0;
+    unsigned long _timeSpamBuzzerChute;
 
     //
     float GyroMeasError = PI * (60.0f / 180.0f);
@@ -33,6 +33,7 @@ private:
     int lastUpdate, firstUpdate, bootTime, Now;     // used to calculate integration interval
     int delt_t;                                     // used to control display output rate
     int count;                                      // used to control display output rate
+
     // Euler angles
     float pitch, yaw, roll;
     float q[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // vector to hold quaternion

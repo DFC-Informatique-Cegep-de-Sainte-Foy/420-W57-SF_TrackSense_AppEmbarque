@@ -24,10 +24,11 @@ GSMTiny::GSMTiny(TSProperties *TSProperties) : _TSProperties(TSProperties),
                                                _lastValidLatitude(0),
                                                _lastValidLongitude(0),
                                                _durationS(0),
-                                               _lastReadTimeMS(0)
+                                               _lastReadTimeMS(0),
+                                               _timeSpamBuzzer(0)
 {
     this->modem = new TinyGsm(SerialAT);
-    pinMode(PIN_GSM_PWR, OUTPUT);
+    pinMode(PWR_PIN, OUTPUT);
 
     // // Set LED OFF
     // pinMode(PIN_LED, OUTPUT);
@@ -49,7 +50,7 @@ void GSMTiny::init()
     this->modemPowerOn();
 
     // Set GSM module baud rate
-    SerialAT.begin(GPS_UART_BAUD, SERIAL_8N1, PIN_GSM_RX, PIN_GSM_TX);
+    SerialAT.begin(GPS_UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
 
     // Restart takes quite some time
     // To skip it, call init() instead of restart() // It take less time to init than restart
@@ -88,8 +89,18 @@ void GSMTiny::init()
 
 void GSMTiny::tick()
 {
-    long actualTime = millis();
+    // Serial.println("6--- GSM --> tick");
+    // 如果当前TS状态是跌倒状态，并且还未发送短信时，则发送一条短信
+    if (this->_TSProperties->PropertiesGPS.estChute && !_estEnvoye)
+    {
+        Serial.println("Chute detecte!");
+        this->envoyerLocation();
+        Serial.println("SMS send!");
+        _estEnvoye = true;
+    }
 
+    long actualTime = millis();
+    // Serial.println("6---1 Detecter Chute");
 #if DEBUG_GPS
     Serial.println("=======================================");
     Serial.println("Tick GSM");
@@ -99,21 +110,95 @@ void GSMTiny::tick()
 
     if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted && this->_TSProperties->PropertiesCurrentRide.IsRideFinished == false)
     {
+        // est arrive?
+        if (!this->_TSProperties->PropertiesCurrentRide.estArrive && this->distanceBetweenInMeters(this->_latitude, this->_longitude, this->_TSProperties->PropertiesCurrentRide.latitude_destination, this->_TSProperties->PropertiesCurrentRide.longitude_destination) < MINIMUM_DISTANCE)
+        {
+            Serial.println("Arrivee!");
+            this->_TSProperties->PropertiesCurrentRide.estArrive = true;
+            _timeSpamBuzzer = millis();
+        }
+        if (millis() - _timeSpamBuzzer < 5000)
+        {
+            digitalWrite(PIN_BUZZER, HIGH);
+            delay(500);
+            digitalWrite(PIN_BUZZER, LOW);
+        }
+
+        // Serial.println("6---2 Turn On GPS");
         if (this->_isGpsOn == false && this->_isModemOn == true && this->_isInitialized == true)
         {
             this->gpsPowerOn();
         }
 
-        if (actualTime - this->_lastReadTimeMS > 1000)
+        /*----------------------------------------------------------------*/
+
+        /*---------------------------当路线启动后，当GPS启动后，如果时间间隔大于阈限，则读取数据-------------------------------------*/
+        //         if (actualTime - this->_lastReadTimeMS > 1000)
+        //         {
+        //             this->_durationS = (actualTime - this->_TSProperties->PropertiesCurrentRide.StartTimeMS) / 1000;
+        //             this->_TSProperties->PropertiesCurrentRide.DurationS = this->_durationS;
+        //             DEBUG_STRING_LN(DEBUG_TS_GPS, "DurationS : " + String(this->_durationS));
+
+        //             this->_lastReadTimeMS = actualTime;
+
+        //             if (this->readDatas())
+        //             {
+        //                 this->saveGPSDatasToTSProperties();
+
+        //                 if (this->_TSProperties->PropertiesGPS.IsFixValid)
+        //                 {
+        //                     if (this->_lastValidLatitude == 0 && this->_lastValidLongitude == 0)
+        //                     {
+        //                         this->_lastValidLatitude = this->_latitude;
+        //                         this->_lastValidLongitude = this->_longitude;
+        //                     }
+        //                     this->_distanceMetersBetweenLastPointAndCurrentPoint = this->distanceBetweenInMeters(this->_lastValidLatitude, this->_lastValidLongitude, this->_latitude, this->_longitude);
+
+        //                     if (this->_distanceMetersBetweenLastPointAndCurrentPoint > this->_maxDistanceTresholdInMeters)
+        //                     {
+        //                         this->saveCurrentRideDatasToTSProperties();
+        // #if DEBUG_TS_GPS
+        //                         Serial.println("Distance between last point and current point : " + String(this->_distanceMetersBetweenLastPointAndCurrentPoint));
+
+        //                         Serial.println("PointID : " + String(this->_TSProperties->PropertiesCurrentRide.PointID));
+        //                         Serial.println("NbPoints : " + String(this->_TSProperties->PropertiesCurrentRide.NbPoints));
+        //                         Serial.println("DistanceTotalMeters : " + String(this->_TSProperties->PropertiesCurrentRide.DistanceTotalMeters, 2));
+        //                         Serial.println("lat : " + String(this->_latitude, 10));
+        //                         Serial.println("long : " + String(this->_longitude, 10));
+        //                         Serial.println("last lat : " + String(this->_lastValidLatitude, 10));
+        //                         Serial.println("last long : " + String(this->_lastValidLongitude, 10));
+        // #endif
+
+        //                         this->_lastValidLatitude = this->_latitude;
+        //                         this->_lastValidLongitude = this->_longitude;
+        //                     }
+        //                 }
+        // Serial.print("lat : " + String(this->_latitude, 10));
+        // Serial.println(" long : " + String(this->_longitude, 10));
+        //             }
+        //             else
+        //             {
+        //                 DEBUG_STRING_LN(DEBUG_TS_GPS, "Write GPS : Location is not Valid");
+        //             }
+        //         }
+
+        // Serial.println("6---4 Read GPS");
+        // 读取GPS信息特别慢，差不多每5秒才读一次，会严重拖慢系统对其他传感器的识别
+        // 所以这里设置一个条件，不是每次程序循环到这都读GPS数据，而是每5秒读一次，也就是说：
+        // 当程序运行到这里的时候如果最后一次读取时间与当前时间比较，大于5秒时，才进行读取
+        // 所以需要一个变量：lastReadTime,和当前时间进行比较，当大于5秒时，才读取一次GPS数据
+        // 所以最后，程序每5秒就会被拖慢一次
+        // 最终的解决办法应该是使用多线程
+        // 一个程序线程，一个GPS读取数据线程，并行运行，互不影响
+        if (millis() - _lastReadTimeMS > 5000)
         {
             this->_durationS = (actualTime - this->_TSProperties->PropertiesCurrentRide.StartTimeMS) / 1000;
             this->_TSProperties->PropertiesCurrentRide.DurationS = this->_durationS;
             DEBUG_STRING_LN(DEBUG_TS_GPS, "DurationS : " + String(this->_durationS));
 
-            this->_lastReadTimeMS = actualTime;
-
             if (this->readDatas())
             {
+                // Serial.println("6---5 Save GPS");
                 this->saveGPSDatasToTSProperties();
 
                 if (this->_TSProperties->PropertiesGPS.IsFixValid)
@@ -122,11 +207,16 @@ void GSMTiny::tick()
                     {
                         this->_lastValidLatitude = this->_latitude;
                         this->_lastValidLongitude = this->_longitude;
+                        // 更新起点坐标
+                        _TSProperties->PropertiesCurrentRide.latitude_point_depart = this->_latitude;
+                        _TSProperties->PropertiesCurrentRide.longitude_destination = this->_longitude;
                     }
+                    // Serial.println("6---6 Calculer Distance");
                     this->_distanceMetersBetweenLastPointAndCurrentPoint = this->distanceBetweenInMeters(this->_lastValidLatitude, this->_lastValidLongitude, this->_latitude, this->_longitude);
 
                     if (this->_distanceMetersBetweenLastPointAndCurrentPoint > this->_maxDistanceTresholdInMeters)
                     {
+                        // Serial.println("6---7 Save Ride");
                         this->saveCurrentRideDatasToTSProperties();
 #if DEBUG_TS_GPS
                         Serial.println("Distance between last point and current point : " + String(this->_distanceMetersBetweenLastPointAndCurrentPoint));
@@ -144,14 +234,29 @@ void GSMTiny::tick()
                         this->_lastValidLongitude = this->_longitude;
                     }
                 }
+                // Serial.print("lat : " + String(this->_latitude, 10));
+                // Serial.println(" long : " + String(this->_longitude, 10));
+                Serial.println(" Distance de Destination : " + String(distanceBetweenInMeters(this->_latitude, this->_longitude, this->_TSProperties->PropertiesCurrentRide.latitude_destination, this->_TSProperties->PropertiesCurrentRide.longitude_destination)));
             }
             else
             {
                 DEBUG_STRING_LN(DEBUG_TS_GPS, "Write GPS : Location is not Valid");
             }
+
+            this->_TSProperties->PropertiesCurrentRide.AverageSpeedKMPH = (this->_TSProperties->PropertiesCurrentRide.DistanceTotalMeters / this->_durationS) * 3.6;
         }
 
-        this->_TSProperties->PropertiesCurrentRide.AverageSpeedKMPH = (this->_TSProperties->PropertiesCurrentRide.DistanceTotalMeters / this->_durationS) * 3.6;
+        // /*---------------------------当路线启动后，GPS才启动，当GPS启动后，如果侦测到跌倒，则发送短信-------------------------------------*/
+        // 如果当前TS状态是跌倒状态，并且还未发送短信时，则发送一条短信
+        // 因为已经在骑行状态中，所以GPS已经打开了，所以不需要再次读取GPS信息，直接从TS状态中读取经纬度即可
+        // Serial.println("6---3 Detecter Chute(2)");
+        if (this->_TSProperties->PropertiesGPS.estChute && !_estEnvoye)
+        {
+            Serial.println("Chute detecte!");
+            this->envoyerSMS(this->_TSProperties->PropertiesGPS.Latitude, this->_TSProperties->PropertiesGPS.Longitude);
+            Serial.println("SMS send!");
+            _estEnvoye = true;
+        }
     }
     else
     {
@@ -172,11 +277,12 @@ bool GSMTiny::readDatas()
     {
         DEBUG_STRING_LN(DEBUG_TS_GPS, "Requesting current GPS/GNSS/GLONASS location");
 
-        if (this->modem->getGPS(&this->_latitude, &this->_longitude, &this->_speed, &this->_altitude, &this->_visibleSatellites, &this->_usedSatellites,
+        if (this->modem->getGPS(&_status, &this->_latitude, &this->_longitude, &this->_speed, &this->_altitude, &this->_visibleSatellites, &this->_usedSatellites,
                                 &this->_accuracy, &this->_year, &this->_month, &this->_day, &this->_hour, &this->_minute, &this->_seconde))
         {
             result = true;
-
+            // 在此更新最后一个读取数据时间
+            this->_lastReadTimeMS = millis();
 #if DEBUG_TS_GPS_HARDCORE
             Serial.println("Latitude: " + String(this->_latitude, 10) + "\tLongitude: " + String(this->_longitude, 10));
             Serial.println("Speed: " + String(this->_speed) + "\tAltitude: " + String(this->_altitude));
@@ -387,18 +493,18 @@ void GSMTiny::gpsRestart()
 
 void GSMTiny::modemPowerOn()
 {
-    digitalWrite(PIN_GSM_PWR, LOW);
+    digitalWrite(PWR_PIN, LOW);
     delay(300);
-    digitalWrite(PIN_GSM_PWR, HIGH);
+    digitalWrite(PWR_PIN, HIGH);
     this->_isModemOn = true;
     delay(1000);
 }
 
 void GSMTiny::modemPowerOff()
 {
-    digitalWrite(PIN_GSM_PWR, HIGH);
+    digitalWrite(PWR_PIN, HIGH);
     delay(300);
-    digitalWrite(PIN_GSM_PWR, LOW);
+    digitalWrite(PWR_PIN, LOW);
     this->_isModemOn = false;
 }
 
@@ -437,6 +543,11 @@ bool GSMTiny::isInitialized()
     return this->_isInitialized;
 }
 
+void GSMTiny::tick_test()
+{
+    ;
+}
+
 double GSMTiny::distanceBetweenInMeters(double lat1, double long1, double lat2, double long2)
 {
     /* Méthode provient de TinyGPS++ */
@@ -462,4 +573,77 @@ double GSMTiny::distanceBetweenInMeters(double lat1, double long1, double lat2, 
     double denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
     delta = atan2(delta, denom);
     return delta * 6372795;
+}
+
+void GSMTiny::envoyerLocation()
+{
+    // 先打开GPS
+    if (this->_isGpsOn == false)
+    {
+        this->gpsPowerOn();
+    }
+    float lat = 0;
+    float lon = 0;
+    float speed = 0;
+    float alt = 0;
+    int vsat = 0;
+    int usat = 0;
+    float accuracy = 0;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    int hour = 0;
+    int min = 0;
+    int sec = 0;
+
+    for (int8_t i = 15; i; i--)
+    {
+        SerialMon.println("Requesting current GPS/GNSS/GLONASS location");
+        if (modem->getGPS(&_status, &lat, &lon, &speed, &alt, &vsat, &usat, &accuracy,
+                          &year, &month, &day, &hour, &min, &sec))
+        {
+            SerialMon.println("Latitude: " + String(lat, 8) + "\tLongitude: " + String(lon, 8));
+            SerialMon.println("Speed: " + String(speed) + "\tAltitude: " + String(alt));
+            SerialMon.println("Visible Satellites: " + String(vsat) + "\tUsed Satellites: " + String(usat));
+            SerialMon.println("Accuracy: " + String(accuracy));
+            SerialMon.println("Year: " + String(year) + "\tMonth: " + String(month) + "\tDay: " + String(day));
+            SerialMon.println("Hour: " + String(hour) + "\tMinute: " + String(min) + "\tSecond: " + String(sec));
+            break;
+        }
+        else
+        {
+            SerialMon.println("Couldn't get GPS/GNSS/GLONASS location, retrying in 15s.");
+            delay(15000L);
+        }
+    }
+    SerialMon.println("Retrieving GPS/GNSS/GLONASS location again as a string");
+    String gps_raw = modem->getGPSraw();
+    SerialMon.println("GPS/GNSS Based Location String: " + gps_raw);
+
+    mylati = dtostrf(lat, 3, 6, buff);
+    mylong = dtostrf(lon, 3, 6, buff);
+    textForSMS = textForSMS + "http://www.google.com/maps/place/" + mylati + "," + mylong;
+    // mylati = dtostrf(46.78569, 3, 6, buff);
+    // mylong = dtostrf(-71.28704, 3, 6, buff);
+    // textForSMS = textForSMS + "http://www.google.com/maps/place/" + mylati + "," + mylong;
+
+    delay(5000);
+    modem->sendSMS(SMS_TARGET, "Je suis ici: ");
+    modem->sendSMS(SMS_TARGET, textForSMS);
+    // fona.sendSMS(callerIDbuffer,textForSMS );
+    Serial.println("GPS send");
+    textForSMS = "";
+}
+
+void GSMTiny::envoyerSMS(float latitude, float longitude)
+{
+    mylati = dtostrf(latitude, 3, 6, buff);
+    mylong = dtostrf(longitude, 3, 6, buff);
+    textForSMS = textForSMS + "http://www.google.com/maps/place/" + mylati + "," + mylong;
+    delay(5000);
+    modem->sendSMS(SMS_TARGET, "Je suis ici: ");
+    modem->sendSMS(SMS_TARGET, textForSMS);
+    // fona.sendSMS(callerIDbuffer,textForSMS );
+    Serial.println("GPS send");
+    textForSMS = "";
 }

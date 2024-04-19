@@ -16,6 +16,8 @@ Battery::~Battery()
 
 void Battery::tick()
 {
+    // Serial.println("3---Batterie --> tick");
+
     this->readBatteryVoltage();
     this->readBatteryPercentage();
 

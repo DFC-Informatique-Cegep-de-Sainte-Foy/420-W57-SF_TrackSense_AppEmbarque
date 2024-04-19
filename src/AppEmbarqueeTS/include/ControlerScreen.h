@@ -12,6 +12,8 @@ private:
     TSProperties *_TSProperties;
     ScreenGC9A01 *_screen;
     unsigned long _timeToDisplayEndingRidePageMS;
+    bool entreCompass = false;
+    float lastDegree = -1;
 
     SemaphoreHandle_t _xMutex; // Create a mutex object
 
@@ -56,4 +58,5 @@ public:
     */
     void tick() override;
     void drawOnScreen() override;
+    float calculerDirectionDegree();
 };

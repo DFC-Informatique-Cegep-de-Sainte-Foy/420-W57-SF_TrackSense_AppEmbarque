@@ -5,23 +5,22 @@
 #include "ControlerButtons.h"
 #include "ControlerScreen.h"
 
-// #include "Modules/LTE.h"
 #include "Modules/GSMTiny.h"
+// #include "Modules/MyTinyGsm.h"
 #include "Modules/SDCard.h"
 #include "Modules/GyroscopeMPU6050.h"
 #include "Modules/CompassHMC5883L.h"
 #include "Modules/AccelerometerMPU6050.h"
 #include "Modules/BLE.h"
-#include "Modules/Battery.h"
 #include "Modules/ScreenGC9A01.h"
 #include "Modules/Buzzer.h"
-#include "Modules/MPU6050.h"
+#include "Modules/Battery.h"
 #include "Modules/GY87_Adafruit.h"
+
 class Program
 {
 private:
     TSProperties *_TSProperties;
-    // ILTE *_lte;
     IGSM *_gsm;
     ISDCard *_sdCard;
     IGyroscope *_gyroscope;
@@ -32,15 +31,12 @@ private:
     IBattery *_battery;
     ControlerButtons *_controlerButtons;
     IControlerScreen *_controlerScreen;
-    MPU6050 *_MPU6050;
-    // 惯性单元
     IGY87 *_gy87;
 
 public:
     Program();
     ~Program();
 
-    void execute();
     void executeCore1();
     void executeCore0();
 };

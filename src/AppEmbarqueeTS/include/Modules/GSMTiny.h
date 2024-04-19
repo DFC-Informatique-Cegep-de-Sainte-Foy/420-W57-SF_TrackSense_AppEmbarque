@@ -16,17 +16,19 @@ private:
     bool _isModemOn;
     bool _isGPSFixed;
 
+    unsigned long _timeSpamBuzzer;
+
     double _distanceMetersBetweenLastPointAndCurrentPoint;
     unsigned long _maxDistanceTresholdInMeters;
 
     unsigned long _lastReadTimeMS;
 
     unsigned long _durationS;
-    unsigned long _maxDurationTresholdInSeconds;
 
     double _lastValidLatitude;
     double _lastValidLongitude;
 
+    u_int8_t _status;
     float _latitude;
     float _longitude;
     float _altitude;
@@ -40,20 +42,7 @@ private:
     int _hour;
     int _minute;
     int _seconde;
-
-    // float _latitude2;
-    // float _longitude2;
-    // float _altitude2;
-    // float _speed2;
-    // int _visibleSatellites2;
-    // int _usedSatellites2;
-    // float _accuracy2;
-    // int _year2;
-    // int _month2;
-    // int _day2;
-    // int _hour2;
-    // int _minute2;
-    // int _seconde2;
+    bool _estEnvoye = false;
 
     String getDate();
     String getTime();
@@ -75,7 +64,15 @@ private:
     void saveCurrentRideDatasToTSProperties();
 
     /* Méthode provient de TinyGPS++ */
-    double distanceBetweenInMeters(double lat1, double long1, double lat2, double long2);
+    double distanceBetweenInMeters(double lat1, double long1, double lat2, double long2); // 移植
+
+    /*_________________Envoyer SMS_____________________*/
+    void envoyerLocation();
+    void envoyerSMS(float, float);
+    String mylong = ""; // for storing the longittude value
+    String mylati = ""; // for storing the latitude value
+    String textForSMS;
+    char buff[10];
 
 public:
     GSMTiny(TSProperties *TSProperties);
@@ -84,4 +81,5 @@ public:
     void init() override;
     void tick() override;
     bool isInitialized() override;
+    void tick_test() override;
 };

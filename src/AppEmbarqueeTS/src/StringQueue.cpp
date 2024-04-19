@@ -2,70 +2,70 @@
 
 StringQueue::StringQueue()
 {
-  front = rear = nullptr;
-  size = 0;
+    front = rear = nullptr;
+    size = 0;
 };
 
 void StringQueue::enqueue(const String &data)
 {
-  QueueNode *newNode = new QueueNode;
-  newNode->data = data;
-  newNode->next = nullptr;
+    QueueNode *newNode = new QueueNode;
+    newNode->data = data;
+    newNode->next = nullptr;
 
-  if (rear == nullptr)
-  {
-    front = rear = newNode;
-  }
-  else
-  {
-    rear->next = newNode;
-    rear = newNode;
-  }
+    if (rear == nullptr)
+    {
+        front = rear = newNode;
+    }
+    else
+    {
+        rear->next = newNode;
+        rear = newNode;
+    }
 
-  size++;
+    size++;
 };
 
 String StringQueue::dequeue()
 {
-  if (front == nullptr)
-  {
-    return "";
-  }
+    if (front == nullptr)
+    {
+        return "";
+    }
 
-  String data = front->data;
-  QueueNode *temp = front;
-  front = front->next;
+    String data = front->data;
+    QueueNode *temp = front;
+    front = front->next;
 
-  if (front == nullptr)
-  {
-    rear = nullptr;
-  }
+    if (front == nullptr)
+    {
+        rear = nullptr;
+    }
 
-  delete temp;
-  size--;
-  return data;
+    delete temp;
+    size--;
+    return data;
 };
 
 bool StringQueue::isEmpty()
 {
-  return front == nullptr;
+    return front == nullptr;
 };
 
 int StringQueue::getSize()
 {
-  return size;
+    return size;
 };
 
 bool StringQueue::contains(const String &data)
 {
-  QueueNode *current = front;
-  while (current != nullptr)
-  {
-    if (current->data == data)
+    QueueNode *current = front;
+    while (current != nullptr)
     {
-      return true;
+        if (current->data == data)
+        {
+            return true;
+        }
+        current = current->next;
     }
-    current = current->next;
-  }
-  return false;
+    return false;
 };

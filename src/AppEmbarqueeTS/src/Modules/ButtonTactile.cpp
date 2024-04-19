@@ -21,9 +21,11 @@ int ButtonTactile::getFinalState()
     long actualTime = millis();
     int finalState = 0; // 0 == not pressed    // 1 == short press    // 2 == long press    // 3 == double short press
 
+    // 如果时间间隔大于阈限，则按键有效
     if (actualTime - this->_lastDateChange > this->_durationDebounce)
     {
         // ajout pour test son bouton
+        // 如果按键是从low到high的状态
         if (this->_lastStableStateButton == LOW && this->_buttonState == HIGH)
         {
             // tone(PIN_BUZZER, 450, 50);

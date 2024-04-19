@@ -111,6 +111,7 @@ BLE::~BLE()
 
 void BLE::tick()
 {
+    // Serial.println("5---BlueTooth --> tick");
     this->_TSProperties->PropertiesBluetooth.IsDeviceBluetoothConnected = BLE::isDeviceConnected;
 
     if (BLE::isDeviceConnected)

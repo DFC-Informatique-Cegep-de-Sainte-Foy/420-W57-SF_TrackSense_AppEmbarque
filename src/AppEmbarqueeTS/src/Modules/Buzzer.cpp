@@ -12,6 +12,8 @@ Buzzer::~Buzzer()
 
 void Buzzer::tick()
 {
+    // Serial.println("2---Buzzer --> tick");
+
     if (this->_TSProperties->PropertiesBuzzer.IsBuzzerOn)
     {
         tone(PIN_BUZZER, 500, 100);

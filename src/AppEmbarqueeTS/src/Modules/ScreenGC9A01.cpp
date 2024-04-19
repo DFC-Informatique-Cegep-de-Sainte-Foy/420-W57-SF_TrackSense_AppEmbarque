@@ -1,28 +1,28 @@
 #include "Modules/ScreenGC9A01.h"
 
+/* Fonts */
+#include <Fonts/FreeSansBold9pt7b.h>
+#include <Fonts/FreeSansOblique9pt7b.h>
+#include <Fonts/FreeSans9pt7b.h>
+#include <Fonts/FreeSans18pt7b.h>
 // #include <Fonts/BebasNeue_Regular18pt7b.h> // Font logo TrackSense
 // #include <Fonts/BebasNeue_Regular6pt7b.h>  // Font logo TrackSense
 // #include <Fonts/BebasNeue_Regular24pt7b.h> // Font logo TrackSense
-#include <Fonts/FreeSansBold9pt7b.h> // Vraiment le meilleur à date
-// #include <Fonts/FreeSansBold12pt7b.h> // Vraiment le meilleur à date
-// #include <Fonts/FreeSansBold18pt7b.h> // Vraiment le meilleur à date
-// #include <Fonts/FreeSansBold24pt7b.h> // Vraiment le meilleur à date
-#include <Fonts/FreeSansOblique9pt7b.h> // Vraiment le meilleur à date
-#include <Fonts/FreeSans9pt7b.h>
-#include <Fonts/FreeSans18pt7b.h>
-// #include <Fonts/FreeSerifBold9pt7b.h> // look good
-// #include <Fonts/FreeMonoBold9pt7b.h>  // look good mais bug
-// #include <Fonts/FreeSerifBold12pt7b.h>  // jolie, mais pas ce qu'on veut avoir
-// #include <Fonts/FreeMonoBold24pt7b.h>   // jolie, mais pas ce qu'on veut avoir
 
-ScreenGC9A01::ScreenGC9A01(TSProperties *TSProperties) : _TSProperties(TSProperties), _lastBuffer(0), _lastBatteryLevel(0)
+ScreenGC9A01::ScreenGC9A01(TSProperties *TSProperties)
+    : _TSProperties(TSProperties),
+      _lastBuffer(0),
+      status(false)
 {
     this->tft = new Adafruit_GC9A01A(TFT_CS, TFT_DC, TFT_MOSI, TFT_CLK, TFT_RST, TFT_MISO);
     this->canvas = new GFXcanvas16(TFT_WIDTH, TFT_HEIGHT);
 
-    this->tft->begin();
+    this->tft->begin(80000000);
     this->setRotation(this->_TSProperties->PropertiesScreen.ScreenRotation);
     this->canvas->setTextWrap(false);
+
+    pinMode(TFT_BLK, OUTPUT);
+    digitalWrite(TFT_BLK, HIGH); // Backlight on // TODO: Mettre dans une méthode pour allumer/éteindre le rétroéclairage
 
     // tft->setFont(&BebasNeue_Regular24pt7b);
     // tft->setFont(&FreeSansBold12pt7b);
@@ -46,43 +46,20 @@ ScreenGC9A01::~ScreenGC9A01()
 
 void ScreenGC9A01::drawLogoTS() // TODO : Ajouter des fonctions pour dessiner le logo TS en Light Mode : this->drawfillCircle()
 {
-    int16_t coordX = 17; // "T" coordX = 16
-    int16_t coordY = 65; // "T" coordX = 65
-    this->canvas->setTextSize(7);
-    this->canvas->setFont();
+    int16_t coordX = 17;
+    int16_t coordY = 65;
+    uint16_t width = 42;
+    uint16_t height = 56;
 
     int16_t coordX_ = 0;
     int16_t coordY_ = 0;
 
-    // int16_t coordX = 31;  // "T" coordX = 16
-    // int16_t coordY = 115; // "T" coordX = 65
-    // this->canvas->setTextSize(2, 3);
-    // this->canvas->setFont(&FreeSansBold9pt7b);    // Le meilleur à date
-    // this->canvas->setFont(&BebasNeue_Regular18pt7b);
-
-    uint16_t width = 42;  // "T" width = 42
-    uint16_t height = 56; // "T" height = 56
-
+    this->canvas->setTextSize(7);
+    this->canvas->setFont();
     this->canvas->getTextBounds("R", coordX, coordY, &coordX_, &coordY_, &width, &height);
-    // Serial.println("T");
-    // Serial.print("coordX : ");
-    // Serial.println(coordX);
-    // Serial.print("coordY : ");
-    // Serial.println(coordY);
-    // Serial.print("coordX_ : ");
-    // Serial.println(coordX_);
-    // Serial.print("coordY_ : ");
-    // Serial.println(coordY_);
-    // Serial.print("width : ");
-    // Serial.println(width);
-    // Serial.print("height : ");
-    // Serial.println(height);
 
-    // width = 42;  // "T" width = 42
-    // height = 56; // "T" height = 56
-
-    int widthWithoutSpace = width * 0.80952381; // widthWithoutSpace = 42 * 0.80952381 = 34
-    int heightWithoutSpace = height * 0.875;    // heightWithoutSpace = 56 * 0.875 = 49
+    int widthWithoutSpace = width * 0.80952381;
+    int heightWithoutSpace = height * 0.875;
 
     int coordY2 = coordY + height + 1; // "premier E" coordX = 122     // 65 + 56 = 121
 
@@ -126,22 +103,6 @@ void ScreenGC9A01::drawLogoTS() // TODO : Ajouter des fonctions pour dessiner le
     this->canvas->setFont(&FreeSans9pt7b);
 }
 
-// int ScreenGC9A01::arrondiPourcentageAux5UnitesPres(int pourcentage)
-// {
-//     int temp = pourcentage % 5;
-
-//     if (temp < 3)
-//     {
-//         pourcentage -= temp;
-//     }
-//     else
-//     {
-//         pourcentage += (5 - temp);
-//     }
-
-//     return pourcentage;
-// }
-
 void ScreenGC9A01::drawBattery(int16_t coordX, int16_t coordY, int16_t largeurX, uint pourcentage)
 {
     double hauteurY = largeurX / 2;
@@ -153,15 +114,6 @@ void ScreenGC9A01::drawBattery(int16_t coordX, int16_t coordY, int16_t largeurX,
 
     this->canvas->drawRect(coordX, coordY, zoneBarreVerteX, hauteurY, GC9A01A_WHITE);                                   // Contour
     this->canvas->fillRect(coordX + zoneBarreVerteX, coordY + hauteurY / 4, hauteurY / 4, hauteurY / 2, GC9A01A_WHITE); // ti boute        + hauteurY / 2 - 16/2
-
-    if (pourcentage < this->_lastBatteryLevel + 2 && pourcentage > this->_lastBatteryLevel - 2)
-    {
-        pourcentage = this->_lastBatteryLevel;
-    }
-    else
-    {
-        this->_lastBatteryLevel = pourcentage;
-    }
 
     switch (pourcentage)
     {
@@ -251,15 +203,46 @@ void ScreenGC9A01::drawIsGPSValid(int16_t coordX, int16_t coordY, int16_t largeu
 
 void ScreenGC9A01::drawStatistics(String title, String value, String unit, int16_t titleCoordX, int16_t valueCoordX, int16_t unitCoordX, int16_t coordY)
 {
-    // this->canvas->setTextWrap(false);
     this->setTextSize(1);
     this->setFont(1);
     this->printText(title, titleCoordX, coordY);
     this->printText(unit, unitCoordX, coordY);
     this->setFont(2);
     this->printText(value, valueCoordX, coordY);
-    // this->canvas->setTextWrap(true);
 }
+
+void ScreenGC9A01::drawCompass(float degree)
+{
+    this->sdeg = degree;
+    // 当第一次或重新进入罗盘屏幕时，准备罗盘，只画一次罗盘，之后每次loop不再画罗盘
+    if (!this->status)
+    {
+        Serial.println("Compass---->Entrer");
+        // 画一次罗盘
+        this->tft->setTextColor(WHITE, GREY);
+        this->tft->fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
+        this->tft->fillCircle(120, 120, 110, BLACK);
+        // 更新屏幕状态
+        this->status = true;
+    }
+    // this->tft->fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
+    // this->tft->fillCircle(120, 120, 110, BLACK);
+    // 数值有变动时，再清除上一次画的阴影，如果没有变动，则保留当前图形
+    if (lastDegree != degree)
+    {
+        Serial.println("Compass---->Change");
+        lastDegree = degree; // 更新数值
+        this->tft->fillTriangle(ox, oy, px, py, rx, ry, BLACK);
+        this->tft->fillTriangle(qx, qy, px, py, rx, ry, BLACK);
+        this->tft->fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, BLACK);
+        delayMicroseconds(80);
+    }
+    Draw_points_azimuths();
+    Draw_green_ticks_bevels();
+    Draw_Compass(degree);
+    Draw_Destination(60);
+}
+
 #pragma endregion Elements
 
 /*
@@ -275,13 +258,13 @@ void ScreenGC9A01::drawOnScreen()
 {
     uint16_t temp = this->calculateScreenBuffer();
 
-    if (this->_lastBuffer != temp)
+    if (this->_lastBuffer != temp || this->_TSProperties->PropertiesScreen.IsScreenRotationChanged)
     {
         this->_lastBuffer = temp;
+        this->_TSProperties->PropertiesScreen.IsScreenRotationChanged = false;
+
         this->tft->drawRGBBitmap(0, 0, this->canvas->getBuffer(), this->canvas->width(), this->canvas->height());
     }
-
-    this->drawBackgroundColor();
 }
 
 uint16_t ScreenGC9A01::calculateScreenBuffer()
@@ -325,6 +308,7 @@ int ScreenGC9A01::calculateXCoordTextToCenter(String text)
 
 void ScreenGC9A01::setFont(uint id)
 {
+
     switch (id)
     {
     case 0:
@@ -361,6 +345,7 @@ int ScreenGC9A01::calculateXCoordItemToCenter(uint16_t lengthInPixels)
 
 void ScreenGC9A01::drawBackgroundColor(uint16_t darkModeColor, uint16_t lightModeColor)
 {
+
     if (this->_TSProperties->PropertiesScreen.IsDarkMode)
     {
         this->canvas->fillScreen(darkModeColor);
@@ -376,6 +361,7 @@ void ScreenGC9A01::setTextColor(uint16_t textDarkModeColor,
                                 uint16_t textLightModeColor,
                                 uint16_t backgroundLightModeColor)
 {
+
     if (this->_TSProperties->PropertiesScreen.IsDarkMode)
     {
         this->canvas->setTextColor(textDarkModeColor, backgroundDarkModeColor);
@@ -405,6 +391,7 @@ void ScreenGC9A01::printText(String text, int16_t coordX, int16_t coordY)
 {
     String text2 = "%-" + String(text.length()) + "s";
     const char *formatChar = text2.c_str();
+
     this->canvas->setCursor(coordX, coordY);
     this->canvas->printf(formatChar, text.c_str());
 }
@@ -433,6 +420,209 @@ void ScreenGC9A01::drawFillRect(int16_t x, int16_t y, int16_t width, int16_t hei
     {
         this->canvas->fillRect(x, y, width, height, lightModeColor);
     }
+}
+
+void ScreenGC9A01::Draw_green_ticks_bevels()
+{
+    for (float i = 0; i < 360; i += 22.5) // draw 16 line segments at the outer ring
+    {
+        sx = cos((i - 90) * DEG2RAD);
+        sy = sin((i - 90) * DEG2RAD);
+        x0 = sx * 114 + 120;
+        yy0 = sy * 114 + 120;
+        x1 = sx * 100 + 120;
+        yy1 = sy * 100 + 120;
+        this->tft->drawLine(x0, yy0, x1, yy1, GREEN);
+
+        if (i == 45)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            this->tft->setTextSize(2);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 - 24, yy0 + 14);
+            this->tft->print("NE");
+        }
+        else if (i == 135)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            this->tft->setTextSize(2);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 - 24, yy0 - 30);
+            this->tft->print("SE");
+        }
+        else if (i == 225)
+        {
+            this->tft->setTextSize(2);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 + 14, yy0 - 30);
+            this->tft->print("SW");
+        }
+        else if (i == 315)
+        {
+            this->tft->setTextSize(2);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 + 14, yy0 + 14);
+            this->tft->print("NW");
+        }
+    }
+}
+
+void ScreenGC9A01::Draw_points_azimuths()
+{
+    for (int i = 0; i < 360; i += 6) // draw 60 dots - minute markers
+    {
+        sx = cos((i - 90) * DEG2RAD);
+        sy = sin((i - 90) * DEG2RAD);
+        x0 = sx * 102 + 120;
+        yy0 = sy * 102 + 120;
+        this->tft->drawPixel(x0, yy0, WHITE);
+
+        if (i == 0)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            this->tft->setTextSize(3);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 - 7, yy0);
+            this->tft->print("N");
+        }
+
+        if (i == 90)
+        {
+            this->tft->setTextSize(3);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 - 15, yy0 - 10);
+            this->tft->print("E");
+        }
+        if (i == 180)
+        {
+            this->tft->setTextSize(3);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 - 7, yy0 - 20);
+            this->tft->print("S");
+        }
+        if (i == 270)
+        {
+            this->tft->setTextSize(3);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 + 5, yy0 - 10);
+            this->tft->print("O");
+        }
+    }
+}
+
+void ScreenGC9A01::Draw_Destination(float dest)
+{
+    // // 根据目的地点相对于当前坐标的位置，分成4种情况，在当前坐标的东北、东南、西南、西北
+    // // 当前屏幕是翻转180度的，就是0,0坐标由左上，变到了右下
+    // // 如果在东北： 90度-dest,因为整体翻转了180度，所以最终还要再加180度：90-dest+180
+    // float degreeAjuste = 0.0;
+    // float DX = _TSProperties->PropertiesCurrentRide.longitude_destination; // 目的地经度
+    // float DY = _TSProperties->PropertiesCurrentRide.latitude_destination;  // 目的地维度
+    // float OX = _TSProperties->PropertiesGPS.Longitude;                     // 当前经度
+    // float OY = _TSProperties->PropertiesGPS.Latitude;                      // 当前维度
+
+    // if (DX > OX && DY > OY)
+    // {
+    //     // 目的地在当前的东北
+    //     degreeAjuste = 180 + 90 - (dest);
+    // }
+    // else if (DX > OX && DY < OY)
+    // {
+    //     // 目的地在当前的东南
+    //     degreeAjuste = 180 + 90 + (dest);
+    // }
+    // else if (DX < OX && DY < OY)
+    // {
+    //     // 目的地在当前的西南
+    //     degreeAjuste = 180 + 90 + (dest);
+    // }
+    // else if (DX < OX && DY > OY)
+    // {
+    //     // 目的地在当前的西北
+    //     degreeAjuste = 180 + 90 + (dest);
+    // }
+
+    // D1x = (120 + (100 * sin((-(180 + 90 - (dest))) * DEG2RAD)));
+    // D1y = (120 + (100 * cos((-(180 + 90 - (dest))) * DEG2RAD)));
+
+    // D2x = (120 + (80 * sin((-(180 + 90 - (dest - 7))) * DEG2RAD)));
+    // D2y = (120 + (80 * cos((-(180 + 90 - (dest - 7))) * DEG2RAD)));
+
+    // D3x = (120 + (80 * sin((-(180 + 90 - (dest + 7))) * DEG2RAD)));
+    // D3y = (120 + (80 * cos((-(180 + 90 - (dest + 7))) * DEG2RAD)));
+
+    // dest = 30;
+
+    D1x = (120 + (100 * sin((-((dest))) * DEG2RAD)));
+    D1y = (120 + (100 * cos((-((dest))) * DEG2RAD)));
+
+    D2x = (120 + (80 * sin((-((dest - 7))) * DEG2RAD)));
+    D2y = (120 + (80 * cos((-((dest - 7))) * DEG2RAD)));
+
+    D3x = (120 + (80 * sin((-((dest + 7))) * DEG2RAD)));
+    D3y = (120 + (80 * cos((-((dest + 7))) * DEG2RAD)));
+    // 如果在西北:90度+dest,因为翻转了180度，所以最终再加180度：90+dest+180
+
+    // 如果在东南
+
+    // 如果在西南
+
+    // DDD 3顶点
+    // tft.fillCircle(D1x, D1y, 3, RED);
+    // tft.fillCircle(D2x, D2y, 3, BLUE);
+    // tft.fillCircle(D3x, D3y, 3, GREEN);
+
+    this->tft->fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, GREEN);
+}
+
+void ScreenGC9A01::Draw_Compass(float degree)
+{
+    this->sdeg = degree;
+    // 先画点A
+    // tft.drawLine(ox, oy, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    ox = (120 + (70 * sin((-degree) * DEG2RAD)));
+    oy = (120 + (70 * cos((-degree) * DEG2RAD)));
+    // tft.drawLine(ox, oy, 120, 121, GREEN);
+
+    // 再画点B
+    // tft.drawLine(px, py, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    px = (120 + 15 * sin((90 - degree) * DEG2RAD));
+    py = (120 + 15 * cos((90 - degree) * DEG2RAD));
+    // tft.drawLine(px, py, 120, 121, YELLOW);
+
+    // 再画点C
+    // tft.drawLine(qx, qy, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    qx = (120 + 70 * sin((180 - degree) * DEG2RAD));
+    qy = (120 + 70 * cos((180 - degree) * DEG2RAD));
+    // tft.drawLine(qx, qy, 120, 121, GREEN);
+
+    // 再画点D
+    // tft.drawLine(rx, ry, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    rx = (120 + 15 * sin((270 - degree) * DEG2RAD));
+    ry = (120 + 15 * cos((270 - degree) * DEG2RAD));
+    // tft.drawLine(rx, ry, 120, 121, YELLOW);
+
+    // tft.drawTriangle(ox, oy, px, py, rx, ry, RED);
+    this->tft->fillTriangle(ox, oy, px, py, rx, ry, BLUE);
+    // tft.drawTriangle(qx, qy, px, py, rx, ry, BLUE);
+    this->tft->fillTriangle(qx, qy, px, py, rx, ry, RED);
+}
+
+void ScreenGC9A01::Draw_Cadran_Compass()
+{
+    // 画背景
+    // this->tft->fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
+    // this->tft->fillCircle(120, 120, 110, BLACK);
+    // 画绿色刻度和斜角
+    Draw_green_ticks_bevels();
+    // 画60个刻度和方位角
+    Draw_points_azimuths();
+}
+void ScreenGC9A01::cleanNeedleCompass()
+{
+    this->tft->fillTriangle(ox, oy, px, py, rx, ry, BLACK);
+    this->tft->fillTriangle(qx, qy, px, py, rx, ry, BLACK);
+    this->tft->fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, BLACK);
 }
 #pragma endregion DrawingTools
 
@@ -503,6 +693,7 @@ void ScreenGC9A01::testGPS()
 void ScreenGC9A01::testButtonsScreen()
 {
     this->setTextColor();
+
     this->canvas->setTextSize(3);
     this->canvas->setCursor(35, 50);
 
@@ -537,7 +728,6 @@ void ScreenGC9A01::testButtonsScreen()
         {
             this->canvas->printf(formatChar, "No button pressed !");
         }
-        // Serial.println("No button pressed");
     }
     else if (isButton1Pressed == 1 & isButton2Pressed == 0) // short press button 1
     {
@@ -550,7 +740,6 @@ void ScreenGC9A01::testButtonsScreen()
         {
             this->canvas->printf(formatChar, "Button 1 SHORT press !");
         }
-        // Serial.println("Button 1 SHORT press");
     }
     else if (isButton1Pressed == 0 & isButton2Pressed == 1) // short press button 2
     {
@@ -563,7 +752,6 @@ void ScreenGC9A01::testButtonsScreen()
         {
             this->canvas->printf(formatChar, "Button 2 SHORT press !");
         }
-        // Serial.println("Button 2 SHORT press");
     }
     else if (isButton1Pressed == 2 & isButton2Pressed == 0) // long press button 1
     {
@@ -576,7 +764,6 @@ void ScreenGC9A01::testButtonsScreen()
         {
             this->canvas->printf(formatChar, "Button 1 LONG press !");
         }
-        // Serial.println("Button 1 LONG press");
     }
     else if (isButton1Pressed == 0 & isButton2Pressed == 2) // long press button 2
     {
@@ -589,7 +776,6 @@ void ScreenGC9A01::testButtonsScreen()
         {
             this->canvas->printf(formatChar, "Button 2 LONG press !");
         }
-        // Serial.println("Button 2 LONG press");
     }
     else if (isButton1Pressed == 3 & isButton2Pressed == 0) // double short press button 1
     {
@@ -602,7 +788,6 @@ void ScreenGC9A01::testButtonsScreen()
         {
             this->canvas->printf(formatChar, "Button 1 DOUBLE SHORT press !");
         }
-        // Serial.println("Button 1 DOUBLE SHORT press");
     }
     else if (isButton1Pressed == 0 & isButton2Pressed == 3) // double short press button 2
     {
@@ -615,7 +800,6 @@ void ScreenGC9A01::testButtonsScreen()
         {
             this->canvas->printf(formatChar, "Button 2 DOUBLE SHORT press !");
         }
-        // Serial.println("Button 2 DOUBLE SHORT press");
     }
     else if (isButton1Pressed == 1 & isButton2Pressed == 1) // short press button 1 and 2
     {
@@ -628,7 +812,6 @@ void ScreenGC9A01::testButtonsScreen()
         {
             this->canvas->printf(formatChar, "Buttons 1 and 2 SHORT press !");
         }
-        // Serial.println("Buttons 1 and 2 SHORT press");
     }
     else if (isButton1Pressed == 2 & isButton2Pressed == 2) // long press button 1 and 2
     {
@@ -641,7 +824,6 @@ void ScreenGC9A01::testButtonsScreen()
         {
             this->canvas->printf(formatChar, "Buttons 1 and 2 LONG press !");
         }
-        // Serial.println("Buttons 1 and 2 LONG press");
     }
     else
     {
@@ -654,7 +836,6 @@ void ScreenGC9A01::testButtonsScreen()
         {
             this->canvas->printf(formatChar, "BUTTONS ERROR !!!");
         }
-        // Serial.println("BUTTONS ERROR !!!");
     }
 }
 
