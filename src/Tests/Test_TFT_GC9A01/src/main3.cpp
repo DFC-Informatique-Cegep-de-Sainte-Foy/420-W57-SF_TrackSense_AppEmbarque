@@ -3,9 +3,9 @@
 // #define humidity_meter // works greate
 // #define chart_mono // works greate
 // #define chart_rainbow // works greate
-// #define tachometer // works greate    类似于跑步用秒表，可以作为参考
+// #define tachometer // works greate    Semblable à un chronomètre pour courir, il peut être utilisé comme référence
 // #define voltage // works greate
-// #define myclock // works greate          一个表盘，有指针每秒移动，可以作为模版
+// #define myclock // works greate          Un cadran de montre, avec des aiguilles qui bougent toutes les secondes, peut être utilisé comme modèle
 #define myCompass
 
 #ifdef spiral
@@ -1762,23 +1762,23 @@ void Draw_Compass(float);
 void setup(void)
 {
     // Serial.begin(9600);
-    // 开启
-    tft.begin();
-    // 设置旋转
-    tft.setRotation(0);
-    tft.fillScreen(BLACK); // 全屏幕显示黑色
-    delay(200);
-    tft.fillScreen(RED); // 全屏幕显示红色
-    delay(200);
-    tft.fillScreen(GREEN); // 全屏幕显示绿色
-    delay(200);
-    tft.fillScreen(BLUE); // 全屏幕显示蓝色
-    delay(200);
-    tft.fillScreen(BLACK); // 全屏幕显示黑色
-    delay(200);
-    tft.fillScreen(GREY); // 全屏幕显示灰色
 
-    createDial(); // 绘制表盘
+    tft.begin();
+
+    tft.setRotation(0);
+    tft.fillScreen(BLACK);
+    delay(200);
+    tft.fillScreen(RED);
+    delay(200);
+    tft.fillScreen(GREEN);
+    delay(200);
+    tft.fillScreen(BLUE);
+    delay(200);
+    tft.fillScreen(BLACK);
+    delay(200);
+    tft.fillScreen(GREY);
+
+    createDial();
 
     Serial.begin(9600);
     Serial.println();
@@ -1833,19 +1833,19 @@ void loop()
         // }
     }
 
-    // 通过角度来决定指针的朝向
+    // Détermine la direction du pointeur par angle
     sdeg = ss * 6; // 0-59 -> 0-354
                    // sx = cos((sdeg - 90) * DEG2RAD);
                    // sy = sin((sdeg - 90) * DEG2RAD);
 
-    /*--------------------------------秒针   works!-----------------------------------*/
+    /*--------------------------------Seconde   works!-----------------------------------*/
     // tft.drawLine(osx, osy, 120, 121, BLACK); // redraw new hand positions, hour and minute hands not erased here to avoid flicker
     // osx = sx * 90 + 121;
     // osy = sy * 90 + 121;
     // tft.drawLine(osx, osy, 120, 121, RED);
     // tft.fillCircle(120, 121, 3, RED);
-    /*---------------------------------秒针  works!----------------------------------*/
-    // 清除上一次画的阴影
+    /*---------------------------------Seconde  works!----------------------------------*/
+    // Efface la dernière ombre dessinée
     tft.fillTriangle(ox, oy, px, py, rx, ry, BLACK);
     tft.fillTriangle(qx, qy, px, py, rx, ry, BLACK);
     tft.fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, BLACK);
@@ -1853,22 +1853,22 @@ void loop()
     Draw_green_ticks_bevels();
     Draw_Compass(sdeg);
     Draw_Destination(60);
-    /*---------------------------------画一个菱形----------------------------------*/
+    /*---------------------------------dessiner un losange----------------------------------*/
     /*
-        已知变量：
-            圆点x坐标：120
-            圆点y坐标：120
-            r1：60
-            r2：15
-        未知变量：
-            角度1：方向角
-            角度2：角度1+90
-        一个菱形由两个三角形组成，一共需要知道4个点的坐标
-        A - B - C - D
-        A : 上顶点
-        B ：右顶点
-        C ：下顶点
-        D ：左顶点
+       Variables connues :
+             Coordonnée x du cercle : 120
+             Coordonnée du point y : 120
+             r1：60
+             r2:15
+         Variables inconnues :
+             Angle 1 : angle de direction
+             Angle 2 : Angle 1+90
+         Un losange se compose de deux triangles et un total de 4 coordonnées de points doivent être connues.
+         A B C D
+         A : sommet supérieur
+         B : sommet droit
+         C : sommet inférieur
+         D : sommet gauche
 
 
     */
@@ -1877,8 +1877,8 @@ void loop()
     // tft.fillCircle(D2x, D2y, 3, BLACK);
     // tft.fillCircle(D3x, D3y, 3, BLACK);
 
-    // 重新画一遍方位字母和绿色刻度
-    // 360/30 = 12，每22.5度，画一个刻度
+    // Redessiner les lettres d'azimut et l'échelle verte
+    // 360/30 = 12, tous les 22,5 degrés, dessinez une échelle
     // for (float i = 0; i < 360; i += 22.5) // draw 16 line segments at the outer ring
     // {
     //     sx = cos((i - 90) * DEG2RAD);
@@ -1961,25 +1961,25 @@ void loop()
     //     }
     // }
 
-    // // 先画点A
+    // // Point A
     // // tft.drawLine(ox, oy, 120, 121, BLACK); // erase hour and minute hand positions every minute
     // ox = (120 + (70 * sin((-sdeg) * DEG2RAD)));
     // oy = (120 + (70 * cos((-sdeg) * DEG2RAD)));
     // // tft.drawLine(ox, oy, 120, 121, GREEN);
 
-    // // 再画点B
+    // // Point B
     // // tft.drawLine(px, py, 120, 121, BLACK); // erase hour and minute hand positions every minute
     // px = (120 + 15 * sin((90 - sdeg) * DEG2RAD));
     // py = (120 + 15 * cos((90 - sdeg) * DEG2RAD));
     // // tft.drawLine(px, py, 120, 121, YELLOW);
 
-    // // 再画点C
+    // // Point C
     // // tft.drawLine(qx, qy, 120, 121, BLACK); // erase hour and minute hand positions every minute
     // qx = (120 + 70 * sin((180 - sdeg) * DEG2RAD));
     // qy = (120 + 70 * cos((180 - sdeg) * DEG2RAD));
     // // tft.drawLine(qx, qy, 120, 121, GREEN);
 
-    // // 再画点D
+    // // Point D
     // // tft.drawLine(rx, ry, 120, 121, BLACK); // erase hour and minute hand positions every minute
     // rx = (120 + 15 * sin((270 - sdeg) * DEG2RAD));
     // ry = (120 + 15 * cos((270 - sdeg) * DEG2RAD));
@@ -1990,19 +1990,19 @@ void loop()
     // // tft.drawTriangle(qx, qy, px, py, rx, ry, BLUE);
     // tft.fillTriangle(qx, qy, px, py, rx, ry, BLUE);
     // tft.fillCircle(120, 121, 3, RED);
-    /*---------------------------------画一个菱形----------------------------------*/
+    /*---------------------------------dessiner un losange----------------------------------*/
 
-    /*---------------------------------画目的地方向----------------------------------*/
-    // 画出目的地的相对方向
+    /*---------------------------------dessiner la direction de la destination----------------------------------*/
+    // dessiner la direction de la destination
     /*
-        假设目的地方位与当前朝向的夹角为DDD
-        就相当于从罗盘正N开始，顺时针+DDD的角度为当前目的地方向，顺时针累加
-        需要分别计算三个点
-        顶点A：
-            x =  (120 + (110 * sin((-sdeg) * DEG2RAD)));
-            y = (120 + (110 * cos((-sdeg) * DEG2RAD)));
-        点B：
-        点C：
+        Supposons que l'angle entre la position de destination et l'orientation actuelle est DDD
+         Cela équivaut à partir du N positif de la boussole. L'angle dans le sens des aiguilles d'une montre + DDD est la direction de destination actuelle, et l'angle est accumulé dans le sens des aiguilles d'une montre.
+         Trois points doivent être calculés séparément
+         Sommet A :
+             x = (120 + (110 * sin((-sdeg) * DEG2RAD)));
+             y = (120 + (110 * cos((-sdeg) * DEG2RAD)));
+         Point B :
+         Point C :
 
     */
 
@@ -2015,7 +2015,7 @@ void loop()
     // D3x = (120 + (80 * sin((-(7 + sdeg + DDD)) * DEG2RAD)));
     // D3y = (120 + (80 * cos((-(7 + sdeg + DDD)) * DEG2RAD)));
 
-    // // DDD 3顶点
+    // // DDD
     // // tft.fillCircle(D1x, D1y, 3, RED);
     // // tft.fillCircle(D2x, D2y, 3, BLUE);
     // // tft.fillCircle(D3x, D3y, 3, GREEN);
@@ -2032,7 +2032,7 @@ void createDial()
     tft.fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
     tft.fillCircle(120, 120, 110, BLACK);
 
-    // 360/22.5 = 16，每22.5度，画一个刻度
+    // 360/22,5 = 16, tous les 22,5 degrés, dessinez une échelle
     for (float i = 0; i < 360; i += 22.5) // draw 16 line segments at the outer ring
     {
         sx = cos((i - 90) * DEG2RAD);
@@ -2115,7 +2115,7 @@ void createDial()
         }
     }
 
-    tft.fillCircle(120, 121, 3, WHITE); // pivot  中心圆点
+    tft.fillCircle(120, 121, 3, WHITE); // pivot  point central
     targetTime = millis() + 1000;
 }
 
@@ -2228,25 +2228,21 @@ void Draw_Destination(float dest)
 void Draw_Compass(float degree)
 {
 
-    // 先画点A
     // tft.drawLine(ox, oy, 120, 121, BLACK); // erase hour and minute hand positions every minute
     ox = (120 + (70 * sin((-degree) * DEG2RAD)));
     oy = (120 + (70 * cos((-degree) * DEG2RAD)));
     // tft.drawLine(ox, oy, 120, 121, GREEN);
 
-    // 再画点B
     // tft.drawLine(px, py, 120, 121, BLACK); // erase hour and minute hand positions every minute
     px = (120 + 15 * sin((90 - degree) * DEG2RAD));
     py = (120 + 15 * cos((90 - degree) * DEG2RAD));
     // tft.drawLine(px, py, 120, 121, YELLOW);
 
-    // 再画点C
     // tft.drawLine(qx, qy, 120, 121, BLACK); // erase hour and minute hand positions every minute
     qx = (120 + 70 * sin((180 - degree) * DEG2RAD));
     qy = (120 + 70 * cos((180 - degree) * DEG2RAD));
     // tft.drawLine(qx, qy, 120, 121, GREEN);
 
-    // 再画点D
     // tft.drawLine(rx, ry, 120, 121, BLACK); // erase hour and minute hand positions every minute
     rx = (120 + 15 * sin((270 - degree) * DEG2RAD));
     ry = (120 + 15 * cos((270 - degree) * DEG2RAD));

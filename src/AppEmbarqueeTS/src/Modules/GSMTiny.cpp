@@ -90,7 +90,8 @@ void GSMTiny::init()
 void GSMTiny::tick()
 {
     // Serial.println("6--- GSM --> tick");
-    // 如果当前TS状态是跌倒状态，并且还未发送短信时，则发送一条短信
+    // Si l'état actuel du TS est l'état de chute et qu'aucun message texte n'a encore été envoyé,
+    // alors envoyez un message texte
     if (this->_TSProperties->PropertiesGPS.estChute && !_estEnvoye)
     {
         Serial.println("Chute detecte!");
@@ -132,7 +133,8 @@ void GSMTiny::tick()
 
         /*----------------------------------------------------------------*/
 
-        /*---------------------------当路线启动后，当GPS启动后，如果时间间隔大于阈限，则读取数据-------------------------------------*/
+        /*---------------------------Après le démarrage de l'itinéraire, au démarrage du GPS, si l'intervalle de temps est supérieur au seuil , lisez les données-------------------------------------*/
+
         //         if (actualTime - this->_lastReadTimeMS > 1000)
         //         {
         //             this->_durationS = (actualTime - this->_TSProperties->PropertiesCurrentRide.StartTimeMS) / 1000;
@@ -183,13 +185,14 @@ void GSMTiny::tick()
         //         }
 
         // Serial.println("6---4 Read GPS");
-        // 读取GPS信息特别慢，差不多每5秒才读一次，会严重拖慢系统对其他传感器的识别
-        // 所以这里设置一个条件，不是每次程序循环到这都读GPS数据，而是每5秒读一次，也就是说：
-        // 当程序运行到这里的时候如果最后一次读取时间与当前时间比较，大于5秒时，才进行读取
-        // 所以需要一个变量：lastReadTime,和当前时间进行比较，当大于5秒时，才读取一次GPS数据
-        // 所以最后，程序每5秒就会被拖慢一次
-        // 最终的解决办法应该是使用多线程
-        // 一个程序线程，一个GPS读取数据线程，并行运行，互不影响
+        // La lecture des informations GPS est très lente. Il ne les lit que presque toutes les 5 secondes, ce qui ralentira sérieusement la reconnaissance des autres capteurs par le système.
+        // Donc posez une condition ici, au lieu de lire les données GPS à chaque fois que le programme boucle ici, il les lit toutes les 5 secondes, c'est à dire :
+        // Lorsque le programme s'exécute ici, si l'heure de la dernière lecture est comparée à l'heure actuelle, elle ne sera lue que lorsqu'elle sera supérieure à 5 secondes.
+        // Il faut donc une variable : lastReadTime, qui est comparée à l'heure actuelle. Lorsqu'elle est supérieure à 5 secondes, les données GPS sont lues une fois.
+        // Donc au final, le programme sera ralenti toutes les 5 secondes
+        // La solution finale devrait être d'utiliser le multi-threading
+        // Un thread de programme et un thread de lecture de données GPS, fonctionnant en parallèle sans s'affecter mutuellement
+
         if (millis() - _lastReadTimeMS > 5000)
         {
             this->_durationS = (actualTime - this->_TSProperties->PropertiesCurrentRide.StartTimeMS) / 1000;
@@ -207,7 +210,7 @@ void GSMTiny::tick()
                     {
                         this->_lastValidLatitude = this->_latitude;
                         this->_lastValidLongitude = this->_longitude;
-                        // 更新起点坐标
+                        // Mettre à jour les coordonnées du point de départ
                         _TSProperties->PropertiesCurrentRide.latitude_point_depart = this->_latitude;
                         _TSProperties->PropertiesCurrentRide.longitude_destination = this->_longitude;
                     }
@@ -246,9 +249,10 @@ void GSMTiny::tick()
             this->_TSProperties->PropertiesCurrentRide.AverageSpeedKMPH = (this->_TSProperties->PropertiesCurrentRide.DistanceTotalMeters / this->_durationS) * 3.6;
         }
 
-        // /*---------------------------当路线启动后，GPS才启动，当GPS启动后，如果侦测到跌倒，则发送短信-------------------------------------*/
-        // 如果当前TS状态是跌倒状态，并且还未发送短信时，则发送一条短信
-        // 因为已经在骑行状态中，所以GPS已经打开了，所以不需要再次读取GPS信息，直接从TS状态中读取经纬度即可
+        // /*---------------------------Au démarrage de l'itinéraire, le GPS démarre. Au démarrage du GPS, si une chute est détectée, un message texte sera envoyé.-------------------------------------*/
+        // Si l'état actuel du TS est l'état déchu et qu'aucun message texte n'a encore été envoyé, alors envoyez un message texte
+        // Parce que nous sommes déjà en état de conduite, le GPS est déjà activé, il n'est donc pas nécessaire de relire les informations GPS, il suffit de lire la longitude et la latitude directement à partir de l'état TS.
+
         // Serial.println("6---3 Detecter Chute(2)");
         if (this->_TSProperties->PropertiesGPS.estChute && !_estEnvoye)
         {
@@ -281,7 +285,7 @@ bool GSMTiny::readDatas()
                                 &this->_accuracy, &this->_year, &this->_month, &this->_day, &this->_hour, &this->_minute, &this->_seconde))
         {
             result = true;
-            // 在此更新最后一个读取数据时间
+            // Mettez à jour l'heure de la dernière lecture des données ici
             this->_lastReadTimeMS = millis();
 #if DEBUG_TS_GPS_HARDCORE
             Serial.println("Latitude: " + String(this->_latitude, 10) + "\tLongitude: " + String(this->_longitude, 10));
@@ -577,7 +581,7 @@ double GSMTiny::distanceBetweenInMeters(double lat1, double long1, double lat2, 
 
 void GSMTiny::envoyerLocation()
 {
-    // 先打开GPS
+    // Allumez d'abord le GPS
     if (this->_isGpsOn == false)
     {
         this->gpsPowerOn();

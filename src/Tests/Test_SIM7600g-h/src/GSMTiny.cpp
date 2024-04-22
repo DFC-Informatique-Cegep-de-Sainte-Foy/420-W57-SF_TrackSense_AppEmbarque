@@ -97,15 +97,15 @@ void GSMTiny::tick()
     Serial.println("IsRideFinished : " + String(this->_TSProperties->PropertiesCurrentRide.IsRideFinished));
 #endif
 
-    // 如果在骑行过程中
+    // Si en roulant
     if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted && this->_TSProperties->PropertiesCurrentRide.IsRideFinished == false)
     {
-        // 如果GPS没开启，则启动GPS
+        // Si le GPS n'est pas activé, démarrez le GPS
         if (this->_isGpsOn == false && this->_isModemOn == true && this->_isInitialized == true)
         {
             this->gpsPowerOn();
         }
-        // 如果满足时间间隔(大于1秒钟)，则GPS工作
+        // Si l'intervalle de temps est respecté (supérieur à 1 seconde), le GPS fonctionne
         if (actualTime - this->_lastReadTimeMS > 1000)
         {
             this->_durationS = (actualTime - this->_TSProperties->PropertiesCurrentRide.StartTimeMS) / 1000;
@@ -154,7 +154,7 @@ void GSMTiny::tick()
         }
         this->_TSProperties->PropertiesCurrentRide.AverageSpeedKMPH = (this->_TSProperties->PropertiesCurrentRide.DistanceTotalMeters / this->_durationS) * 3.6;
     }
-    else // 不在骑行中
+    else
     {
         DEBUG_STRING_LN(DEBUG_TS_GSM, "Write GPS : Ride is not Started");
 
@@ -165,17 +165,18 @@ void GSMTiny::tick()
     }
     // Serial.println("GSM tick");
 
-    // 无论在哪种状态下，只要有跌倒，并且消息还没有发送，就发送消息
+    // Peu importe dans quel état, tant qu'il y a une chute et que le message n'a pas été envoyé, le message est envoyé
     if (this->_TSProperties->PropertiesGPS.estChute && !this->_TSProperties->PropertiesGPS.estEnvoyerSMS)
     {
-        // 发送消息
+
         envoyerSMS();
-        // 更新TS状态为：已发送
-        // TODO:
-        // 更新是否发送了短信的状态：已经发送(true)
+        // Mettre à jour le statut TS à : Envoyé
+        //  FAIRE:
+        //  Mise à jour du statut indiquant si le message texte a été envoyé : Envoyé (vrai)
+
         // this->_TSProperties->PropertiesGPS.estEnvoyerSMS = true;
         Serial.println("SMS est envoye!");
-        // 等待按钮事件，如果点击了按钮，则重新更新状态：还未发送(false)
+        // Attend l'événement du bouton Si le bouton est cliqué, met à jour le statut : pas encore envoyé (faux).
         // TODO
     }
 }
@@ -496,7 +497,7 @@ void GSMTiny::envoyerSMS()
     int min = 0;
     int sec = 0;
 
-    // 获取GPS数据
+    // Récupère les données GPS
     // TODO:
     for (int8_t i = 15; i; i--)
     {
@@ -522,8 +523,8 @@ void GSMTiny::envoyerSMS()
     String gps_raw = modem->getGPSraw();
     // SerialMon.println("GPS/GNSS Based Location String: " + gps_raw);
 
-    // 发送GPS数据到telephone
-    // TODO:
+    // Envoyer les données GPS au téléphone
+    //  TODO:
     mylati = dtostrf(lat, 3, 6, buff);
     mylong = dtostrf(lon, 3, 6, buff);
     textForSMS = textForSMS + "http://www.google.com/maps/place/" + mylati + "," + mylong;

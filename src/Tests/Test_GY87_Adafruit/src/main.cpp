@@ -13,9 +13,7 @@ void setup()
   Serial.begin(9600);
   // mygy = new GY87_Adafruit();
   program = new Program();
-  // mygy->calibrationHMC5883L(); // 获得校准参数
-  // 将校准参数保存在File中，不用每次都校准
-  // 应用Quebec磁偏角
+  // mygy->calibrationHMC5883L();
   // mygy->setMagneticDeclination(-15, 5);
 
   // Test
