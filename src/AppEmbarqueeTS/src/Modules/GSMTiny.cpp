@@ -34,6 +34,7 @@ GSMTiny::GSMTiny(TSProperties *TSProperties) : _TSProperties(TSProperties),
     // pinMode(PIN_LED, OUTPUT);
     // DEBUG_STRING_LN(DEBUG_TS_GSM, "Set LED OFF");
     // digitalWrite(PIN_LED, HIGH);
+    // Modification pour localiser le user story a corriger pour iteration 2
 
     this->init();
 }
@@ -89,6 +90,7 @@ void GSMTiny::init()
 
 void GSMTiny::tick()
 {
+    // Modification pour localiser le user story a corriger pour iteration 2
     // Serial.println("6--- GSM --> tick");
     // Si l'état actuel du TS est l'état de chute et qu'aucun message texte n'a encore été envoyé,
     // alors envoyez un message texte
@@ -112,6 +114,7 @@ void GSMTiny::tick()
     if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted && this->_TSProperties->PropertiesCurrentRide.IsRideFinished == false)
     {
         // est arrive?
+        // Modification pour localiser le user story a corriger pour iteration 2
         if (!this->_TSProperties->PropertiesCurrentRide.estArrive && this->distanceBetweenInMeters(this->_latitude, this->_longitude, this->_TSProperties->PropertiesCurrentRide.latitude_destination, this->_TSProperties->PropertiesCurrentRide.longitude_destination) < MINIMUM_DISTANCE)
         {
             Serial.println("Arrivee!");
@@ -254,6 +257,7 @@ void GSMTiny::tick()
         // Parce que nous sommes déjà en état de conduite, le GPS est déjà activé, il n'est donc pas nécessaire de relire les informations GPS, il suffit de lire la longitude et la latitude directement à partir de l'état TS.
 
         // Serial.println("6---3 Detecter Chute(2)");
+        // Modification pour localiser le user story a corriger pour iteration 2
         if (this->_TSProperties->PropertiesGPS.estChute && !_estEnvoye)
         {
             Serial.println("Chute detecte!");
@@ -271,6 +275,7 @@ void GSMTiny::tick()
             this->gpsPowerOff();
         }
     }
+    // Modification pour localiser le user story a corriger pour iteration 2
 }
 
 bool GSMTiny::readDatas()
@@ -579,6 +584,7 @@ double GSMTiny::distanceBetweenInMeters(double lat1, double long1, double lat2, 
     return delta * 6372795;
 }
 
+// Modification pour localiser le user story a corriger pour iteration 2
 void GSMTiny::envoyerLocation()
 {
     // Allumez d'abord le GPS
@@ -627,6 +633,7 @@ void GSMTiny::envoyerLocation()
     mylati = dtostrf(lat, 3, 6, buff);
     mylong = dtostrf(lon, 3, 6, buff);
     textForSMS = textForSMS + "http://www.google.com/maps/place/" + mylati + "," + mylong;
+    // test manuel location Cegep
     // mylati = dtostrf(46.78569, 3, 6, buff);
     // mylong = dtostrf(-71.28704, 3, 6, buff);
     // textForSMS = textForSMS + "http://www.google.com/maps/place/" + mylati + "," + mylong;
@@ -637,6 +644,7 @@ void GSMTiny::envoyerLocation()
     // fona.sendSMS(callerIDbuffer,textForSMS );
     Serial.println("GPS send");
     textForSMS = "";
+    // Modification pour localiser le user story a corriger pour iteration 2
 }
 
 void GSMTiny::envoyerSMS(float latitude, float longitude)
@@ -650,4 +658,5 @@ void GSMTiny::envoyerSMS(float latitude, float longitude)
     // fona.sendSMS(callerIDbuffer,textForSMS );
     Serial.println("GPS send");
     textForSMS = "";
+    // Modification pour localiser le user story a corriger pour iteration 2
 }

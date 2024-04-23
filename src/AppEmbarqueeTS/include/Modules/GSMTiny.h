@@ -73,6 +73,7 @@ private:
     String mylati = ""; // for storing the latitude value
     String textForSMS;
     char buff[10];
+    // Modification pour localiser le user story a corriger pour iteration 2
 
 public:
     GSMTiny(TSProperties *TSProperties);

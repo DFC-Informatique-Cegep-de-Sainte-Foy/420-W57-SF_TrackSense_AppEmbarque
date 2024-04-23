@@ -98,6 +98,7 @@ public:
     } PropertiesCurrentRide;
 
     /* datas GPS */
+
     struct TSPropertiesGPS
     {
         // datas brute GPS
@@ -116,7 +117,7 @@ public:
         int Seconde;
         bool IsFixValid;
         bool IsGPSFixed;
-        bool estChute;
+        bool estChute; // Modification pour localiser le user story a corriger pour iteration 2
         bool estEnvoyerSMS;
 
         int CounterGoodValue;
