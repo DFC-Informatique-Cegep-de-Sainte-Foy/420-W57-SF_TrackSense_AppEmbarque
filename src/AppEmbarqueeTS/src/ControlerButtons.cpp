@@ -247,21 +247,20 @@ void ControlerButtons::startRide()
         this->_TSProperties->PropertiesCurrentRide.CompletedRideId = this->_guidGenerator->toCharArray();
         this->_TSProperties->PropertiesScreen.ActiveScreen = RIDE_PAGE_ID;
 
-        // Modification pour localiser le user story a corriger pour iteration 2
-        // coordonnees GPS pour destination pour test
+        // 更新TS的终点坐标,坐标应是存储在数据库中的某段路程的终点坐标
         // HOME
         // this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.78772;   //
         // this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.26219; //
 
-        // Chateau Frontenac
+        // Chateau Frontenac 坐标
         // this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.81207;   //
         // this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.20501; //
 
-        // Test Garneau
+        // Test Garneau 坐标
         // this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.79308;   //
         // this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.26474; //
 
-        // Test 418
+        // Test 418 坐标
         this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.78570;   //
         this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.28714; //
     }

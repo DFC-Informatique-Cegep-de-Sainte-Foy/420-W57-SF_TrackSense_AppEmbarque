@@ -109,36 +109,36 @@ void GY87_Adafruit::read()
     // Serial.print("MagAngle-> ");
     // Serial.println(Magangle);
     _TSProperties->PropertiesCompass.heading = Magangle;
-    Serial.print("Accn X: ");
-    Serial.print(temp_evt_acce.acceleration.x);
-    Serial.print(", Y: ");
-    Serial.print(temp_evt_acce.acceleration.y);
-    Serial.print(", Z: ");
-    Serial.print(temp_evt_acce.acceleration.z);
-    Serial.print(" m/s^2");
-    Serial.print("  ");
+    // Serial.print("Accn X: ");
+    // Serial.print(temp_evt_acce.acceleration.x);
+    // Serial.print(", Y: ");
+    // Serial.print(temp_evt_acce.acceleration.y);
+    // Serial.print(", Z: ");
+    // Serial.print(temp_evt_acce.acceleration.z);
+    // Serial.print(" m/s^2");
+    // Serial.print("  ");
     // Rendre cohérent le système de coordonnées de l'axe d'accélération et de l'axe de vitesse angulaire
     /*----------------------------------------Normaliser--------------------------------------------------------------------*/
     this->normaliseMPU(&(temp_evt_gyro.gyro.x), &(temp_evt_gyro.gyro.y), &(temp_evt_gyro.gyro.z));
     /*------------------------------------------------------------------------------------------------------------*/
 
-    Serial.print("Rot X: ");
-    Serial.print(temp_evt_gyro.gyro.x);
-    Serial.print(", Y: ");
-    Serial.print(temp_evt_gyro.gyro.y);
-    Serial.print(", Z: ");
-    Serial.print(temp_evt_gyro.gyro.z);
-    Serial.print(" rad/s");
-    Serial.print("  ");
-    /*------------------------------------------------------------------------------------------------------------*/
-    Serial.print("Mag X: ");
-    Serial.print(temp_evt_compass.magnetic.x);
-    Serial.print(", Y: ");
-    Serial.print(temp_evt_compass.magnetic.y);
-    Serial.print(", Z: ");
-    Serial.print(temp_evt_compass.magnetic.z);
-    Serial.print(" rad/s");
-    Serial.println("  ");
+    // Serial.print("Rot X: ");
+    // Serial.print(temp_evt_gyro.gyro.x);
+    // Serial.print(", Y: ");
+    // Serial.print(temp_evt_gyro.gyro.y);
+    // Serial.print(", Z: ");
+    // Serial.print(temp_evt_gyro.gyro.z);
+    // Serial.print(" rad/s");
+    // Serial.print("  ");
+    // /*------------------------------------------------------------------------------------------------------------*/
+    // Serial.print("Mag X: ");
+    // Serial.print(temp_evt_compass.magnetic.x);
+    // Serial.print(", Y: ");
+    // Serial.print(temp_evt_compass.magnetic.y);
+    // Serial.print(", Z: ");
+    // Serial.print(temp_evt_compass.magnetic.z);
+    // Serial.print(" rad/s");
+    // Serial.println("  ");
     /*---------------------------------------------------maj. data raw au TR---------------------------------------------------------*/
     this->_TSProperties->PropertiesCompass.Acc_X = temp_evt_acce.acceleration.x;
     this->_TSProperties->PropertiesCompass.Acc_Y = temp_evt_acce.acceleration.y;

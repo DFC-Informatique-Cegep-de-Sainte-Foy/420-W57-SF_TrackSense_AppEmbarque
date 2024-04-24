@@ -50,7 +50,7 @@
 
 #else               // VSPI
 // ATTENTION : La PIN 25 TFT_BLK semble utilisée par le GPS selon le site officiel Lilygo. Mais elle ne semble pas utilisée par le GPS dans notre cas... Sert pour le mode veille !
-#define TFT_BLK -1  // LED back-light. "BLK" or "BLK"
+#define TFT_BLK 25  // LED back-light. "BLK" or "BLK"
 #define TFT_CS 5    // Chip select control pin. "CS" or "SS"
 #define TFT_DC 0    // Data Command control pin
 #define TFT_RST -1  // Reset pin (could connect to Arduino RESET pin) "RST" or "RST"
@@ -169,12 +169,11 @@
 #define BATTERY_VREF 1100   // ADC reference voltage, change this to 1100 if using ESP32 ADC
 
 /*----- Buttons -----*/
-#define PIN_BUTTON1 33
-#define PIN_BUTTON2 34
+#define PIN_BUTTON1 -1
+#define PIN_BUTTON2 -1
 #define BUTTON_LONG_PRESS_DURATION_MS 2000
 #define BUTTON_INACTIVITY_TIME_MS 300000 // 5 minutes
 // #define BUTTON_INACTIVITY_TIME_MS 5000 // 10 secondes
-/*----- Bouttons Tactiles -----*/
 
 /*----- BLE -----*/
 #define BLE_DEVICE_NAME "TrackSense"

@@ -1,8 +1,7 @@
 #include <Arduino.h>
 
-// #define DrawBitMap
-#define TouchTest
-// #define DrawCompass
+#define DrawBitMap
+// #define TouchTest
 
 #ifdef DrawBitMap
 /*******************************************************************************
@@ -21,11 +20,11 @@
  *     ESP32: https://github.com/lorol/arduino-esp32fs-plugin
  *
  *
- * LCD <=>  ESP32
+ * LCD <=>  ESP32   SPI
  * IOVCC    - 3.3V
  * VCC28    - 3.3V
  * GND      - GND
- * SDA      - 23
+ * MOSI     - 23
  * SCLK     - 18
  * RST      - 4
  * CS       - 15
@@ -34,13 +33,13 @@
  * LEDA     - 3.3V  //backlight +
  * LEDK     - GND   //backlight - (use an N-channel mosfet to control the backlight with any pin)
  *
- * TOUCH <=> ESP32
+ * TOUCH <=> ESP32   IIC
  * VCC    - 3.3V
  * GND    - GND
  * TSCL   - 22
  * TSDA   - 21
- * TRST   - 5
- * TINT   - 19
+ * TRST   - 33
+ * TINT   - 34
  *
  ******************************************************************************/
 #include <Arduino_GFX_Library.h>
@@ -48,8 +47,8 @@
 #include <SPIFFS.h>
 #include "JpegClass.h"
 
-CST816S touch(21, 22, 5, 19); // sda, scl, rst, irq
-Arduino_DataBus *bus = new Arduino_HWSPI(2 /* DC */, 15 /* CS */);
+CST816S touch(21, 22, 33, 34); // sda, scl, rst, irq
+Arduino_DataBus *bus = new Arduino_HWSPI(0 /* DC */, 05 /* CS */);
 
 Arduino_GFX *gfx = new Arduino_GC9A01(bus, 4, 0 /* rotation */, true /* IPS */);
 
@@ -123,7 +122,7 @@ void loop()
 
 #include <CST816S.h>
 
-CST816S touch(21, 22, 14, 15); // sda, scl, rst, irq
+CST816S touch(21, 22, 33, 34); // sda, scl, rst, irq
 
 void setup()
 {
@@ -154,10 +153,5 @@ void loop()
         Serial.println(touch.data.y);
     }
 }
-
-#endif
-
-#ifdef DrawCompass
-// TODO: utiliser un instance de ScreenGC9A01 pour draw un gauge au lieu de afficher un bitmap
 
 #endif

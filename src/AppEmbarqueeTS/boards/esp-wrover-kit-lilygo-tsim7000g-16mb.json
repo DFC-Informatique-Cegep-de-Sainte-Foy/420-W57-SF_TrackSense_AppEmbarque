@@ -6,8 +6,10 @@
     "core": "esp32",
     "extra_flags": "-DARDUINO_ESP32_DEV",
     "f_cpu": "240000000L",
-    "f_flash": "40000000L",
-    "flash_mode": "dio",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "partitions": "default_16MB.csv",
+    "filesystem": "littlefs",
     "hwids": [
       [
         "0x0403",
@@ -24,9 +26,10 @@
     "can"
   ],
   "debug": {
-    "default_tool": "ftdi",
+    "default_tool": "esp-prog",
     "onboard_tools": [
-      "ftdi"
+      "ftdi",
+      "esp-prog"
     ],
     "openocd_board": "esp32-wrover-kit-1.8v.cfg"
   },
