@@ -4,6 +4,7 @@
 #include "TSProperties.h"
 #include "Interfaces/IButton.h"
 #include "Modules/ButtonTactile.h"
+#include "Modules/ButtonTouch.h"
 #include <UUID.h>
 
 class ControlerButtons

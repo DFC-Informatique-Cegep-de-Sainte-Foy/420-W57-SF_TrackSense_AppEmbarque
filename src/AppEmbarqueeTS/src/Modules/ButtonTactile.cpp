@@ -4,7 +4,7 @@ ButtonTactile::ButtonTactile(const uint8_t pinButton, TSProperties *TSProperties
                                                                                     _lastStateButton(LOW),
                                                                                     _lastDateChange(0),
                                                                                     _lastStableStateButton(LOW),
-                                                                                    _durationDebounce(25),
+                                                                                    _durationDebounce(BUTTON_DURATIONDEBOUNCE),
                                                                                     _buttonState(LOW),
                                                                                     _TSProperties(TSProperties)
 {
@@ -24,7 +24,6 @@ int ButtonTactile::getFinalState()
     // 如果时间间隔大于阈限，则按键有效
     if (actualTime - this->_lastDateChange > this->_durationDebounce)
     {
-        // ajout pour test son bouton
         // 如果按键是从low到high的状态
         if (this->_lastStableStateButton == LOW && this->_buttonState == HIGH)
         {

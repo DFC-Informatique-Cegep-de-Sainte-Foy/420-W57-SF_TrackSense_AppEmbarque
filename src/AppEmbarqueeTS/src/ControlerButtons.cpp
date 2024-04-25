@@ -10,8 +10,12 @@ ControlerButtons::ControlerButtons(TSProperties *TSProperties) : _TSProperties(T
                                                                  _guidGenerator(nullptr),
                                                                  _lastDateChangementStateButtons(millis())
 {
-    this->_button1 = new ButtonTactile(PIN_BUTTON1, _TSProperties);
+    // this->_button1 = new ButtonTactile(PIN_BUTTON1, _TSProperties);
+
+    // TEST boutton tactile
+    this->_button1 = new ButtonTouch(_TSProperties);
     this->_button2 = new ButtonTactile(PIN_BUTTON2, _TSProperties);
+
     this->_guidGenerator = new UUID();
     this->_guidGenerator->setRandomMode();
 }
@@ -23,9 +27,6 @@ ControlerButtons::~ControlerButtons()
 
 void ControlerButtons::tick()
 {
-    // Serial.println("1---ButtonControl --> tick");
-    // this->_isPressedButton1 = this->_button1->getIsPressedButton();   // 0 == not pressed    // 1 == pressed
-    // this->_isPressedButton2 = this->_button2->getIsPressedButton();
 
     // Serial.println("1---Button-Affecter ");
     this->_finalStateButton1 = this->_button1->getFinalState(); // 0 == not pressed    // 1 == short press    // 2 == long press    // 3 == double short press
@@ -62,7 +63,8 @@ void ControlerButtons::tick()
     // Serial.println("3---Button-ControlState ");
 
     int controlerState = this->_finalStateButton1 + 4 * this->_finalStateButton2;
-
+    // Serial.print("Button Controle State -> ");
+    // Serial.println(controlerState);
     switch (controlerState)
     {
     case 0:
@@ -160,6 +162,83 @@ void ControlerButtons::tick()
         DEBUG_STRING_LN(DEBUG_TS_BUTTONS, "BUTTONS ERROR !!!");
         break;
     }
+
+    // pseudocode
+    /*
+        1 - prendre gesture de touch
+        2 - verifier l'etat actuel de TS
+        3 - MAJ l'etat de TS selon l'etat actuel et gesture de touch
+--------------------------------------------------------------------------
+    1)  this->_finalStateButton1 = this->_button1->getFinalState();
+
+    2)  Ecran 1
+        if this-> _TS_etat_Actuel == StandBy
+            if _finalStateButton1 == "SWIPE RIGHT"   →
+                then this-> _TS_etat_Actuel = Liste_Trajets
+                then this-> _TS_Ecran_Active = 0
+
+            else if _finalStateButton1 == "SWIPE LEFT"   ←
+                then this-> _TS_etat_Actuel = Statistic_Trajet
+                then this-> _TS_Ecran_Active = 0
+
+            else if _finalStateButton1 == "SWIPE UP"   ↑
+                then this-> _TS_etat_Actuel = Statistic_Trajet
+                then this->  _TS_Ecran_Active ++
+
+            else if _finalStateButton1 == "SWIPE DOWN"  ↓
+                then this-> _TS_etat_Actuel = Statistic_Trajet
+                then this-> _TS_Ecran_Active --
+        Ecran 2
+        if this-> _TS_etat_Actuel == Liste_Trajet
+            if _finalStateButton1 == "SWIPE RIGHT"   →
+                then this-> _TS_etat_Actuel = Statistic_Trajet
+                then this-> _TS_Ecran_Active = 0
+
+            else if _finalStateButton1 == "SWIPE LEFT"   ←
+                then this-> _TS_etat_Actuel = Stand_By
+                then this-> _TS_Ecran_Active = 0
+
+            else if _finalStateButton1 == "SWIPE UP"   ↑
+                then this-> _TS_etat_Actuel = Liste_Trajet
+                then this->  _TS_Ecran_Active ++
+
+            else if _finalStateButton1 == "SWIPE DOWN"  ↓
+                then this-> _TS_etat_Actuel = Liste_Trajet
+                then this-> _TS_Ecran_Active --
+
+            else if _finalStateButton1 == "SINGLE CLICK"
+                then this-> _TS_etat_Actuel = Demarrer
+
+        Ecran 3
+        if this-> _TS_etat_Actuel == Demarrer
+            else if _finalStateButton1 == "SWIPE UP"   ↑
+                then this-> _TS_etat_Actuel = Demarrer
+                then this->  _TS_Ecran_Active ++
+
+            else if _finalStateButton1 == "SWIPE DOWN"  ↓
+                then this-> _TS_etat_Actuel = Demarrer
+                then this-> _TS_Ecran_Active --
+
+            else if _finalStateButton1 == "SINGLE CLICK" sur "STOP"
+                then this-> _TS_etat_Actuel = Statistic_Trajets
+
+            else if _finalStateButton1 == "SINGLE CLICK" sur "Pause"
+                then this-> _TS_etat_Actuel = Pause
+                then this-> _TS_Ecran_Actuel = Pause  ??? rajouter un Bouton ou rajouter un ecran
+
+            else if _finalStateButton1 == "SINGLE CLICK" sur "Re-Demarrer"
+                then this-> _TS_etat_Actuel = Demarrer
+
+        Ecran 4
+        if this-> _TS_etat_Actuel == Statistic_Trajet
+            if _finalStateButton1 == "SWIPE RIGHT"   →
+                then this-> _TS_etat_Actuel = Stand By
+                then this-> _TS_Ecran_Active = 0
+
+            else if _finalStateButton1 == "SWIPE LEFT"   ←
+                then this-> _TS_etat_Actuel = Liste_Trajets
+                then this-> _TS_Ecran_Active = 0
+    */
 }
 
 /*

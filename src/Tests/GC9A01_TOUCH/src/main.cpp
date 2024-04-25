@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
-#define DrawBitMap
-// #define TouchTest
+// #define DrawBitMap
+#define TouchTest
 
 #ifdef DrawBitMap
 /*******************************************************************************

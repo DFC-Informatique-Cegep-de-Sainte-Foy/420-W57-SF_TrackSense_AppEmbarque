@@ -40,14 +40,14 @@ void loop()
 void loopCore0(void *pvParameters); // forward declaration of the loopCore0 function
 Program *program = nullptr;
 
-CST816S touch(21, 22, 33, 34); // sda(21), scl(22), rst(33), irq(34)  works
+// CST816S touch(21, 22, 33, 34); // sda(21), scl(22), rst(33), irq(34)  works
 
 void setup()
 {
     Serial.end();
     Serial.begin(115200);
     // Test touch
-    touch.begin();
+    // touch.begin();
     program = new Program();
 
     //???
@@ -130,18 +130,18 @@ void loop()
 {
     program->executeCore1();
     // test touch
-    if (touch.available())
-    {
-        Serial.print(touch.gesture());
-        Serial.print("\t");
-        Serial.print(touch.data.points);
-        Serial.print("\t");
-        Serial.print(touch.data.event);
-        Serial.print("\t");
-        Serial.print(touch.data.x);
-        Serial.print("\t");
-        Serial.println(touch.data.y);
-    }
+    // if (touch.available())
+    // {
+    //     Serial.print(touch.gesture());
+    //     Serial.print("\t");
+    //     Serial.print(touch.data.points);
+    //     Serial.print("\t");
+    //     Serial.print(touch.data.event);
+    //     Serial.print("\t");
+    //     Serial.print(touch.data.x);
+    //     Serial.print("\t");
+    //     Serial.println(touch.data.y);
+    // }
 }
 
 void loopCore0(void *pvParameters)

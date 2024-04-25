@@ -152,8 +152,10 @@
 #define SerialAT Serial1 // HardwareSerial Serial1(1);
 
 /*----- I2C : Accelerometer, Gyroscope, Compass, Temperature -----*/
-#define PIN_GY87_SDA 21
-#define PIN_GY87_SCL 22
+#define PIN_SDA 21
+#define PIN_SCL 22
+#define PIN_CST816_RST 33
+#define PIN_CST816_INT 34
 
 /*----- Buzzer -----*/
 #define PIN_BUZZER 32
@@ -173,6 +175,8 @@
 #define PIN_BUTTON2 -1
 #define BUTTON_LONG_PRESS_DURATION_MS 2000
 #define BUTTON_INACTIVITY_TIME_MS 300000 // 5 minutes
+#define BUTTON_DURATIONDEBOUNCE 200
+
 // #define BUTTON_INACTIVITY_TIME_MS 5000 // 10 secondes
 
 /*----- BLE -----*/
