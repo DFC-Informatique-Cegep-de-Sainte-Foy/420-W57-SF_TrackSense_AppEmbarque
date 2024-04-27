@@ -4,7 +4,9 @@
 #ifdef Address_detect
 #include <Adafruit_I2CDevice.h>
 
-Adafruit_I2CDevice i2c_dev = Adafruit_I2CDevice(0x68);
+Adafruit_I2CDevice i2c_dev = Adafruit_I2CDevice(0x15);
+// CST816S 0x15
+// mpu6050 0X65
 
 void setup()
 {

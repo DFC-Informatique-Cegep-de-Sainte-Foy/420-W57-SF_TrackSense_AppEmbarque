@@ -1,4 +1,5 @@
 #include "ControlerButtons.h"
+#define ECRAN_TACTICL
 
 ControlerButtons::ControlerButtons(TSProperties *TSProperties) : _TSProperties(TSProperties),
                                                                  _button1(nullptr),
@@ -8,7 +9,8 @@ ControlerButtons::ControlerButtons(TSProperties *TSProperties) : _TSProperties(T
                                                                  _finalStateButton1(0),
                                                                  _finalStateButton2(0),
                                                                  _guidGenerator(nullptr),
-                                                                 _lastDateChangementStateButtons(millis())
+                                                                 _lastDateChangementStateButtons(millis()),
+                                                                 _finalGesture("NONE")
 {
     // this->_button1 = new ButtonTactile(PIN_BUTTON1, _TSProperties);
 
@@ -27,6 +29,7 @@ ControlerButtons::~ControlerButtons()
 
 void ControlerButtons::tick()
 {
+#ifdef DEUX_BOUTON
 
     // Serial.println("1---Button-Affecter ");
     this->_finalStateButton1 = this->_button1->getFinalState(); // 0 == not pressed    // 1 == short press    // 2 == long press    // 3 == double short press
@@ -162,6 +165,141 @@ void ControlerButtons::tick()
         DEBUG_STRING_LN(DEBUG_TS_BUTTONS, "BUTTONS ERROR !!!");
         break;
     }
+#endif
+
+#ifdef ECRAN_TACTICL
+
+    this->_finalGesture = this->_button1->getTouchGesture();
+    long dateActuelle = millis();
+    // Reveiller
+    if (this->_finalGesture != "NONE")
+    {
+        this->_lastDateChangementStateButtons = dateActuelle;
+        this->_TSProperties->PropertiesTS.IsOnStanby = false;
+        digitalWrite(TFT_BLK, HIGH); // Backlight on
+    }
+    if (this->_TSProperties->PropertiesScreen.etat_Actuel == "STAND_BY")
+    {
+        if (this->_finalGesture == "SWIPE LEFT") // entrer dans ecran Liste_Trajet
+        {
+            this->_TSProperties->PropertiesScreen.etat_Actuel = "Liste_Trajet";
+            this->_TSProperties->PropertiesScreen.ActiveScreen = 0; // afficher premier sous-ecran
+            Serial.println("2 Liste");
+        }
+        else if (this->_finalGesture == "SWIPE RIGHT") // entrer dans ecran Statistic_Trajet
+        {
+            this->_TSProperties->PropertiesScreen.etat_Actuel = "Statistic_Trajet";
+            this->_TSProperties->PropertiesScreen.ActiveScreen = 0; // afficher premier sous-ecran
+            Serial.println("2 Statistic");
+        }
+        else if (this->_finalGesture == "SWIPE UP")
+        {
+            this->_TSProperties->PropertiesScreen.ActiveScreen++; // afficher prochain sous-ecran
+            Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
+        }
+        else if (this->_finalGesture == "SWIPE DOWN")
+        {
+            this->_TSProperties->PropertiesScreen.ActiveScreen--; // afficher dernier sous-ecran
+            Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
+        }
+    }
+    else if (this->_TSProperties->PropertiesScreen.etat_Actuel == "Liste_Trajet")
+    {
+        if (this->_finalGesture == "SWIPE LEFT")
+        {
+            this->_TSProperties->PropertiesScreen.etat_Actuel = "Statistic_Trajet";
+            this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            Serial.println("2 Statistic");
+        }
+        else if (this->_finalGesture == "SWIPE RIGHT")
+        {
+            this->_TSProperties->PropertiesScreen.etat_Actuel = "STAND_BY";
+            this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            Serial.println("2 Stand By");
+        }
+        else if (this->_finalGesture == "SWIPE UP")
+        {
+            this->_TSProperties->PropertiesScreen.ActiveScreen++;
+            Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
+        }
+        else if (this->_finalGesture == "SWIPE DOWN")
+        {
+            this->_TSProperties->PropertiesScreen.ActiveScreen--;
+            Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
+        }
+        else if (this->_finalGesture == "SINGLE CLICK") // appuyer sur un Trajet
+        {
+            this->_TSProperties->PropertiesScreen.etat_Actuel = "DEMARRER"; // entrer dans ecran de DEMARRER
+            this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            Serial.println("2 Demarrer");
+        }
+    }
+    else if (this->_TSProperties->PropertiesScreen.etat_Actuel == "Demarrer")
+    {
+        if (this->_finalGesture == "SWIPE UP")
+        {
+            this->_TSProperties->PropertiesScreen.ActiveScreen++;
+            Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
+        }
+        else if (this->_finalGesture == "SWIPE DOWN")
+        {
+            this->_TSProperties->PropertiesScreen.ActiveScreen--;
+            Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
+        }
+        else if (this->_finalGesture == "SINGLE CLICK") // appuyer sur un Bouton STOP ou Pause ou Re-Damarrer
+        {
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen == 0) // appuyer sur ecran Demarrer
+            {
+                // STOP
+                if (this->_button1->getTouchPosition().first >= 150 && this->_button1->getTouchPosition().second <= 119)
+                {
+                    this->_TSProperties->PropertiesScreen.etat_Actuel = "Statistic_Trajet"; // entrer dans ecran de DEMARRER
+                    this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+                    Serial.println("STOP -> 2 Statistic");
+                }
+                // PAUSE
+                else if (this->_button1->getTouchPosition().first >= 150 && this->_button1->getTouchPosition().second >= 121)
+                {
+                    this->_TSProperties->PropertiesScreen.ActiveScreen = 1;
+                    Serial.println("Pause -> 2 sous Ecran 1");
+                }
+            }
+            else if (this->_TSProperties->PropertiesScreen.ActiveScreen == 1) // appuyer sur ecran Re-Demarrer
+            {
+                // Re-Demarrer
+                if (this->_button1->getTouchPosition().first >= 150)
+                {
+                    this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+                    Serial.println("Re-Demarrer -> 2 sous Ecran 0");
+                }
+            }
+        }
+    }
+    else if (this->_TSProperties->PropertiesScreen.etat_Actuel == "Statistic_Trajet")
+    {
+        if (this->_finalGesture == "SWIPE LEFT")
+        {
+            this->_TSProperties->PropertiesScreen.etat_Actuel = "STAND_BY";
+            this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            Serial.println("2 Stand By");
+        }
+        else if (this->_finalGesture == "SWIPE RIGHT")
+        {
+            this->_TSProperties->PropertiesScreen.etat_Actuel = "Liste_Trajet";
+            this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            Serial.println("2 Liste Trajet");
+        }
+        else if (this->_finalGesture == "SWIPE UP")
+        {
+            this->_TSProperties->PropertiesScreen.ActiveScreen++;
+            Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
+        }
+        else if (this->_finalGesture == "SWIPE DOWN")
+        {
+            this->_TSProperties->PropertiesScreen.ActiveScreen--;
+            Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
+        }
+    }
 
     // pseudocode
     /*
@@ -182,11 +320,11 @@ void ControlerButtons::tick()
                 then this-> _TS_Ecran_Active = 0
 
             else if _finalStateButton1 == "SWIPE UP"   ↑
-                then this-> _TS_etat_Actuel = Statistic_Trajet
+                then this-> _TS_etat_Actuel = StandBy
                 then this->  _TS_Ecran_Active ++
 
             else if _finalStateButton1 == "SWIPE DOWN"  ↓
-                then this-> _TS_etat_Actuel = Statistic_Trajet
+                then this-> _TS_etat_Actuel = StandBy
                 then this-> _TS_Ecran_Active --
         Ecran 2
         if this-> _TS_etat_Actuel == Liste_Trajet
@@ -239,6 +377,7 @@ void ControlerButtons::tick()
                 then this-> _TS_etat_Actuel = Liste_Trajets
                 then this-> _TS_Ecran_Active = 0
     */
+#endif
 }
 
 /*

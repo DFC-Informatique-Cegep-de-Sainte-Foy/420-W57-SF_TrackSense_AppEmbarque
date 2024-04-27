@@ -13,7 +13,7 @@ Program::Program() : _TSProperties(nullptr),
                      _controlerScreen(nullptr),
                      _gy87(nullptr)
 {
-    this->_TSProperties = new TSProperties();
+    this->_TSProperties = new TSProperties(); //
     this->_controlerScreen = new ControlerScreen(this->_TSProperties);
     this->_controlerButtons = new ControlerButtons(this->_TSProperties);
     this->_ble = new BLE(this->_TSProperties);
@@ -27,10 +27,12 @@ Program::Program() : _TSProperties(nullptr),
     this->_battery = new Battery(this->_TSProperties);
 
     this->_TSProperties->PropertiesTS.IsInitializingTS = false;
-    this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
 
     this->_gy87 = new GY87_Adafruit(this->_TSProperties);
     this->_controlerButtons->resetLastDateChangementStateButtons();
+    this->_TSProperties->PropertiesScreen.etat_Actuel = "STAND_BY"; // Ecran est pret
+    // this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
+    this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
 }
 
 Program::~Program()

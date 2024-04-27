@@ -26,7 +26,6 @@ void TSProperties::initProperties()
     this->PropertiesTS.IsInitializedGSM = true;
     this->PropertiesTS.IsOnStanby = false;
     this->PropertiesTS.IsFrenchMode = true; // À récupérer dans la mémoire avec les paramètres du cellulaire un jour
-
     // Battery
     this->PropertiesBattery.BatteryLevelPourcentage = 0;
 
@@ -45,7 +44,8 @@ void TSProperties::initProperties()
     this->PropertiesSDCard.IsSDCardConnected = false;
 
     // Screen
-    this->PropertiesScreen.ActiveScreen = INIT_TS_PAGE_ID;
+    this->PropertiesScreen.etat_Actuel = "INITIALISATION";
+    this->PropertiesScreen.ActiveScreen = INIT_TS_PAGE_ID; //-1
     this->PropertiesScreen.IsDarkMode = true;
     this->PropertiesScreen.ScreenRotation = atoi(ControlerConfigurationFile::getValue(FIELD_SCREEN_ROTATION).c_str());
     this->PropertiesScreen.IsScreenRotationChanged = false;

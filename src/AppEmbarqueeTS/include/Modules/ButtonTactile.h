@@ -4,12 +4,10 @@
 #include "Interfaces/IButton.h"
 #include "Configurations.h"
 
-
-
 class ButtonTactile : public IButton
 {
 private:
-    TSProperties* _TSProperties;
+    TSProperties *_TSProperties;
     uint8_t _pinButton;
     int _lastStateButton;
     long _lastDateChange;
@@ -18,9 +16,10 @@ private:
     int _buttonState;
 
 public:
-    ButtonTactile(const uint8_t pinButton, TSProperties* TSProperties);
+    ButtonTactile(const uint8_t pinButton, TSProperties *TSProperties);
     ~ButtonTactile();
 
-    int getFinalState() override;    // 0 == not pressed    // 1 == short press    // 2 == long press    // 3 == double short press
-    // bool getIsPressedButton() override;    // 0 == not pressed    // 1 == pressed
+    int getFinalState() override; // 0 == not pressed    // 1 == short press    // 2 == long press    // 3 == double short press
+    String getTouchGesture() override;
+    std::pair<int, int> getTouchPosition() override;
 };

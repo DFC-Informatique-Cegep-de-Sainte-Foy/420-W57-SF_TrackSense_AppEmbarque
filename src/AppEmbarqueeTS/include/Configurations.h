@@ -50,7 +50,7 @@
 
 #else               // VSPI
 // ATTENTION : La PIN 25 TFT_BLK semble utilisée par le GPS selon le site officiel Lilygo. Mais elle ne semble pas utilisée par le GPS dans notre cas... Sert pour le mode veille !
-#define TFT_BLK 25  // LED back-light. "BLK" or "BLK"
+#define TFT_BLK -1  // LED back-light. "BLK" or "BLK"
 #define TFT_CS 5    // Chip select control pin. "CS" or "SS"
 #define TFT_DC 0    // Data Command control pin
 #define TFT_RST -1  // Reset pin (could connect to Arduino RESET pin) "RST" or "RST"

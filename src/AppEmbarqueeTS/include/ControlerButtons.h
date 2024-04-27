@@ -22,6 +22,8 @@ private:
     long _lastDateChangementStateButtons;
     int _finalStateButton1;
     int _finalStateButton2;
+    String _finalGesture;
+    std::pair<int, int> position;
 
     void changePageUp();
     void changePageDown();

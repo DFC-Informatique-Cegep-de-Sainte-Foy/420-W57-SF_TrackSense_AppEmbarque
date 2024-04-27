@@ -77,7 +77,15 @@ int ButtonTactile::getFinalState()
     return finalState;
 }
 
+String ButtonTactile::getTouchGesture()
+{
+    return String("NONE");
+}
 // bool ButtonTactile::getIsPressedButton()
+std::pair<int, int> ButtonTactile::getTouchPosition()
+{
+    return std::pair<int, int>(-1, -1);
+}
 // {
 //     return this->_buttonState == HIGH;
 // }

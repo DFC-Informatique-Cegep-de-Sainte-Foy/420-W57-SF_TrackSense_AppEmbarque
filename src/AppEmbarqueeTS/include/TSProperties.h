@@ -185,6 +185,7 @@ public:
             -2 : Page Fin Trajet
             -3 : Page Erreur
         */
+        String etat_Actuel;
         int ActiveScreen; // Seul paramètre modifier par le controlerScreen
         bool IsDarkMode;
 

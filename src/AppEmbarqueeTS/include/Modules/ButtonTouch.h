@@ -11,9 +11,12 @@ private:
     CST816S *_touch;
     long _lastDateChange;
     uint16_t _durationDebounce;
+    int _Xt, _Yt;
 
 public:
     ButtonTouch(TSProperties *);
     ~ButtonTouch();
+    String getTouchGesture() override;
     int getFinalState() override;
+    std::pair<int, int> getTouchPosition() override;
 };
