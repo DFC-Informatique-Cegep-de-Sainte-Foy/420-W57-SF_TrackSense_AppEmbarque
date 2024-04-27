@@ -56,6 +56,7 @@ public:
         -2 : Page Fin Trajet
         -3 : Page Erreur
     */
+
     void tick() override;
     void drawOnScreen() override;
     float calculerDirectionDegree();

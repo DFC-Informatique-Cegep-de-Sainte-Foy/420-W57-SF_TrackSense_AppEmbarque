@@ -22,4 +22,6 @@ private:
     virtual void drawRideStatisticsPage() = 0;
     virtual void drawEndingRidePage() = 0;
     virtual void drawErrorPage() = 0;
+
+    // API
 };

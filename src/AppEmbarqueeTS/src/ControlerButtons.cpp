@@ -1,5 +1,6 @@
 #include "ControlerButtons.h"
-#define ECRAN_TACTICL
+#define ECRAN_TACTILE
+// #define DEUX_BOUTON
 
 ControlerButtons::ControlerButtons(TSProperties *TSProperties) : _TSProperties(TSProperties),
                                                                  _button1(nullptr),
@@ -26,7 +27,19 @@ ControlerButtons::~ControlerButtons()
 {
     ;
 }
-
+/// @brief Changer le contenu affiché en effectuant différents gestes sur l'écran tactile :
+/// dans la version actuelle, le TS dispose de quatre menus principaux d'écran différents :
+///     l'écran Stand By,
+///     l'écran Liste Trajet,
+///     l'écran de démarrage et
+///     l'écran Statistic Trajet ;
+/// faites glisser vers la gauche ou la droite pour changer de menu principal d'écran.
+/// Sous chaque menu principal d'écran, faites glisser vers le haut ou le bas
+/// pour modifier l'affichage du sous-menu correspondant :
+///     sous Stand By, il y a trois sous-écrans Compass-Direction-Watch ;
+///     sous Liste Trajet, il y a cinq sous-écrans affichant différents trajets ;
+///     sous Demarrer, il y a trois sous-écrans Direction-Statistic-Pause/STOP-Re-Demarrer ;
+///     sous Statistic, il y a des écrans statistiques pour chaque trajet effectué et un écran statistique principal.
 void ControlerButtons::tick()
 {
 #ifdef DEUX_BOUTON
@@ -167,7 +180,7 @@ void ControlerButtons::tick()
     }
 #endif
 
-#ifdef ECRAN_TACTICL
+#ifdef ECRAN_TACTILE
 
     this->_finalGesture = this->_button1->getTouchGesture();
     long dateActuelle = millis();
@@ -178,6 +191,7 @@ void ControlerButtons::tick()
         this->_TSProperties->PropertiesTS.IsOnStanby = false;
         digitalWrite(TFT_BLK, HIGH); // Backlight on
     }
+    // Ecran Stand By : Stand By -> Compass -> Direction Home -> Watch
     if (this->_TSProperties->PropertiesScreen.etat_Actuel == "STAND_BY")
     {
         if (this->_finalGesture == "SWIPE LEFT") // entrer dans ecran Liste_Trajet
@@ -195,14 +209,23 @@ void ControlerButtons::tick()
         else if (this->_finalGesture == "SWIPE UP")
         {
             this->_TSProperties->PropertiesScreen.ActiveScreen++; // afficher prochain sous-ecran
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen == 4)
+            {
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            }
             Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
         }
         else if (this->_finalGesture == "SWIPE DOWN")
         {
             this->_TSProperties->PropertiesScreen.ActiveScreen--; // afficher dernier sous-ecran
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen == -1)
+            {
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 3;
+            }
             Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
         }
     }
+    // Ecran Liste_Trajet : Trajet 1 -> Trajet 2 -> Trajet 3 ...
     else if (this->_TSProperties->PropertiesScreen.etat_Actuel == "Liste_Trajet")
     {
         if (this->_finalGesture == "SWIPE LEFT")
@@ -220,61 +243,97 @@ void ControlerButtons::tick()
         else if (this->_finalGesture == "SWIPE UP")
         {
             this->_TSProperties->PropertiesScreen.ActiveScreen++;
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen == 5)
+            {
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            }
             Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
         }
         else if (this->_finalGesture == "SWIPE DOWN")
         {
             this->_TSProperties->PropertiesScreen.ActiveScreen--;
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen == -1)
+            {
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 4;
+            }
             Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
         }
         else if (this->_finalGesture == "SINGLE CLICK") // appuyer sur un Trajet
         {
             this->_TSProperties->PropertiesScreen.etat_Actuel = "DEMARRER"; // entrer dans ecran de DEMARRER
             this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            // Trajet Start
+            this->startRide();
             Serial.println("2 Demarrer");
         }
     }
+    // Ecran Demarrer : Demarrer Principal -> Compass -> Direction -> Statistic -> Pause/Stop -> Re-Demarrer
     else if (this->_TSProperties->PropertiesScreen.etat_Actuel == "Demarrer")
     {
         if (this->_finalGesture == "SWIPE UP")
         {
             this->_TSProperties->PropertiesScreen.ActiveScreen++;
+            // PAS DE PAUSE, PAS ECRAN RE-DEMARRER
+            if (!this->_TSProperties->PropertiesCurrentRide.IsRidePaused && this->_TSProperties->PropertiesScreen.ActiveScreen == 5)
+            {
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            }
+
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen == 6)
+            {
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            }
             Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
         }
         else if (this->_finalGesture == "SWIPE DOWN")
         {
             this->_TSProperties->PropertiesScreen.ActiveScreen--;
+            // PAS DE PAUSE, PAS ECRAN RE-DEMARRER
+            if (!this->_TSProperties->PropertiesCurrentRide.IsRidePaused && this->_TSProperties->PropertiesScreen.ActiveScreen == 5)
+            {
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            }
+
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen == -1)
+            {
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 5;
+            }
+
             Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
         }
         else if (this->_finalGesture == "SINGLE CLICK") // appuyer sur un Bouton STOP ou Pause ou Re-Damarrer
         {
-            if (this->_TSProperties->PropertiesScreen.ActiveScreen == 0) // appuyer sur ecran Demarrer
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen == 4) // appuyer sur ecran Pause/Stop
             {
                 // STOP
-                if (this->_button1->getTouchPosition().first >= 150 && this->_button1->getTouchPosition().second <= 119)
+                if (this->_button1->getTouchPosition().first >= 150 && this->_button1->getTouchPosition().second <= 119) // Bouton en bas a gauche pour STOP
                 {
                     this->_TSProperties->PropertiesScreen.etat_Actuel = "Statistic_Trajet"; // entrer dans ecran de DEMARRER
                     this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+                    this->finishRide();
                     Serial.println("STOP -> 2 Statistic");
                 }
                 // PAUSE
-                else if (this->_button1->getTouchPosition().first >= 150 && this->_button1->getTouchPosition().second >= 121)
+                else if (this->_button1->getTouchPosition().first >= 150 && this->_button1->getTouchPosition().second >= 121) // Bouton en bas a droite pour Pause
                 {
-                    this->_TSProperties->PropertiesScreen.ActiveScreen = 1;
-                    Serial.println("Pause -> 2 sous Ecran 1");
+                    this->_TSProperties->PropertiesScreen.ActiveScreen = 5;
+                    this->pauseRide();
+                    Serial.println("Pause -> 2 sous Ecran Re-Demarrer");
                 }
             }
-            else if (this->_TSProperties->PropertiesScreen.ActiveScreen == 1) // appuyer sur ecran Re-Demarrer
+            else if (this->_TSProperties->PropertiesScreen.ActiveScreen == 5) // appuyer sur ecran Re-Demarrer
             {
                 // Re-Demarrer
-                if (this->_button1->getTouchPosition().first >= 150)
+                if (this->_button1->getTouchPosition().first >= 150) // bouton en bas pour Re-Demarrer
                 {
                     this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
-                    Serial.println("Re-Demarrer -> 2 sous Ecran 0");
+                    this->restartRide();
+                    Serial.println("Re-Demarrer -> 2 sous Ecran Principal Demarrer");
                 }
             }
         }
     }
+    // Ecran Statistic
     else if (this->_TSProperties->PropertiesScreen.etat_Actuel == "Statistic_Trajet")
     {
         if (this->_finalGesture == "SWIPE LEFT")
@@ -292,11 +351,19 @@ void ControlerButtons::tick()
         else if (this->_finalGesture == "SWIPE UP")
         {
             this->_TSProperties->PropertiesScreen.ActiveScreen++;
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen == 6)
+            {
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+            }
             Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
         }
         else if (this->_finalGesture == "SWIPE DOWN")
         {
             this->_TSProperties->PropertiesScreen.ActiveScreen--;
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen == -1)
+            {
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 5;
+            }
             Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
         }
     }

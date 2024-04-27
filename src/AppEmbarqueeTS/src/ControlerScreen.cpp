@@ -139,6 +139,79 @@ void ControlerScreen::tick()
         // this->_screen->drawOnScreen();   // We use void ControlerScreen::drawOnScreen() on Core 0 to draw on screen
         xSemaphoreGive(_xMutex); // release the mutex
     }
+
+    /*
+        pseudocode - Affiche d'ecran
+        if TAKE XSemaphore
+            TODO:
+                1 - re-fresh Ecran
+                2 - set Rotation
+                3 - Affiche differents ecran :
+
+                    if _TSProperties->PropertiesScreen.etat_Actuel == Initialisation
+                        then Affiche Ecran Initialisation
+
+                    if _TSProperties->PropertiesScreen.etat_Actuel == Stand By
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 0
+                        then Affiche Ecran Stand By Principal
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 1
+                        then Affiche Ecran COMPASS
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 2
+                        then Affiche Ecran Direction Home
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 3
+                        then Affiche Ecran WATCH
+
+                    if _TSProperties->PropertiesScreen.etat_Actuel == Liste Trajet
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 0
+                        then Affiche Ecran Trajet 1
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 1
+                        then Affiche Ecran Trajet 2
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 2
+                        then Affiche Ecran Trajet 3
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 3
+                        then Affiche Ecran Trajet 4
+
+                    if _TSProperties->PropertiesScreen.etat_Actuel == Demarrer
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 0
+                        then Affiche Ecran DEMARRER PRINCIPAL
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 1
+                        then Affiche Ecran COMPASS
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 2
+                        then Affiche Ecran DIRECTION
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 3
+                        then Affiche Ecran STATISTIC
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 4
+                        then Affiche Ecran PAUSE/STOP
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 5
+                        then Affiche Ecran RE-DEMARRER
+
+                    if _TSProperties->PropertiesScreen.etat_Actuel == Statistic
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 0
+                        then Affiche Ecran STATISTIC PRINCIPAL
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 1
+                        then Affiche Ecran STATISTIC-TRAJET 1
+
+                        if _TSProperties->PropertiesScreen.ActiveScreen == 2
+                        then Affiche Ecran STATISTIC-TRAJET 2
+
+                    then Affiche Ecran Initialisation
+
+            GIVE XSemaphore
+        else
+            DO Nothing
+    */
 }
 
 void ControlerScreen::drawOnScreen()
