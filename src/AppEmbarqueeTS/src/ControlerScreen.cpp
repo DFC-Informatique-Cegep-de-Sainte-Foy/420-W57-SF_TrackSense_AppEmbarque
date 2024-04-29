@@ -1,9 +1,10 @@
 #include "ControlerScreen.h"
 
-ControlerScreen::ControlerScreen(TSProperties *TSProperties) : _TSProperties(TSProperties),
-                                                               _screen(nullptr),
-                                                               _timeToDisplayEndingRidePageMS(10000),
-                                                               _xMutex(nullptr)
+ControlerScreen::ControlerScreen(TSProperties *TSProperties, StringQueue *trajetsSD) : _TSProperties(TSProperties),
+                                                                                       _screen(nullptr),
+                                                                                       _timeToDisplayEndingRidePageMS(10000),
+                                                                                       _xMutex(nullptr),
+                                                                                       _trajetsSauvgardeSD(trajetsSD)
 {
     this->_screen = new ScreenGC9A01(this->_TSProperties);
     this->_xMutex = xSemaphoreCreateMutex(); // Create a mutex object
@@ -42,8 +43,11 @@ ControlerScreen::~ControlerScreen()
 */
 void ControlerScreen::tick()
 {
+#define BOUTON_TACTIL
+    // #define Deux_BOUTON
     // Serial.println("4---ScreenControl --> tick");
 
+#ifdef Deux_BOUTON
     // if (xSemaphoreTake(_xMutex, portMAX_DELAY))
     if (xSemaphoreTake(_xMutex, (150 * portTICK_PERIOD_MS)))
     {
@@ -139,7 +143,134 @@ void ControlerScreen::tick()
         // this->_screen->drawOnScreen();   // We use void ControlerScreen::drawOnScreen() on Core 0 to draw on screen
         xSemaphoreGive(_xMutex); // release the mutex
     }
+#endif
+#ifdef BOUTON_TACTIL
+    if (xSemaphoreTake(_xMutex, (150 * portTICK_PERIOD_MS)))
+    {
+        // 1
+        this->_screen->drawBackgroundColor(); // Reset Canvas
+        //
+        DEBUG_STRING_LN(DEBUG_TS_SCREEN, "Screen Rotation : " + String(this->_TSProperties->PropertiesScreen.ScreenRotation));
+        // 2
+        this->_screen->setRotation(this->_TSProperties->PropertiesScreen.ScreenRotation);
+        // 3
+        String menu = this->_TSProperties->PropertiesScreen.etat_Actuel;
+        int sousMenu = this->_TSProperties->PropertiesScreen.ActiveScreen;
 
+        // IsOnStandby = inactif then eteindre l'ecran
+        if (this->_TSProperties->PropertiesTS.IsOnStanby)
+        {
+            DEBUG_STRING_LN(DEBUG_TS_SCREEN, "IsOnStanby");
+            digitalWrite(TFT_BLK, LOW); // Backlight off
+        }
+        else // allumer l'ecran
+        {
+
+            if (menu == "INITIALISATION")
+            {
+                // Ecran Initialisation
+                this->drawInitTSPage();
+            }
+            if (menu == "STAND_BY")
+            {
+                if (sousMenu == 0)
+                {
+                    // Ecran Stand By Principal
+                    this->drawHomePage();
+                }
+                else if (sousMenu == 1)
+                {
+                    //  Ecran COMPASS
+                    this->drawCompassPage();
+                }
+                else if (sousMenu == 2)
+                {
+                    //  Ecran Home_Direction
+                    this->drawRideDirectionPage();
+                }
+                else if (sousMenu == 3)
+                {
+                    //  Ecran Watch
+                    this->drawWatch();
+                }
+            }
+            if (menu == "Liste_Trajet")
+            {
+                this->drawTrajets(sousMenu);
+                // if (sousMenu == 0)
+                // {
+                //     // Ecran Trajet 1
+                // }
+                // else if (sousMenu == 1)
+                // {
+                //     // Ecran Trajet 2
+                // }
+                // else if (sousMenu == 2)
+                // {
+                //     // Ecran Trajet 3
+                // }
+                // else if (sousMenu == 3)
+                // {
+                //     // Ecran Trajet 4
+                // }
+            }
+            if (menu == "Demarrer")
+            {
+                if (sousMenu == 0)
+                {
+                    // Ecran DEMARRER PRINCIPAL
+                    this->drawDemarrerPrincipal();
+                }
+                else if (sousMenu == 1)
+                {
+                    // Ecran COMPASS
+                    this->drawCompassPage();
+                }
+                else if (sousMenu == 2)
+                {
+                    // Ecran DIRECTION
+                    this->drawRideDirectionPage();
+                }
+                else if (sousMenu == 3)
+                {
+                    //  Ecran STATISTIC
+                    this->drawRideStatisticsPage();
+                }
+                else if (sousMenu == 4)
+                {
+                    // PAUSE/STOP Ecran RE-DEMARRER
+                    this->drawPauseStop();
+                }
+                else if (sousMenu == 5)
+                {
+                    //  Ecran RE-DEMARRER
+                    this->drawReDemarrer();
+                }
+            }
+            if (menu == "Statistic_Trajet")
+            {
+                if (sousMenu == 0)
+                {
+                    // Ecran STATISTIC PRINCIPAL
+                    this->drawGlobalStatisticsPage();
+                }
+                else
+                {
+                    this->drawStatisticRide(sousMenu);
+                }
+
+                // else if (sousMenu == 1)
+                // {
+                //     // Ecran STATISTIC-TRAJET 1
+                // }
+                // else if (sousMenu == 2)
+                // {
+                //     // Ecran STATISTIC-TRAJET 1
+                // }
+            }
+        }
+        xSemaphoreGive(_xMutex); // release the mutex
+    }
     /*
         pseudocode - Affiche d'ecran
         if TAKE XSemaphore
@@ -212,6 +343,8 @@ void ControlerScreen::tick()
         else
             DO Nothing
     */
+
+#endif
 }
 
 void ControlerScreen::drawOnScreen()
@@ -483,6 +616,57 @@ void ControlerScreen::drawEndingRidePage()
 void ControlerScreen::drawErrorPage()
 {
     this->_screen->drawError();
+}
+
+void ControlerScreen::drawWatch()
+{
+    // TODO
+    this->_screen->setTextSize(1);
+    this->_screen->setFont(1);
+    this->_screen->printText("WATCH", 100, 100);
+}
+
+void ControlerScreen::drawTrajets(int p_index)
+{
+    String trajet_nom = this->_trajetsSauvgardeSD->getNode(p_index);
+    // TODO
+    this->_screen->setTextSize(1);
+    this->_screen->setFont(1);
+    this->_screen->printText(trajet_nom, 100, 100);
+}
+
+void ControlerScreen::drawDemarrerPrincipal()
+{
+    // TODO
+    this->_screen->setTextSize(1);
+    this->_screen->setFont(1);
+    this->_screen->printText("Demarrer Principal", 100, 100);
+}
+
+void ControlerScreen::drawPauseStop()
+{
+    // TODO
+    this->_screen->setTextSize(1);
+    this->_screen->setFont(1);
+    this->_screen->printText("Pause", 150, 10);
+    this->_screen->printText("stop", 150, 130);
+}
+
+void ControlerScreen::drawReDemarrer()
+{
+    // TODO
+    this->_screen->setTextSize(1);
+    this->_screen->setFont(1);
+    this->_screen->printText("Re-Demarrer", 100, 100);
+}
+
+void ControlerScreen::drawStatisticRide(int p_index)
+{
+    // TODO
+    String trajet_nom = this->_trajetsSauvgardeSD->getNode(p_index);
+    this->_screen->setTextSize(1);
+    this->_screen->setFont(1);
+    this->_screen->printText(trajet_nom + String(" donnees"), 100, 100);
 }
 
 #pragma endregion DrawPages

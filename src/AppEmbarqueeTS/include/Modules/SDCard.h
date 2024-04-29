@@ -12,10 +12,10 @@
 class SDCard : public ISDCard
 {
 private:
-    TSProperties* _TSProperties;
+    TSProperties *_TSProperties;
     // SD* _sd;
 
-    StringQueue _queueCompletedRideIds;
+    StringQueue *_queueCompletedRideIds;
     int _nbRidesInSDCard;
     bool _isRideStarted;
     File _currentPointsFile;
@@ -39,7 +39,7 @@ private:
     void deleteCurrentRideSentFiles();
 
 public:
-    SDCard(TSProperties* TSProperties);
+    SDCard(TSProperties *TSProperties, StringQueue *trajetSD);
     ~SDCard();
 
     void init() override;

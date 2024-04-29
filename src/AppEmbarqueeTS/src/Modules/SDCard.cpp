@@ -2,9 +2,9 @@
 #include "Configurations.h"
 #include "StringQueue.h"
 
-SDCard::SDCard(TSProperties *TSProperties)
+SDCard::SDCard(TSProperties *TSProperties, StringQueue *trajetsSD)
     : _TSProperties(TSProperties),
-      _queueCompletedRideIds(),
+      _queueCompletedRideIds(trajetsSD),
       _nbRidesInSDCard(0),
       _isRideStarted(false),
       _currentPointsFile(),
@@ -14,8 +14,8 @@ SDCard::SDCard(TSProperties *TSProperties)
       _positionCursorFileSendPoints(0),
       _isSendingRide(false),
       _isSendingPoints(false)
+
 {
-    this->_queueCompletedRideIds = StringQueue();
     this->init();
 };
 
@@ -75,10 +75,10 @@ void SDCard::checkFiles()
         {
             String idTemp = name.substring(0, 36);
 
-            if (!this->_queueCompletedRideIds.contains(idTemp))
+            if (!this->_queueCompletedRideIds->contains(idTemp))
             {
                 DEBUG_STRING_LN(DEBUG_TS_SDCARD, "SDCard Ride Id find: " + idTemp);
-                this->_queueCompletedRideIds.enqueue(idTemp);
+                this->_queueCompletedRideIds->enqueue(idTemp);
                 this->_nbRidesInSDCard++;
             }
 
@@ -130,7 +130,7 @@ void SDCard::processCurrentRide()
             this->writeStatsFile();
             this->_currentPointsFile.close();
             DEBUG_STRING_LN(DEBUG_TS_SDCARD, "SDCard Ride Id add into the queue: " + this->_TSProperties->PropertiesCurrentRide.CompletedRideId);
-            this->_queueCompletedRideIds.enqueue(this->_TSProperties->PropertiesCurrentRide.CompletedRideId);
+            this->_queueCompletedRideIds->enqueue(this->_TSProperties->PropertiesCurrentRide.CompletedRideId);
         }
         else
         {
@@ -265,7 +265,7 @@ void SDCard::setPointsToSendFromFile()
 
 void SDCard::processSendRide()
 {
-    if (this->_TSProperties->PropertiesBluetooth.IsDeviceBluetoothConnected && (this->_queueCompletedRideIds.getSize() > 0 || this->_isSendingRide))
+    if (this->_TSProperties->PropertiesBluetooth.IsDeviceBluetoothConnected && (this->_queueCompletedRideIds->getSize() > 0 || this->_isSendingRide))
     {
         if (this->_TSProperties->PropertiesCompletedRideToSend.IsReceived)
         {
@@ -283,7 +283,7 @@ void SDCard::processSendRide()
         }
         else if (!this->_TSProperties->PropertiesCompletedRideToSend.IsReady)
         {
-            this->_TSProperties->PropertiesCompletedRideToSend.CompletedRideId = this->_queueCompletedRideIds.dequeue();
+            this->_TSProperties->PropertiesCompletedRideToSend.CompletedRideId = this->_queueCompletedRideIds->dequeue();
             DEBUG_STRING_LN(DEBUG_TS_SDCARD, "SDCard Ride Id find to send: " + this->_TSProperties->PropertiesCompletedRideToSend.CompletedRideId);
             this->setStatsToSend();
             DEBUG_STRING_LN(DEBUG_TS_SDCARD, "SDCard stats ready to send !");

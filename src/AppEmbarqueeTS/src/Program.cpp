@@ -13,11 +13,12 @@ Program::Program() : _TSProperties(nullptr),
                      _controlerScreen(nullptr),
                      _gy87(nullptr)
 {
-    this->_TSProperties = new TSProperties(); //
-    this->_controlerScreen = new ControlerScreen(this->_TSProperties);
+    this->_TSProperties = new TSProperties();
+    this->_trajetsSD = new StringQueue();
+    this->_controlerScreen = new ControlerScreen(this->_TSProperties, this->_trajetsSD);
     this->_controlerButtons = new ControlerButtons(this->_TSProperties);
     this->_ble = new BLE(this->_TSProperties);
-    this->_sdCard = new SDCard(this->_TSProperties);
+    this->_sdCard = new SDCard(this->_TSProperties, this->_trajetsSD);
     this->_gsm = new GSMTiny(this->_TSProperties);
     // this->_gsm = new MyTinyGsm(this->_TSProperties);
     this->_gyroscope = new GyroscopeMPU6050(this->_TSProperties);

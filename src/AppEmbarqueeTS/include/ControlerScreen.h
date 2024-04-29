@@ -5,12 +5,14 @@
 #include "TSProperties.h"
 
 #include "Modules/ScreenGC9A01.h"
-
+#include "StringQueue.h"
 class ControlerScreen : public IControlerScreen
 {
 private:
     TSProperties *_TSProperties;
     ScreenGC9A01 *_screen;
+    StringQueue *_trajetsSauvgardeSD;
+
     unsigned long _timeToDisplayEndingRidePageMS;
     bool entreCompass = false;
     float lastDegree = -1;
@@ -28,9 +30,15 @@ private:
     void drawRideStatisticsPage() override;
     void drawEndingRidePage() override;
     void drawErrorPage() override;
+    void drawWatch() override;
+    void drawTrajets(int) override;
+    void drawDemarrerPrincipal() override;
+    void drawPauseStop() override;
+    void drawReDemarrer() override;
+    void drawStatisticRide(int) override;
 
 public:
-    ControlerScreen(TSProperties *TSProperties);
+    ControlerScreen(TSProperties *TSProperties, StringQueue *trajetsSD);
     ~ControlerScreen();
 
     /*

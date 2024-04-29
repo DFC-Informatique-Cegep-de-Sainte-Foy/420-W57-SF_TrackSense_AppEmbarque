@@ -16,11 +16,12 @@
 #include "Modules/Buzzer.h"
 #include "Modules/Battery.h"
 #include "Modules/GY87_Adafruit.h"
-
+#include "StringQueue.h"
 class Program
 {
 private:
     TSProperties *_TSProperties;
+    StringQueue *_trajetsSD;
     IGSM *_gsm;
     ISDCard *_sdCard;
     IGyroscope *_gyroscope;
