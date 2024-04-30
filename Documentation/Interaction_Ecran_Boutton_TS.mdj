@@ -5483,7 +5483,7 @@
 											"font": "Arial;13;0",
 											"left": -21,
 											"top": -123,
-											"width": 93.16455078125,
+											"width": 100.9912109375,
 											"height": 13,
 											"text": "(from Demarrer)"
 										},
@@ -5553,9 +5553,9 @@
 										"$ref": "AAAAAAGPIA4qomar66U="
 									},
 									"font": "Arial;13;0",
-									"left": 1655,
+									"left": 1654,
 									"top": 429,
-									"width": 14.4599609375,
+									"width": 16.3134765625,
 									"height": 13,
 									"alpha": 1.5707963267948966,
 									"distance": 15,
@@ -5683,7 +5683,7 @@
 											"font": "Arial;13;0",
 											"left": -228,
 											"top": -459,
-											"width": 95.8623046875,
+											"width": 100.9912109375,
 											"height": 13,
 											"text": "(from Demarrer)"
 										},

@@ -197,6 +197,8 @@ void ControlerScreen::tick()
             if (menu == "Liste_Trajet")
             {
                 this->drawTrajets(sousMenu);
+                // sur Ecran, affiche les informations:
+
                 // if (sousMenu == 0)
                 // {
                 //     // Ecran Trajet 1
@@ -628,11 +630,24 @@ void ControlerScreen::drawWatch()
 
 void ControlerScreen::drawTrajets(int p_index)
 {
-    String trajet_nom = this->_trajetsSauvgardeSD->getNode(p_index);
     // TODO
+    /*
+       1 - Destination du trajet
+
+       2 - Distance du trajet
+       3 - Temps moyen pour completer
+       4 - Difficulté du trajet
+       5 - Bouton Demarrer
+    */
+    String trajet_nom = this->_trajetsSauvgardeSD->getNode(p_index);
     this->_screen->setTextSize(1);
     this->_screen->setFont(1);
-    this->_screen->printText(trajet_nom, 100, 100);
+    this->_screen->printText("Destination: Everest", 20, 80);
+    this->_screen->printText("Distance: 15000 KM", 20, 100);
+    this->_screen->printText("Temps: 28D", 20, 120);
+    this->_screen->printText("Difficulte: Hard", 20, 140);
+    // draw bouton
+    this->_screen->drawBoutonTriangle(230, 120, 190, 150, 190, 90); // Un triangle point a droite en vert
 }
 
 void ControlerScreen::drawDemarrerPrincipal()

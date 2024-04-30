@@ -57,6 +57,7 @@ public:
     void drawIsGPSValid(int16_t coordX, int16_t coordY, int16_t largeurX) override;
     void drawStatistics(String title, String value, String unit, int16_t titleCoordX, int16_t valueCoordX, int16_t unitCoordX, int16_t coordY) override;
     void drawCompass(float degree);
+    void drawBoutonTriangle(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3) override;
     /* Calculations */
     int calculateXCoordTextToCenter(String text) override;
     int calculateXCoordItemToCenter(uint16_t lengthInPixels) override;

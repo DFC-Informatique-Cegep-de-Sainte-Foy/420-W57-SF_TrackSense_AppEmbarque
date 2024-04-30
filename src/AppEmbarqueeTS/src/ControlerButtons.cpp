@@ -260,11 +260,15 @@ void ControlerButtons::tick()
         }
         else if (this->_finalGesture == "SINGLE CLICK") // appuyer sur un Trajet
         {
-            this->_TSProperties->PropertiesScreen.etat_Actuel = "DEMARRER"; // entrer dans ecran de DEMARRER
-            this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
-            // Trajet Start
-            this->startRide();
-            Serial.println("2 Demarrer");
+            // Si appuyer sur un bouton, (190,90) (230,120) (190,150)
+            if (this->_button1->getTouchPosition().first >= 190 && this->_button1->getTouchPosition().first <= 230 && this->_button1->getTouchPosition().second >= 90 && this->_button1->getTouchPosition().second <= 150)
+            {
+                this->_TSProperties->PropertiesScreen.etat_Actuel = "DEMARRER"; // entrer dans ecran de DEMARRER
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+                // Trajet Start
+                this->startRide();
+                Serial.println("2 Demarrer");
+            }
         }
     }
     // Ecran Demarrer : Demarrer Principal -> Compass -> Direction -> Statistic -> Pause/Stop -> Re-Demarrer

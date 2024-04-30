@@ -243,6 +243,10 @@ void ScreenGC9A01::drawCompass(float degree)
     Draw_Destination(60);
 }
 
+void ScreenGC9A01::drawBoutonTriangle(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3)
+{
+    this->tft->fillTriangle(x1, y1, x2, y2, x3, y3, GREEN);
+}
 #pragma endregion Elements
 
 /*
