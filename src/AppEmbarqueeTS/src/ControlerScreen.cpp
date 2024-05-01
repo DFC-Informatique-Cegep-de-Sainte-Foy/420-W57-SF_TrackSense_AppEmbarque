@@ -216,36 +216,31 @@ void ControlerScreen::tick()
                 //     // Ecran Trajet 4
                 // }
             }
-            if (menu == "Demarrer")
+            if (menu == "DEMARRER")
             {
-                if (sousMenu == 0)
+                Serial.println("Active Screen - >" + String(sousMenu));
+                if (sousMenu == 0) // Ecran DEMARRER PRINCIPAL TODO
                 {
-                    // Ecran DEMARRER PRINCIPAL
                     this->drawDemarrerPrincipal();
                 }
-                else if (sousMenu == 1)
+                else if (sousMenu == 1) // Ecran COMPASS
                 {
-                    // Ecran COMPASS
                     this->drawCompassPage();
                 }
-                else if (sousMenu == 2)
+                else if (sousMenu == 2) // Ecran DIRECTION TODO
                 {
-                    // Ecran DIRECTION
                     this->drawRideDirectionPage();
                 }
-                else if (sousMenu == 3)
+                else if (sousMenu == 3) //  Ecran STATISTIC
                 {
-                    //  Ecran STATISTIC
                     this->drawRideStatisticsPage();
                 }
-                else if (sousMenu == 4)
+                else if (sousMenu == 4) // PAUSE/STOP Ecran RE-DEMARRER
                 {
-                    // PAUSE/STOP Ecran RE-DEMARRER
                     this->drawPauseStop();
                 }
-                else if (sousMenu == 5)
+                else if (sousMenu == 5) //  Ecran RE-DEMARRER
                 {
-                    //  Ecran RE-DEMARRER
                     this->drawReDemarrer();
                 }
             }
@@ -653,6 +648,7 @@ void ControlerScreen::drawTrajets(int p_index)
 void ControlerScreen::drawDemarrerPrincipal()
 {
     // TODO
+    Serial.println("Draw Demarrer Principale");
     this->_screen->setTextSize(1);
     this->_screen->setFont(1);
     this->_screen->printText("Demarrer Principal", 100, 100);
@@ -663,8 +659,14 @@ void ControlerScreen::drawPauseStop()
     // TODO
     this->_screen->setTextSize(1);
     this->_screen->setFont(1);
-    this->_screen->printText("Pause", 150, 10);
-    this->_screen->printText("stop", 150, 130);
+    this->_screen->printText("Temps:" + String("6 min 12 s"), 35, 65);
+    this->_screen->printText("Parcour completé: " + String("5.4 km"), 35, 85);
+    this->_screen->printText("Parcour restant: " + String("2.5 km"), 35, 105);
+    this->_screen->drawFillRect(0, 150, 120, 90, BLUE, BLUE);
+    this->_screen->drawFillRect(120, 150, 120, 90, RED, RED);
+
+    this->_screen->printText("Pause", 50, 190);
+    this->_screen->printText("stop", 150, 190);
 }
 
 void ControlerScreen::drawReDemarrer()
@@ -672,7 +674,11 @@ void ControlerScreen::drawReDemarrer()
     // TODO
     this->_screen->setTextSize(1);
     this->_screen->setFont(1);
-    this->_screen->printText("Re-Demarrer", 100, 100);
+    this->_screen->printText("Temps:" + String("6 min 12 s"), 35, 65);
+    this->_screen->printText("Parcour completé: " + String("5.4 km"), 35, 85);
+    this->_screen->printText("Parcour restant: " + String("2.5 km"), 35, 105);
+    this->_screen->drawBoutonTriangle(100, 160, 100, 220, 160, 190);
+    this->_screen->printText("ReStart", 105, 200);
 }
 
 void ControlerScreen::drawStatisticRide(int p_index)

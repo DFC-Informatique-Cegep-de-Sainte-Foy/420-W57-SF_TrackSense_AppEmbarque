@@ -272,18 +272,20 @@ void ControlerButtons::tick()
         }
     }
     // Ecran Demarrer : Demarrer Principal -> Compass -> Direction -> Statistic -> Pause/Stop -> Re-Demarrer
-    else if (this->_TSProperties->PropertiesScreen.etat_Actuel == "Demarrer")
+    else if (this->_TSProperties->PropertiesScreen.etat_Actuel == "DEMARRER")
     {
         if (this->_finalGesture == "SWIPE UP")
         {
             this->_TSProperties->PropertiesScreen.ActiveScreen++;
+
             // PAS DE PAUSE, PAS ECRAN RE-DEMARRER
+
             if (!this->_TSProperties->PropertiesCurrentRide.IsRidePaused && this->_TSProperties->PropertiesScreen.ActiveScreen == 5)
             {
                 this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
             }
 
-            if (this->_TSProperties->PropertiesScreen.ActiveScreen == 6)
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen == 5)
             {
                 this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
             }
@@ -295,12 +297,12 @@ void ControlerButtons::tick()
             // PAS DE PAUSE, PAS ECRAN RE-DEMARRER
             if (!this->_TSProperties->PropertiesCurrentRide.IsRidePaused && this->_TSProperties->PropertiesScreen.ActiveScreen == 5)
             {
-                this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 4;
             }
 
             if (this->_TSProperties->PropertiesScreen.ActiveScreen == -1)
             {
-                this->_TSProperties->PropertiesScreen.ActiveScreen = 5;
+                this->_TSProperties->PropertiesScreen.ActiveScreen = 4;
             }
 
             Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
@@ -310,7 +312,7 @@ void ControlerButtons::tick()
             if (this->_TSProperties->PropertiesScreen.ActiveScreen == 4) // appuyer sur ecran Pause/Stop
             {
                 // STOP
-                if (this->_button1->getTouchPosition().first >= 150 && this->_button1->getTouchPosition().second <= 119) // Bouton en bas a gauche pour STOP
+                if (this->_button1->getTouchPosition().first >= 120 && this->_button1->getTouchPosition().second >= 150) // Bouton en bas a gauche pour STOP
                 {
                     this->_TSProperties->PropertiesScreen.etat_Actuel = "Statistic_Trajet"; // entrer dans ecran de DEMARRER
                     this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
@@ -318,7 +320,7 @@ void ControlerButtons::tick()
                     Serial.println("STOP -> 2 Statistic");
                 }
                 // PAUSE
-                else if (this->_button1->getTouchPosition().first >= 150 && this->_button1->getTouchPosition().second >= 121) // Bouton en bas a droite pour Pause
+                else if (this->_button1->getTouchPosition().first <= 120 && this->_button1->getTouchPosition().second >= 150) // Bouton en bas a droite pour Pause
                 {
                     this->_TSProperties->PropertiesScreen.ActiveScreen = 5;
                     this->pauseRide();
@@ -328,7 +330,7 @@ void ControlerButtons::tick()
             else if (this->_TSProperties->PropertiesScreen.ActiveScreen == 5) // appuyer sur ecran Re-Demarrer
             {
                 // Re-Demarrer
-                if (this->_button1->getTouchPosition().first >= 150) // bouton en bas pour Re-Demarrer
+                if (this->_button1->getTouchPosition().first >= 100 && this->_button1->getTouchPosition().first <= 160 && this->_button1->getTouchPosition().second >= 160 && this->_button1->getTouchPosition().second <= 220) // bouton en bas pour Re-Demarrer
                 {
                     this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
                     this->restartRide();
@@ -534,22 +536,21 @@ void ControlerButtons::startRide()
         this->_guidGenerator->generate();
 
         this->_TSProperties->PropertiesCurrentRide.CompletedRideId = this->_guidGenerator->toCharArray();
-        this->_TSProperties->PropertiesScreen.ActiveScreen = RIDE_PAGE_ID;
+        // this->_TSProperties->PropertiesScreen.ActiveScreen = RIDE_PAGE_ID; // RIDE_PAGE_ID =1
 
-        // 更新TS的终点坐标,坐标应是存储在数据库中的某段路程的终点坐标
         // HOME
         // this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.78772;   //
         // this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.26219; //
 
-        // Chateau Frontenac 坐标
+        // Chateau Frontenac
         // this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.81207;   //
         // this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.20501; //
 
-        // Test Garneau 坐标
+        // Test Garneau
         // this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.79308;   //
         // this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.26474; //
 
-        // Test 418 坐标
+        // Test 418
         this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.78570;   //
         this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.28714; //
     }

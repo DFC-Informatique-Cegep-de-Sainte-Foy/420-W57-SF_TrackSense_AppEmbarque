@@ -56,13 +56,13 @@ void Program::executeCore1()
     this->_controlerScreen->tick();
 
     DEBUG_STRING_LN(DEBUG_TS_CORE, "_ble");
-    // this->_ble->tick();
+    this->_ble->tick();
 
     DEBUG_STRING_LN(DEBUG_TS_CORE, "_gsm");
     this->_gsm->tick();
 
     DEBUG_STRING_LN(DEBUG_TS_CORE, "_sdCard");
-    // this->_sdCard->tick();
+    this->_sdCard->tick();
 
     DEBUG_STRING_LN(DEBUG_TS_CORE, "_gyroscope");
     // this->_gyroscope->tick();
