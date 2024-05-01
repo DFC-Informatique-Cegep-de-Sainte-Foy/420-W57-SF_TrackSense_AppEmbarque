@@ -214,24 +214,26 @@ void ScreenGC9A01::drawStatistics(String title, String value, String unit, int16
 void ScreenGC9A01::drawCompass(float degree)
 {
     this->sdeg = degree;
-    // 当第一次或重新进入罗盘屏幕时，准备罗盘，只画一次罗盘，之后每次loop不再画罗盘
+    // Lorsque vous accédez à l'écran de la boussole pour la première fois ou que vous y entrez à nouveau,
+    // préparez la boussole et dessinez la boussole une seule fois, puis ne dessinez plus la boussole dans chaque boucle.
     if (!this->status)
     {
         Serial.println("Compass---->Entrer");
-        // 画一次罗盘
+        // Dessine une boussole
         this->tft->setTextColor(WHITE, GREY);
         this->tft->fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
         this->tft->fillCircle(120, 120, 110, BLACK);
-        // 更新屏幕状态
+        // Mettre à jour l'état de l'écran
         this->status = true;
     }
     // this->tft->fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
     // this->tft->fillCircle(120, 120, 110, BLACK);
-    // 数值有变动时，再清除上一次画的阴影，如果没有变动，则保留当前图形
+    // Lorsque la valeur change, la dernière ombre dessinée est effacée.
+    // S'il n'y a pas de changement, la forme actuelle est conservée.
     if (lastDegree != degree)
     {
         Serial.println("Compass---->Change");
-        lastDegree = degree; // 更新数值
+        lastDegree = degree; // Mettre à jour la valeur
         this->tft->fillTriangle(ox, oy, px, py, rx, ry, BLACK);
         this->tft->fillTriangle(qx, qy, px, py, rx, ry, BLACK);
         this->tft->fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, BLACK);
@@ -516,33 +518,35 @@ void ScreenGC9A01::Draw_points_azimuths()
 
 void ScreenGC9A01::Draw_Destination(float dest)
 {
-    // // 根据目的地点相对于当前坐标的位置，分成4种情况，在当前坐标的东北、东南、西南、西北
-    // // 当前屏幕是翻转180度的，就是0,0坐标由左上，变到了右下
-    // // 如果在东北： 90度-dest,因为整体翻转了180度，所以最终还要再加180度：90-dest+180
+    // // Selon la position du point de destination par rapport aux coordonnées actuelles,
+    // // il est divisé en quatre situations : nord-est, sud-est, sud-ouest, nord-ouest des coordonnées actuelles,
+    // // l'écran actuel est inversé de 180 degrés, c'est-à-dire que les coordonnées 0,0 changent ;
+    // // du haut à gauche vers le bas à droite ; si Nord-Est : 90 degrés-dest,
+    // // car l'ensemble est inversé de 180 degrés, donc au final 180 degrés seront ajoutés : 90-dest+180
     // float degreeAjuste = 0.0;
-    // float DX = _TSProperties->PropertiesCurrentRide.longitude_destination; // 目的地经度
-    // float DY = _TSProperties->PropertiesCurrentRide.latitude_destination;  // 目的地维度
-    // float OX = _TSProperties->PropertiesGPS.Longitude;                     // 当前经度
-    // float OY = _TSProperties->PropertiesGPS.Latitude;                      // 当前维度
+    // float DX = _TSProperties->PropertiesCurrentRide.longitude_destination;
+    // float DY = _TSProperties->PropertiesCurrentRide.latitude_destination;
+    // float OX = _TSProperties->PropertiesGPS.Longitude;
+    // float OY = _TSProperties->PropertiesGPS.Latitude;
 
     // if (DX > OX && DY > OY)
     // {
-    //     // 目的地在当前的东北
+    //     // La destination est dans le Nord-Est actuel
     //     degreeAjuste = 180 + 90 - (dest);
     // }
     // else if (DX > OX && DY < OY)
     // {
-    //     // 目的地在当前的东南
+    //     // La destination est dans le sud-est actuel
     //     degreeAjuste = 180 + 90 + (dest);
     // }
     // else if (DX < OX && DY < OY)
     // {
-    //     // 目的地在当前的西南
+    //     // La destination est dans le sud-ouest actuel
     //     degreeAjuste = 180 + 90 + (dest);
     // }
     // else if (DX < OX && DY > OY)
     // {
-    //     // 目的地在当前的西北
+    //     // La destination est dans le nord-ouest actuel
     //     degreeAjuste = 180 + 90 + (dest);
     // }
 
@@ -565,13 +569,7 @@ void ScreenGC9A01::Draw_Destination(float dest)
 
     D3x = (120 + (80 * sin((-((dest + 7))) * DEG2RAD)));
     D3y = (120 + (80 * cos((-((dest + 7))) * DEG2RAD)));
-    // 如果在西北:90度+dest,因为翻转了180度，所以最终再加180度：90+dest+180
 
-    // 如果在东南
-
-    // 如果在西南
-
-    // DDD 3顶点
     // tft.fillCircle(D1x, D1y, 3, RED);
     // tft.fillCircle(D2x, D2y, 3, BLUE);
     // tft.fillCircle(D3x, D3y, 3, GREEN);
@@ -582,25 +580,25 @@ void ScreenGC9A01::Draw_Destination(float dest)
 void ScreenGC9A01::Draw_Compass(float degree)
 {
     this->sdeg = degree;
-    // 先画点A
+    // Point A
     // tft.drawLine(ox, oy, 120, 121, BLACK); // erase hour and minute hand positions every minute
     ox = (120 + (70 * sin((-degree) * DEG2RAD)));
     oy = (120 + (70 * cos((-degree) * DEG2RAD)));
     // tft.drawLine(ox, oy, 120, 121, GREEN);
 
-    // 再画点B
+    // point B
     // tft.drawLine(px, py, 120, 121, BLACK); // erase hour and minute hand positions every minute
     px = (120 + 15 * sin((90 - degree) * DEG2RAD));
     py = (120 + 15 * cos((90 - degree) * DEG2RAD));
     // tft.drawLine(px, py, 120, 121, YELLOW);
 
-    // 再画点C
+    // Point C
     // tft.drawLine(qx, qy, 120, 121, BLACK); // erase hour and minute hand positions every minute
     qx = (120 + 70 * sin((180 - degree) * DEG2RAD));
     qy = (120 + 70 * cos((180 - degree) * DEG2RAD));
     // tft.drawLine(qx, qy, 120, 121, GREEN);
 
-    // 再画点D
+    // Point D
     // tft.drawLine(rx, ry, 120, 121, BLACK); // erase hour and minute hand positions every minute
     rx = (120 + 15 * sin((270 - degree) * DEG2RAD));
     ry = (120 + 15 * cos((270 - degree) * DEG2RAD));
@@ -614,12 +612,12 @@ void ScreenGC9A01::Draw_Compass(float degree)
 
 void ScreenGC9A01::Draw_Cadran_Compass()
 {
-    // 画背景
+    // draw background
     // this->tft->fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
     // this->tft->fillCircle(120, 120, 110, BLACK);
-    // 画绿色刻度和斜角
+    // Dessinez des graduations vertes et des biseaux
     Draw_green_ticks_bevels();
-    // 画60个刻度和方位角
+    // Dessinez 60 échelles et azimuts
     Draw_points_azimuths();
 }
 void ScreenGC9A01::cleanNeedleCompass()

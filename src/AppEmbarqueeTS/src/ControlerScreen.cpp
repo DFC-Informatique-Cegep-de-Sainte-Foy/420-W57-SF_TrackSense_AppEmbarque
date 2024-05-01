@@ -361,10 +361,10 @@ float ControlerScreen::calculerDirectionDegree()
     float newDirectionDestinationDegree = 0.0;
 
     float newHeading = _TSProperties->PropertiesCompass.heading;
-    float DX = _TSProperties->PropertiesCurrentRide.longitude_destination; // 目的地经度
-    float DY = _TSProperties->PropertiesCurrentRide.latitude_destination;  // 目的地维度
-    float OX = _TSProperties->PropertiesGPS.Longitude;                     // 当前经度
-    float OY = _TSProperties->PropertiesGPS.Latitude;                      // 当前维度
+    float DX = _TSProperties->PropertiesCurrentRide.longitude_destination; // longitude de destination
+    float DY = _TSProperties->PropertiesCurrentRide.latitude_destination;  // dimension de destination
+    float OX = _TSProperties->PropertiesGPS.Longitude;                     // longitude actuelle
+    float OY = _TSProperties->PropertiesGPS.Latitude;                      // dimension actuelle
 
     float param1 = (90 - OY) * (DY - OY);
     float param2 = sqrt((90 - DY) * (90 - DY));
@@ -429,30 +429,30 @@ void ControlerScreen::drawCompassPage()
     float newHeading = _TSProperties->PropertiesCompass.heading;
     // double newDirectionDestinationRAD = atan((_TSProperties->PropertiesCurrentRide.latitude_destination - _TSProperties->PropertiesGPS.Latitude) / (_TSProperties->PropertiesCurrentRide.longitude_destination - _TSProperties->PropertiesGPS.Longitude)); // 23.08
     // Serial.println("New Direction --> " + String(newDirectionDestinationRAD * RAD2DEG));                                                                                                                                                                   // 0.40弧度
-    // // 弧度转角度
+    // // Angle de rotation en radians
     // float newDirectionDestinationDegree = newDirectionDestinationRAD * RAD2DEG;
-    // 如果第一次画，渲染表盘
-    // 如果数据有改变，先清除原始阴影，再画指针
+    // Si vous dessinez pour la première fois, restituez le cadran
+    // Si les données ont changé, effacez d'abord l'ombre d'origine, puis dessinez le pointeur.
     // if (!entreCompass)
     // {
-    //     Serial.println("第一次进入Compass");
-    //     // 第一次画表盘
+    //     Serial.println(First time entrer Compass");
+    //     // Première fois que je peins un cadran
     //     this->_screen->Draw_Cadran_Compass();
     //     entreCompass = true;
     //     delayMicroseconds(1000);
-    //     Serial.println("表盘绘制完成");
+    //     Serial.println("Dessin du cadran terminé");
     // }
 
     this->_screen->Draw_Cadran_Compass();
 
-    // 有新数据，清屏并更新
+    // Il y a de nouvelles données, effacez l'écran et mettez à jour
     if (lastDegree != newHeading)
     {
-        // 清屏上一次的指针
+        // Effacer le dernier pointeur sur l'écran
         this->_screen->cleanNeedleCompass();
-        // 更新指针方位
+        // Mettre à jour la position du pointeur
         this->_screen->Draw_Compass(newHeading);
-        // 更新目的地方位
+        // Mettre à jour l'emplacement de destination
         this->_screen->Draw_Destination(calculerDirectionDegree()); // 23.05  63.64
         lastDegree = newHeading;
     }
