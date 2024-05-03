@@ -30,6 +30,10 @@ private:
     BLECharacteristic *_screenRotateCharacteristic;
     BLEDescriptor *_screenRotateDescriptor;
 
+    BLEService *_allumerLEDService;
+    BLECharacteristic *_ledCharacteristic;
+    BLEDescriptor *_ledAllumerDescriptor;
+
     unsigned long _lastTimeStatsSent;
     unsigned long _lastTimePointSent;
     unsigned long _lastTimeAdvertiesingStarted;
@@ -47,6 +51,8 @@ private:
     void confirmPointReceived();
 
     void updateTSProperties();
+
+    //
 
 public:
     static bool isDeviceConnected;

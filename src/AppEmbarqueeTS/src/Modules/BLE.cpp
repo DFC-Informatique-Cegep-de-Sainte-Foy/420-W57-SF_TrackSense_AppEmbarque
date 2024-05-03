@@ -28,12 +28,14 @@ class ServerBLECallbacks
     {
         BLE::isDeviceConnected = true;
         BLE::isAdvertiesingStarted = false;
+        Serial.println("Connected!!!");
         DEBUG_STRING_LN(DEBUG_TS_BLE, "Connected");
     }
 
     void onDisconnect(BLEServer *p_server)
     {
         BLE::isDeviceConnected = false;
+        Serial.println("Dis-Connected~~~~");
         DEBUG_STRING_LN(DEBUG_TS_BLE, "Disconnected");
     }
 };
@@ -75,6 +77,27 @@ class ScreenRotateCallbacks
     void onWrite(BLECharacteristic *p_characteristic)
     {
         BLE::isNeedToUpdateTSProperties = true;
+    }
+};
+
+//
+class TrajetPlanifieCallbacks : public BLECharacteristicCallbacks
+{
+    // quand cette caractere est ecri
+    void onWrite(BLECharacteristic *p_characteristic)
+    {
+        // BLE::isNeedToUpdateTSProperties = true;
+        Serial.println("on Write!");
+        // Lire data du Characteristic
+        String msg = p_characteristic->getValue().c_str();
+        // transferer un string 2 obj
+        Serial.println(msg);
+    }
+    // quand cette caractere est lu
+    void onRead(BLECharacteristic *p_characteristic)
+    {
+        // BLE::isNeedToUpdateTSProperties = true;
+        Serial.println("on Read!");
     }
 };
 
@@ -185,6 +208,8 @@ void BLE::initAdvertising()
     this->_advertisingBLE->setAppearance(0x0000);
 
     this->_advertisingBLE->addServiceUUID(BLE_COMPLETED_RIDE_SERVICE_UUID);
+    //
+    this->_advertisingBLE->addServiceUUID(BLE_LED_SERVICE_UUID);
     this->_advertisingBLE->start();
 };
 
@@ -192,6 +217,7 @@ void BLE::initServices()
 {
     this->_completedRideService = this->_serverBLE->createService(BLE_COMPLETED_RIDE_SERVICE_UUID);
     this->_screenService = this->_serverBLE->createService(BLE_SCREEN_SERVICE_UUID);
+    this->_allumerLEDService = this->_serverBLE->createService(BLE_LED_SERVICE_UUID);
 };
 
 void BLE::initCaracteristics()
@@ -206,27 +232,44 @@ void BLE::initCaracteristics()
     this->_screenRotateCharacteristic = this->_screenService->createCharacteristic(BLE_SCREEN_CHARACTRISTIC_ROTATE, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
     this->_screenRotateCharacteristic->setValue(ControlerConfigurationFile::getValue(FIELD_SCREEN_ROTATION).c_str());
     this->_screenRotateCharacteristic->setCallbacks(new ScreenRotateCallbacks());
+
+    //
+    this->_ledCharacteristic = this->_allumerLEDService->createCharacteristic(BLE_LED_CHARACTRISTIC, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+    this->_ledCharacteristic->setValue("LED allumer");
+    this->_ledCharacteristic->setValue("id;nom;{}");
+    /*
+        int ->
+        location ->
+    */
+    this->_ledCharacteristic->setCallbacks(new TrajetPlanifieCallbacks());
 };
 
 void BLE::initDescriptors()
 {
-    this->_CRDataDescriptor = new BLEDescriptor(BLE_COMPLETED_RIDE_DESCRIPTOR_DATA_UUID);
+    this->_CRDataDescriptor = new BLEDescriptor(BLE_COMPLETED_RIDE_DESCRIPTOR_DATA_UUID); // 5a2b4a0f-8ddd-4c69-a825-dbab5822ba0e
     this->_CRDataDescriptor->setValue(BLE_COMPLETED_RIDE_DESCRIPTOR_DATA_NAME);
     this->_CRDataCharacteristic->addDescriptor(this->_CRDataDescriptor);
 
-    this->_CRNotificationDescriptor = new BLEDescriptor(BLE_COMPLETED_RIDE_DESCRIPTOR_NOTIFICATION_UUID);
+    this->_CRNotificationDescriptor = new BLEDescriptor(BLE_COMPLETED_RIDE_DESCRIPTOR_NOTIFICATION_UUID); // 6a2b4a0f-8ddd-4c69-a825-dbab5822ba0e
     this->_CRNotificationDescriptor->setValue(BLE_COMPLETED_RIDE_DESCRIPTOR_NOTIF_NAME);
     this->_CRNotificationCharacteristic->addDescriptor(this->_CRNotificationDescriptor);
 
-    this->_screenRotateDescriptor = new BLEDescriptor(BLE_SCREEN_DESCRIPTOR_ROTATE_UUID);
+    this->_screenRotateDescriptor = new BLEDescriptor(BLE_SCREEN_DESCRIPTOR_ROTATE_UUID); // 65000b05-c1a9-4dfb-a173-bdaa4a029bf7
     this->_screenRotateDescriptor->setValue(BLE_SCREEN_DESCRIPTOR_ROTATE_NAME);
     this->_screenRotateCharacteristic->addDescriptor(this->_screenRotateDescriptor);
+
+    //
+    this->_ledAllumerDescriptor = new BLEDescriptor(BLE_LED_CHARACTRISTIC); // 65000b05-c1a9-4dfb-a173-bdaa4a029cf7
+    this->_ledAllumerDescriptor->setValue(BLE_LED_DESCRIPTOR);
+    this->_ledCharacteristic->addDescriptor(this->_ledAllumerDescriptor);
 };
 
 void BLE::startServices()
 {
     this->_completedRideService->start();
     this->_screenService->start();
+    //
+    this->_allumerLEDService->start();
 };
 
 void BLE::sendCompletedRideStats()
