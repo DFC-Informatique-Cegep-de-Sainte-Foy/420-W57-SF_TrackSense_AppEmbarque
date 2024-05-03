@@ -2,6 +2,7 @@
 #include "stdlib.h"
 #include <vector>
 #include "Location.h"
+#include "ArduinoJson.h"
 class Trajet
 {
 private:
@@ -10,6 +11,7 @@ public:
     Trajet();
     Trajet(String, String, String, String, double, double, unsigned long, std::vector<Location> *, std::vector<Location> *, std::vector<Location> *);
     ~Trajet();
+
     String ride_id;
     String nom;
     double distance;
@@ -24,6 +26,9 @@ public:
 
     bool estComplete;
     bool estReadyToSave;
+
+    //
+    static Trajet fromJson(const String &json);
 };
 
 inline Trajet::Trajet()
@@ -66,4 +71,46 @@ Trajet::~Trajet()
     this->points = nullptr;
     this->pointsdInteret = nullptr;
     this->pointsdDanger = nullptr;
+}
+
+inline Trajet Trajet::fromJson(const String &jsonString)
+{
+    Trajet t;
+    DynamicJsonDocument doc(1024);    // creer JSON file
+    deserializeJson(doc, jsonString); // json string - > json file
+    String ride_id = doc["ride_id"];
+    String nom = doc["nom"];
+    double distance = doc["distance"];
+    double vitesse_moyenne = doc["vitesse_moyenne"];
+    String dateBegin = doc["dateBegin"];
+    String dateEnd = doc["dateEnd"];
+    unsigned long duration = doc["duration"];
+    bool estComplete = doc["estComplete"];
+    bool estReadyToSave = doc["estReadyToSave"];
+
+    JsonArray points = doc["points"];
+    JsonArray pointsdInteret = doc["pointsdInteret"];
+    JsonArray pointsdDanger = doc["pointsdDanger"];
+
+    for (JsonVariant pointValue : points)
+    {
+        double lat = pointValue["latitude"];
+        double lon = pointValue["longitude"];
+        t.points->push_back(Location(lat, lon));
+    }
+
+    for (JsonVariant pointValue : pointsdInteret)
+    {
+        double lat = pointValue["latitude"];
+        double lon = pointValue["longitude"];
+        t.pointsdInteret->push_back(Location(lat, lon));
+    }
+
+    for (JsonVariant pointValue : pointsdDanger)
+    {
+        double lat = pointValue["latitude"];
+        double lon = pointValue["longitude"];
+        t.pointsdDanger->push_back(Location(lat, lon));
+    }
+    return t;
 }

@@ -10,6 +10,7 @@
 #include "Interfaces/IBLE.h"
 #include "Configurations.h"
 #include "TSProperties.h"
+#include "Trajet.h"
 
 class BLE
     : public IBLE
@@ -53,6 +54,7 @@ private:
     void updateTSProperties();
 
     //
+    void lancerTrajet();
 
 public:
     static bool isDeviceConnected;
@@ -64,6 +66,7 @@ public:
     static int currentPointNumber;
 
     static bool isNeedToUpdateTSProperties;
+    static bool isRecivedTrajet;
 
     BLE(TSProperties *TSProperties);
     ~BLE();

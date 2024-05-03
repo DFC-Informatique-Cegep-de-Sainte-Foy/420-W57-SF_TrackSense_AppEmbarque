@@ -8,6 +8,7 @@
 #include "Modules/BLE.h"
 #include "Configurations.h"
 #include "ControlerConfigurationFile.h"
+#include "BLE.h"
 
 /*----- Definition des membres statics -----*/
 bool BLE::isDeviceConnected = false;
@@ -19,6 +20,7 @@ bool BLE::isAdvertiesingStarted = false;
 int BLE::currentPointNumber = 0;
 
 bool BLE::isNeedToUpdateTSProperties = false;
+bool BLE::isRecivedTrajet = false;
 
 /*----- CallBacks -----*/
 class ServerBLECallbacks
@@ -86,12 +88,8 @@ class TrajetPlanifieCallbacks : public BLECharacteristicCallbacks
     // quand cette caractere est ecri
     void onWrite(BLECharacteristic *p_characteristic)
     {
-        // BLE::isNeedToUpdateTSProperties = true;
-        Serial.println("on Write!");
-        // Lire data du Characteristic
-        String msg = p_characteristic->getValue().c_str();
-        // transferer un string 2 obj
-        Serial.println(msg);
+        // TS recois un trajet
+        BLE::isRecivedTrajet = true;
     }
     // quand cette caractere est lu
     void onRead(BLECharacteristic *p_characteristic)
@@ -139,6 +137,7 @@ void BLE::tick()
 
     if (BLE::isDeviceConnected)
     {
+        // si un trajet est complete et pret a envoyer a App mobile
         if (this->_TSProperties->PropertiesCompletedRideToSend.IsReady)
         {
             this->_TSProperties->PropertiesCompletedRideToSend.IsStatsReceived = BLE::isCompletedRideStatsReceived;
@@ -159,12 +158,14 @@ void BLE::tick()
             }
         }
     }
+    // Si non connecte avec App mobile, et TS est en mode StandBy et non en Broadcast  -> commencer a faire BroadCast
     else if (!this->_TSProperties->PropertiesTS.IsOnStanby && !BLE::isAdvertiesingStarted)
     {
         DEBUG_STRING_LN(DEBUG_TS_BLE, "BLE Restart Advertising");
         this->_serverBLE->startAdvertising();
         BLE::isAdvertiesingStarted = true;
     }
+    // Si non connecte avec App mobile, et TS est en mode StandBy et en Broadcast  -> Arreter a faire BroadCast
     else if (this->_TSProperties->PropertiesTS.IsOnStanby && BLE::isAdvertiesingStarted)
     {
         DEBUG_STRING_LN(DEBUG_TS_BLE, "BLE Stop Advertising");
@@ -172,12 +173,14 @@ void BLE::tick()
         BLE::isAdvertiesingStarted = false;
     }
 
+    // Si TS est en mode Demarrer et non en paused  -> commencer low BLE
     if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted && !this->_TSProperties->PropertiesCurrentRide.IsRidePaused && !this->_isBLELowPowerMode)
     {
         DEBUG_STRING_LN(DEBUG_TS_BLE, "BLE Low Power Mode");
         BLEDevice::setPower(ESP_PWR_LVL_N6, ESP_BLE_PWR_TYPE_DEFAULT);
         this->_isBLELowPowerMode = true;
     }
+    // Si TS est en LOW BLE et soit en non demarrer soit en en paused - > commencer NORMAL BLE
     else if (this->_isBLELowPowerMode && (!this->_TSProperties->PropertiesCurrentRide.IsRideStarted || this->_TSProperties->PropertiesCurrentRide.IsRidePaused))
     {
         DEBUG_STRING_LN(DEBUG_TS_BLE, "BLE Normal Mode");
@@ -185,9 +188,17 @@ void BLE::tick()
         this->_isBLELowPowerMode = false;
     }
 
+    // si besoin de changer TS_properties
     if (BLE::isNeedToUpdateTSProperties)
     {
         this->updateTSProperties();
+    }
+
+    if (BLE::isRecivedTrajet)
+    {
+        // todo
+        // Lire les donnes dans BLE et transferer a un obj de Trajet
+        this->lancerTrajet();
     }
 };
 
@@ -237,10 +248,7 @@ void BLE::initCaracteristics()
     this->_ledCharacteristic = this->_allumerLEDService->createCharacteristic(BLE_LED_CHARACTRISTIC, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
     this->_ledCharacteristic->setValue("LED allumer");
     this->_ledCharacteristic->setValue("id;nom;{}");
-    /*
-        int ->
-        location ->
-    */
+
     this->_ledCharacteristic->setCallbacks(new TrajetPlanifieCallbacks());
 };
 
@@ -345,3 +353,15 @@ void BLE::updateTSProperties()
 
     BLE::isNeedToUpdateTSProperties = false;
 };
+void BLE::lancerTrajet()
+{
+    String stringJSON = this->_screenRotateCharacteristic->getValue().c_str();
+    // jsonString 2 Tranjet obj
+    Trajet t = Trajet::fromJson(stringJSON);
+    Serial.println(t.nom);
+    // TODO
+
+    // Sauvgarder un trajet dans SD
+
+    // Lancer un Trajet
+}
