@@ -8,7 +8,6 @@
 #include "Modules/BLE.h"
 #include "Configurations.h"
 #include "ControlerConfigurationFile.h"
-#include "BLE.h"
 
 /*----- Definition des membres statics -----*/
 bool BLE::isDeviceConnected = false;
@@ -357,7 +356,7 @@ void BLE::lancerTrajet()
 {
     String stringJSON = this->_screenRotateCharacteristic->getValue().c_str();
     // jsonString 2 Tranjet obj
-    Trajet t = Trajet::fromJson(stringJSON);
+    Trajet t = Trajet::fromJsonStr2Trajet(stringJSON);
     Serial.println(t.nom);
     // TODO
 

@@ -1,5 +1,6 @@
 // #define Address_detect
-#define TrackSense
+// #define TrackSense
+#define Test_Trajet
 
 #ifdef Address_detect
 #include <Adafruit_I2CDevice.h>
@@ -168,6 +169,39 @@ void loopCore0(void *pvParameters)
         */
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
+}
+
+#endif
+
+#ifdef Test_Trajet
+
+#include <Arduino.h>
+#include <Location.h>
+#include <Trajet.h>
+
+Trajet *t1;
+std::vector<Location> *points = new std::vector<Location>();
+std::vector<Location> *pointsInteret = new std::vector<Location>();
+std::vector<Location> *pointsDanger = new std::vector<Location>();
+void setup()
+{
+    Serial.begin(115200);
+    t1 = new Trajet("5515", "一路向北", "2024-05-04", "", 4888.38, 70.49, 54678.123, points, pointsInteret, pointsDanger);
+    t1->points->push_back(Location(1.23, 2.34));
+    t1->points->push_back(Location(9.87, 8.76));
+    t1->pointsdInteret->push_back(Location(6.66, 8.88));
+    t1->pointsdDanger->push_back(Location(3.33, 3.14));
+    Serial.println("Hello");
+    // Serial.println(t1->nom); // checked!
+    // String str = t1->fromTrajet2JsonStr(); // checked!
+    String jsonStr = "{\"ride_id\":\"5515\",\"nom\":\"一路向北\",\"distance\":4888.38,\"vitesse_moyenne\":70.49,\"dateBegin\":\"2024-05-04\",\"dateEnd\":\"\",\"duration\":54678,\"estComplete\":false,\"estReadyToSave\":false,\"points\":[{\"latitude\":1.23,\"longitude\":2.34},{\"latitude\":9.87,\"longitude\":8.76}],\"pointsdInteret\":[{\"latitude\":6.66,\"longitude\":8.88}],\"pointsdDanger\":[{\"latitude\":3.33,\"longitude\":3.14}]}";
+    Trajet t2 = Trajet::fromJsonStr2Trajet(jsonStr);
+    Serial.println(String(t2.points->front().latitude));         // checked!
+    Serial.println(String(t2.pointsdInteret->front().latitude)); // checked!
+    Serial.println(String(t2.pointsdDanger->front().latitude));  // checked!
+}
+void loop()
+{
 }
 
 #endif
