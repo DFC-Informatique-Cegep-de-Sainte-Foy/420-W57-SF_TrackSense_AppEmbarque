@@ -8,13 +8,13 @@
 #include "Configurations.h"
 #include "TSProperties.h"
 #include "StringQueue.h"
-
+#include "Trajet.h"
 class SDCard : public ISDCard
 {
 private:
     TSProperties *_TSProperties;
-    // SD* _sd;
 
+    // SD* _sd;
     StringQueue *_queueCompletedRideIds;
     int _nbRidesInSDCard;
     bool _isRideStarted;
@@ -28,7 +28,6 @@ private:
     bool _isSendingPoints;
 
     void checkFiles();
-    void createRideFiles();
     void processCurrentRide();
     void writeStatsFile();
     void writePoint();
@@ -41,7 +40,14 @@ private:
 public:
     SDCard(TSProperties *TSProperties, StringQueue *trajetSD);
     ~SDCard();
-
+    // Trajet
+    Trajet *_trajet;
     void init() override;
     void tick() override;
+    void SaveTrajet(String p_path, Trajet *p_trajet);
+    Trajet ReadTrajet(String p_path, String p_fileName);
+    // test
+    void createRideFiles();
+    void writeFile();
+    static void creerDir(String p_dir);
 };

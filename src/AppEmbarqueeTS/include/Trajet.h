@@ -1,4 +1,4 @@
-#pragma Once
+#pragma once
 #include <Arduino.h>
 #include "stdlib.h"
 #include <vector>

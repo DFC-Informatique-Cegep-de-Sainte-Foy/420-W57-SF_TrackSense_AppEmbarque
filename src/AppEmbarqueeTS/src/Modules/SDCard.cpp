@@ -31,10 +31,12 @@ void SDCard::init()
     if (!this->_TSProperties->PropertiesSDCard.IsSDCardConnected)
     {
         DEBUG_STRING_LN(DEBUG_TS_SDCARD, "SDCard MOUNT FAIL");
+        Serial.println("SDCard MOUNT FAIL");
     }
     else
     {
         uint32_t cardSize = SD.cardSize() / (1024 * 1024);
+        Serial.println("SDCard Size: " + String(cardSize) + "MB");
         // String str = "SDCard Size: " + String(cardSize) + "MB";
         DEBUG_STRING_LN(DEBUG_TS_SDCARD, "SDCard Size: " + String(cardSize) + "MB");
 
@@ -59,6 +61,56 @@ void SDCard::tick()
     }
 };
 
+void SDCard::SaveTrajet(String p_path, Trajet *p_trajet)
+{
+    // Creer path si n'existe pas
+    if (!SD.exists(p_path))
+    {
+        SDCard::creerDir(p_path);
+    }
+
+    String FileName = p_path + "/" + String(p_trajet->ride_id) + ".txt";
+    File file = SD.open(FileName, FILE_WRITE);
+    // write in file.txt
+    if (!file)
+    {
+        Serial.println("Failed to open file for writing");
+        return;
+    }
+
+    String strJson = p_trajet->fromTrajet2JsonStr();
+
+    if (file.print(strJson))
+    {
+        Serial.println("File written");
+    }
+    else
+    {
+        Serial.println("Write failed");
+    }
+    file.close();
+}
+
+Trajet SDCard::ReadTrajet(String p_path, String p_fileName)
+{
+    String FileName = p_path + "/" + p_fileName + ".txt";
+    File file = SD.open(FileName, FILE_READ);
+
+    if (!file)
+    {
+        Serial.println("Impossible d'ouvrir le fichier");
+    }
+    String jsonStr;
+    while (file.available())
+    {
+        jsonStr += (char)file.read();
+    }
+    file.close();
+
+    Trajet trajet = Trajet::fromJsonStr2Trajet(jsonStr);
+    return trajet;
+}
+
 void SDCard::checkFiles()
 {
     this->_nbRidesInSDCard = 0;
@@ -78,6 +130,7 @@ void SDCard::checkFiles()
             if (!this->_queueCompletedRideIds->contains(idTemp))
             {
                 DEBUG_STRING_LN(DEBUG_TS_SDCARD, "SDCard Ride Id find: " + idTemp);
+
                 this->_queueCompletedRideIds->enqueue(idTemp);
                 this->_nbRidesInSDCard++;
             }
@@ -100,8 +153,43 @@ void SDCard::createRideFiles()
     f.close();
     f = SD.open(this->_currentPointsFileName, FILE_READ);
     f.close();
+    Serial.println("Ride File cree");
 };
 
+void SDCard::writeFile()
+{
+    String path = "/hello.txt";
+
+    Serial.printf("Writing file: %s\n", path);
+
+    File file = SD.open(path, FILE_WRITE);
+    if (!file)
+    {
+        Serial.println("Failed to open file for writing");
+        return;
+    }
+    if (file.print("Hello"))
+    {
+        Serial.println("File written");
+    }
+    else
+    {
+        Serial.println("Write failed");
+    }
+    file.close();
+}
+void SDCard::creerDir(String p_dir)
+{
+    Serial.printf("Creating Dir: %s\n", p_dir);
+    if (SD.mkdir(p_dir))
+    {
+        Serial.println("Dir created");
+    }
+    else
+    {
+        Serial.println("mkdir failed");
+    }
+}
 void SDCard::processCurrentRide()
 {
     if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted && !this->_isRideStarted)
