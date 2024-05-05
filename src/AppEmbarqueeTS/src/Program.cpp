@@ -17,8 +17,8 @@ Program::Program() : _TSProperties(nullptr),
     this->_trajetsSD = new StringQueue();
     this->_controlerScreen = new ControlerScreen(this->_TSProperties, this->_trajetsSD);
     this->_controlerButtons = new ControlerButtons(this->_TSProperties);
-    this->_ble = new BLE(this->_TSProperties);
     this->_sdCard = new SDCard(this->_TSProperties, this->_trajetsSD);
+    this->_ble = new BLE(this->_TSProperties, this->_sdCard);
     this->_gsm = new GSMTiny(this->_TSProperties);
     // this->_gsm = new MyTinyGsm(this->_TSProperties);
     this->_gyroscope = new GyroscopeMPU6050(this->_TSProperties);

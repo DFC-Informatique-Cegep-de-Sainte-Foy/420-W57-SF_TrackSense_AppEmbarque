@@ -1,6 +1,6 @@
 // #define Address_detect
-// #define TrackSense
-#define Test_Trajet
+#define TrackSense
+// #define Test_Trajet
 // #define SD_Card
 
 #ifdef Address_detect
@@ -202,16 +202,28 @@ void setup()
     t1->pointsdInteret->push_back(Location(6.66, 8.88));
     t1->pointsdDanger->push_back(Location(3.33, 3.14));
     Serial.println("Hello");
-    Serial.println(t1->nom);               // checked!
-    String str = t1->fromTrajet2JsonStr(); // checked!
+    Serial.println(t1->nom);            // checked!
+    String str = t1->fromTrajet2Json(); // checked!
+    Serial.println(str);                // JSON obj
+    /*
+        {"ride_id":"5515","nom":"to the North","distance":4888.38,"vitesse_moyenne":70.49,
+        "dateBegin":"2024-05-04","dateEnd":"","duration":54678,"estComplete":false,
+        "estReadyToSave":false,"points":[{"latitude":1.23,"longitude":2.34},{"latitude":9.87,"longitude":8.76}],
+        "pointsdInteret":[{"latitude":6.66,"longitude":8.88}],
+        "pointsdDanger":[{"latitude":3.33,"longitude":3.14}]}
+    */
+
     String jsonStr = "{\"ride_id\":\"5515\",\"nom\":\"to the North\",\"distance\":4888.38,\"vitesse_moyenne\":70.49,\"dateBegin\":\"2024-05-04\",\"dateEnd\":\"\",\"duration\":54678,\"estComplete\":false,\"estReadyToSave\":false,\"points\":[{\"latitude\":1.23,\"longitude\":2.34},{\"latitude\":9.87,\"longitude\":8.76}],\"pointsdInteret\":[{\"latitude\":6.66,\"longitude\":8.88}],\"pointsdDanger\":[{\"latitude\":3.33,\"longitude\":3.14}]}";
-    Trajet t2 = Trajet::fromJsonStr2Trajet(jsonStr);
+
+    Trajet t2 = Trajet::fromJson2Trajet(jsonStr);
+    Serial.println(String(t2.ride_id));                          // checked!
+    Serial.println(String(t2.nom));                              // checked!
     Serial.println(String(t2.points->front().latitude));         // checked!
     Serial.println(String(t2.pointsdInteret->front().latitude)); // checked!
     Serial.println(String(t2.pointsdDanger->front().latitude));  // checked!
 
-    mySD->SaveTrajet("/complete", t1);                                               // checked!
-    Serial.println("Trajet saved with id ->" + String(t1->ride_id));                 // checked!
+    mySD->SaveTrajet("/complete", jsonStr);                                          // checked!
+    Serial.println("Trajet saved with id ->" + String(t2.ride_id));                  // checked!
     Trajet trajet = mySD->ReadTrajet("/complete", String(5515));                     // checked!
     Serial.println("Read Trajet from SD with id 5515 ->" + String(trajet.duration)); // checked!
 }

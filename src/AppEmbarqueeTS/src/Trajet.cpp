@@ -46,8 +46,12 @@ Trajet::~Trajet()
 /// @brief convertir un jsonString a un objet Trajet
 /// @param jsonString qui contient un objet Trajet en format String
 /// @return un Trajet objet
-Trajet Trajet::fromJsonStr2Trajet(const String &jsonString)
+Trajet Trajet::fromJson2Trajet(const String &jsonString)
 {
+    Serial.print("In the method -> fromJsonStr2Trajet -> jsonString entering: ");
+
+    Serial.println(jsonString);
+
     DynamicJsonDocument doc(1024);    // creer JSON file
     deserializeJson(doc, jsonString); // json string - > json file
     String ride_id = doc["ride_id"];
@@ -59,6 +63,10 @@ Trajet Trajet::fromJsonStr2Trajet(const String &jsonString)
     unsigned long duration = doc["duration"];
     bool estComplete = doc["estComplete"];
     bool estReadyToSave = doc["estReadyToSave"];
+
+    Serial.print("In the method -> fromJsonStr2Trajet -> nom from jsonStr: ");
+
+    Serial.println(nom);
 
     JsonArray points = doc["points"];
     JsonArray pointsdInteret = doc["pointsdInteret"];
@@ -95,13 +103,15 @@ Trajet Trajet::fromJsonStr2Trajet(const String &jsonString)
         double lon = pointValue["longitude"];
         t.pointsdDanger->push_back(Location(lat, lon));
     }
+    Serial.print("In the method -> fromJsonStr2Trajet -> ");
+    Serial.println(t.nom);
 
     return t;
 }
 
 /// @brief converir l'objet Trajet à String de Json
 /// @return un String de Json
-String Trajet::fromTrajet2JsonStr() const
+String Trajet::fromTrajet2Json() const
 {
     // Creer DynamicJsonDocument
     DynamicJsonDocument doc(1024);

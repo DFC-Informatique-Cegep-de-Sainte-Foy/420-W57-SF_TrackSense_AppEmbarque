@@ -13,7 +13,7 @@ public:
     Trajet(String, String, String, String, double, double, unsigned long, std::vector<Location> *, std::vector<Location> *, std::vector<Location> *);
     ~Trajet();
 
-    String fromTrajet2JsonStr() const;
+    String fromTrajet2Json() const;
 
     String ride_id;
     String nom;
@@ -31,5 +31,5 @@ public:
     bool estReadyToSave;
 
     //
-    static Trajet fromJsonStr2Trajet(const String &json);
+    static Trajet fromJson2Trajet(const String &json);
 };

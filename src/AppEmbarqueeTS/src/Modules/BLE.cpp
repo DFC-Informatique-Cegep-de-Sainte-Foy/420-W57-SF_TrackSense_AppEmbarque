@@ -89,6 +89,8 @@ class TrajetPlanifieCallbacks : public BLECharacteristicCallbacks
     {
         // TS recois un trajet
         BLE::isRecivedTrajet = true;
+        String stringJSON = p_characteristic->getValue().c_str();
+        Serial.println(stringJSON);
     }
     // quand cette caractere est lu
     void onRead(BLECharacteristic *p_characteristic)
@@ -99,18 +101,19 @@ class TrajetPlanifieCallbacks : public BLECharacteristicCallbacks
 };
 
 /*----- BLE -----*/
-BLE::BLE(TSProperties *TSProperties) : _TSProperties(TSProperties),
-                                       _serverBLE(nullptr),
-                                       _advertisingBLE(nullptr),
-                                       _completedRideService(nullptr),
-                                       _CRDataCharacteristic(nullptr),
-                                       _CRNotificationCharacteristic(nullptr),
-                                       _CRDataDescriptor(nullptr),
-                                       _CRNotificationDescriptor(nullptr),
-                                       _lastTimeStatsSent(0),
-                                       _lastTimePointSent(0),
-                                       _lastTimeAdvertiesingStarted(0),
-                                       _isBLELowPowerMode(false)
+BLE::BLE(TSProperties *TSProperties, ISDCard *SD) : _TSProperties(TSProperties),
+                                                    _sd(SD),
+                                                    _serverBLE(nullptr),
+                                                    _advertisingBLE(nullptr),
+                                                    _completedRideService(nullptr),
+                                                    _CRDataCharacteristic(nullptr),
+                                                    _CRNotificationCharacteristic(nullptr),
+                                                    _CRDataDescriptor(nullptr),
+                                                    _CRNotificationDescriptor(nullptr),
+                                                    _lastTimeStatsSent(0),
+                                                    _lastTimePointSent(0),
+                                                    _lastTimeAdvertiesingStarted(0),
+                                                    _isBLELowPowerMode(false)
 {
     this->initBLE();
     this->initServices();
@@ -156,6 +159,14 @@ void BLE::tick()
                 this->sendCompletedRideCurrentPoint();
             }
         }
+
+        if (BLE::isRecivedTrajet)
+        {
+            BLE::isRecivedTrajet = false;
+            // todo
+            // Lire les donnes dans BLE et transferer a un obj de Trajet
+            this->lancerTrajet();
+        }
     }
     // Si non connecte avec App mobile, et TS est en mode StandBy et non en Broadcast  -> commencer a faire BroadCast
     else if (!this->_TSProperties->PropertiesTS.IsOnStanby && !BLE::isAdvertiesingStarted)
@@ -192,13 +203,6 @@ void BLE::tick()
     {
         this->updateTSProperties();
     }
-
-    if (BLE::isRecivedTrajet)
-    {
-        // todo
-        // Lire les donnes dans BLE et transferer a un obj de Trajet
-        this->lancerTrajet();
-    }
 };
 
 void BLE::initBLE()
@@ -227,7 +231,7 @@ void BLE::initServices()
 {
     this->_completedRideService = this->_serverBLE->createService(BLE_COMPLETED_RIDE_SERVICE_UUID);
     this->_screenService = this->_serverBLE->createService(BLE_SCREEN_SERVICE_UUID);
-    this->_allumerLEDService = this->_serverBLE->createService(BLE_LED_SERVICE_UUID);
+    this->_receiveTrajetPlanifieService = this->_serverBLE->createService(BLE_LED_SERVICE_UUID);
 };
 
 void BLE::initCaracteristics()
@@ -244,11 +248,11 @@ void BLE::initCaracteristics()
     this->_screenRotateCharacteristic->setCallbacks(new ScreenRotateCallbacks());
 
     //
-    this->_ledCharacteristic = this->_allumerLEDService->createCharacteristic(BLE_LED_CHARACTRISTIC, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
-    this->_ledCharacteristic->setValue("LED allumer");
-    this->_ledCharacteristic->setValue("id;nom;{}");
+    this->_trajetPlanifieCharacteristic = this->_receiveTrajetPlanifieService->createCharacteristic(BLE_LED_CHARACTRISTIC, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+    this->_trajetPlanifieCharacteristic->setValue("LED allumer");
+    this->_trajetPlanifieCharacteristic->setValue("id;nom;{}");
 
-    this->_ledCharacteristic->setCallbacks(new TrajetPlanifieCallbacks());
+    this->_trajetPlanifieCharacteristic->setCallbacks(new TrajetPlanifieCallbacks());
 };
 
 void BLE::initDescriptors()
@@ -266,9 +270,9 @@ void BLE::initDescriptors()
     this->_screenRotateCharacteristic->addDescriptor(this->_screenRotateDescriptor);
 
     //
-    this->_ledAllumerDescriptor = new BLEDescriptor(BLE_LED_CHARACTRISTIC); // 65000b05-c1a9-4dfb-a173-bdaa4a029cf7
-    this->_ledAllumerDescriptor->setValue(BLE_LED_DESCRIPTOR);
-    this->_ledCharacteristic->addDescriptor(this->_ledAllumerDescriptor);
+    this->_trajetPlanifieDescriptor = new BLEDescriptor(BLE_LED_CHARACTRISTIC); // 65000b05-c1a9-4dfb-a173-bdaa4a029cf7
+    this->_trajetPlanifieDescriptor->setValue(BLE_LED_DESCRIPTOR);
+    this->_trajetPlanifieCharacteristic->addDescriptor(this->_trajetPlanifieDescriptor);
 };
 
 void BLE::startServices()
@@ -276,7 +280,7 @@ void BLE::startServices()
     this->_completedRideService->start();
     this->_screenService->start();
     //
-    this->_allumerLEDService->start();
+    this->_receiveTrajetPlanifieService->start();
 };
 
 void BLE::sendCompletedRideStats()
@@ -354,13 +358,13 @@ void BLE::updateTSProperties()
 };
 void BLE::lancerTrajet()
 {
-    String stringJSON = this->_screenRotateCharacteristic->getValue().c_str();
+    Serial.println("Trajet receving...");
+    String stringJSON = this->_trajetPlanifieCharacteristic->getValue().c_str();
+    Serial.println(stringJSON);
     // jsonString 2 Tranjet obj
-    Trajet t = Trajet::fromJsonStr2Trajet(stringJSON);
-    Serial.println(t.nom);
-    // TODO
-
+    // Trajet t = Trajet::fromJsonStr2Trajet(stringJSON);
+    // Serial.println(t.nom); // null
     // Sauvgarder un trajet dans SD
-
+    _sd->SaveTrajet("/planifie", stringJSON);
     // Lancer un Trajet
 }

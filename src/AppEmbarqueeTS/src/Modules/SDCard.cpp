@@ -61,7 +61,7 @@ void SDCard::tick()
     }
 };
 
-void SDCard::SaveTrajet(String p_path, Trajet *p_trajet)
+void SDCard::SaveTrajet(String p_path, String p_jsonStr)
 {
     // Creer path si n'existe pas
     if (!SD.exists(p_path))
@@ -69,7 +69,9 @@ void SDCard::SaveTrajet(String p_path, Trajet *p_trajet)
         SDCard::creerDir(p_path);
     }
 
-    String FileName = p_path + "/" + String(p_trajet->ride_id) + ".txt";
+    Trajet t = Trajet::fromJson2Trajet(p_jsonStr);
+
+    String FileName = p_path + "/" + String(t.ride_id) + ".txt";
     File file = SD.open(FileName, FILE_WRITE);
     // write in file.txt
     if (!file)
@@ -78,9 +80,7 @@ void SDCard::SaveTrajet(String p_path, Trajet *p_trajet)
         return;
     }
 
-    String strJson = p_trajet->fromTrajet2JsonStr();
-
-    if (file.print(strJson))
+    if (file.print(p_jsonStr))
     {
         Serial.println("File written");
     }
@@ -107,7 +107,7 @@ Trajet SDCard::ReadTrajet(String p_path, String p_fileName)
     }
     file.close();
 
-    Trajet trajet = Trajet::fromJsonStr2Trajet(jsonStr);
+    Trajet trajet = Trajet::fromJson2Trajet(jsonStr);
     return trajet;
 }
 

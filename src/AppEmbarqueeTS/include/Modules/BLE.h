@@ -11,12 +11,15 @@
 #include "Configurations.h"
 #include "TSProperties.h"
 #include "Trajet.h"
+#include "Modules/SDCard.h"
+#include "Interfaces/ISDCard.h"
 
 class BLE
     : public IBLE
 {
 private:
     TSProperties *_TSProperties;
+    ISDCard *_sd;
 
     BLEServer *_serverBLE;
     BLEAdvertising *_advertisingBLE;
@@ -31,9 +34,9 @@ private:
     BLECharacteristic *_screenRotateCharacteristic;
     BLEDescriptor *_screenRotateDescriptor;
 
-    BLEService *_allumerLEDService;
-    BLECharacteristic *_ledCharacteristic;
-    BLEDescriptor *_ledAllumerDescriptor;
+    BLEService *_receiveTrajetPlanifieService;
+    BLECharacteristic *_trajetPlanifieCharacteristic;
+    BLEDescriptor *_trajetPlanifieDescriptor;
 
     unsigned long _lastTimeStatsSent;
     unsigned long _lastTimePointSent;
@@ -67,8 +70,9 @@ public:
 
     static bool isNeedToUpdateTSProperties;
     static bool isRecivedTrajet;
+    static bool isRecived;
 
-    BLE(TSProperties *TSProperties);
+    BLE(TSProperties *TSProperties, ISDCard *SD);
     ~BLE();
 
     void tick() override;

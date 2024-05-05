@@ -44,8 +44,8 @@ public:
     Trajet *_trajet;
     void init() override;
     void tick() override;
-    void SaveTrajet(String p_path, Trajet *p_trajet);
-    Trajet ReadTrajet(String p_path, String p_fileName);
+    void SaveTrajet(String p_path, String p_jsonStr) override;
+    Trajet ReadTrajet(String p_path, String p_fileName) override;
     // test
     void createRideFiles();
     void writeFile();
