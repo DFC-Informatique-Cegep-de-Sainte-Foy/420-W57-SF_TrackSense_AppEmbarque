@@ -12,8 +12,7 @@ class ScreenGC9A01 : public IScreen
 {
 private:
     TSProperties *_TSProperties;
-    Adafruit_GC9A01A *tft;
-    GFXcanvas16 *canvas;
+
     uint16_t _lastBuffer;
 
     bool status = false;
@@ -22,7 +21,7 @@ private:
 
     float sx = 0, sy = 1, mx = 1, my = 0, hx = -1, hy = 0; // saved H, M, S x & y multipliers
     float ox = 0, oy = 0, px = 0, py = 0, qx = 0, qy = 0, rx = 0, ry = 0;
-    float D1x = 0, D1y = 0, D2x = 0, D2y = 0, D3x = 0, D3y = 0;
+
     float sdeg = 0, mdeg = 0, hdeg = 0;
     uint16_t osx = 120, osy = 120, omx = 120, omy = 120, ohx = 120, ohy = 120; // saved H, M, S x & y coords
     uint16_t x0 = 0, x1 = 0, yy0 = 0, yy1 = 0;
@@ -42,6 +41,10 @@ private:
 #define GREY 0x84B5
 #define BORDEAUX 0xA000
 public:
+    Adafruit_GC9A01A *tft;
+    GFXcanvas16 *canvas;
+    float D1x = 0, D1y = 0, D2x = 0, D2y = 0, D3x = 0, D3y = 0;
+    float directionNordx1 = 0, directionNordy1 = 0, directionNordx2 = 0, directionNordy2 = 0, directionNordx3 = 0, directionNordy3 = 0, directionNordEndX = 0, directionNordEndY = 0;
     ScreenGC9A01(TSProperties *TSProperties);
     ~ScreenGC9A01();
 
@@ -88,4 +91,12 @@ public:
     void Draw_Compass(float);
     void Draw_Cadran_Compass();
     void cleanNeedleCompass();
+
+    void drawFillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
+                          int16_t x2, int16_t y2, uint16_t color);
+
+    void drawGoHomePage();
+    float calculerDirectionDegree(float p_longitude_destination, float p_latitude_destination);
+    void Draw_FlecheNord(float north);
+    void Draw_Distance();
 };

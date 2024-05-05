@@ -195,6 +195,22 @@ void MyTinyGsm::getGPS()
             SerialMon.println("Accuracy: " + String(accuracy));
             SerialMon.println("Year: " + String(year) + "\tMonth: " + String(month) + "\tDay: " + String(day));
             SerialMon.println("Hour: " + String(hour) + "\tMinute: " + String(min) + "\tSecond: " + String(sec));
+
+            //
+            this->_latitude = lat;
+            this->_longitude = lon;
+            this->_speed = speed;
+            this->_altitude = alt;
+            this->_accuracy = accuracy;
+            this->_visibleSatellites = vsat;
+            this->_usedSatellites = usat;
+            this->_year = year;
+            this->_month = month;
+            this->_day = day;
+            this->_hour = hour;
+            this->_minute = min;
+            this->_seconde = sec;
+
             // MAJ info dans struct GPS
             this->_TSProperties->PropertiesGPS.Latitude = lat;
             this->_TSProperties->PropertiesGPS.Longitude = lon;
@@ -209,7 +225,7 @@ void MyTinyGsm::getGPS()
             this->_TSProperties->PropertiesGPS.Hour = hour;
             this->_TSProperties->PropertiesGPS.Minute = min;
             this->_TSProperties->PropertiesGPS.Seconde = sec;
-            this->_TSProperties->PropertiesGPS.Minute = min;
+            this->_TSProperties->PropertiesGPS.Distance2Home = this->distanceBetweenInMeters(lat, lon, this->_TSProperties->PropertiesGPS.Home_Latitude, this->_TSProperties->PropertiesGPS.Home_Longitude);
             break;
         }
         else

@@ -577,7 +577,7 @@ double GSMTiny::distanceBetweenInMeters(double lat1, double long1, double lat2, 
 
 void GSMTiny::envoyerLocation()
 {
-    // 先打开GPS
+    // Ouvrir GPS
     if (this->_isGpsOn == false)
     {
         this->gpsPowerOn();

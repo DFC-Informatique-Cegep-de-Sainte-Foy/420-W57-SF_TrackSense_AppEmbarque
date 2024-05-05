@@ -67,5 +67,5 @@ public:
 
     void tick() override;
     void drawOnScreen() override;
-    float calculerDirectionDegree();
+    float calculerDirectionDegree(float p_longitude_destination, float p_latitude_destination);
 };

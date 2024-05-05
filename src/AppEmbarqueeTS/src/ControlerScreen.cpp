@@ -186,7 +186,7 @@ void ControlerScreen::tick()
                 else if (sousMenu == 2)
                 {
                     //  Ecran Home_Direction
-                    this->drawRideDirectionPage();
+                    this->drawGoHomePage();
                 }
                 else if (sousMenu == 3)
                 {
@@ -355,16 +355,16 @@ void ControlerScreen::drawOnScreen()
     }
 }
 
-float ControlerScreen::calculerDirectionDegree()
+float ControlerScreen::calculerDirectionDegree(float p_longitude_destination, float p_latitude_destination)
 {
     double newDirectionDestinationRAD = 0.0;
     float newDirectionDestinationDegree = 0.0;
 
     float newHeading = _TSProperties->PropertiesCompass.heading;
-    float DX = _TSProperties->PropertiesCurrentRide.longitude_destination; // longitude de destination
-    float DY = _TSProperties->PropertiesCurrentRide.latitude_destination;  // dimension de destination
-    float OX = _TSProperties->PropertiesGPS.Longitude;                     // longitude actuelle
-    float OY = _TSProperties->PropertiesGPS.Latitude;                      // dimension actuelle
+    float DX = p_longitude_destination;                // longitude de destination
+    float DY = p_latitude_destination;                 // dimension de destination
+    float OX = _TSProperties->PropertiesGPS.Longitude; // longitude actuelle
+    float OY = _TSProperties->PropertiesGPS.Latitude;  // dimension actuelle
 
     float param1 = (90 - OY) * (DY - OY);
     float param2 = sqrt((90 - DY) * (90 - DY));
@@ -453,7 +453,7 @@ void ControlerScreen::drawCompassPage()
         // Mettre à jour la position du pointeur
         this->_screen->Draw_Compass(newHeading);
         // Mettre à jour l'emplacement de destination
-        this->_screen->Draw_Destination(calculerDirectionDegree()); // 23.05  63.64
+        this->_screen->Draw_Destination(calculerDirectionDegree(this->_TSProperties->PropertiesCurrentRide.longitude_destination, this->_TSProperties->PropertiesCurrentRide.latitude_destination)); // 23.05  63.64
         lastDegree = newHeading;
     }
     // this->_screen->drawCompass(_TSProperties->PropertiesCompass.heading);
@@ -540,9 +540,7 @@ void ControlerScreen::drawGlobalStatisticsPage()
 void ControlerScreen::drawGoHomePage()
 {
     // TODO
-    this->_screen->setTextSize(1);
-    this->_screen->setFont(1);
-    this->_screen->printText("Back Home", 100, 100);
+    this->_screen->drawGoHomePage();
 }
 
 void ControlerScreen::drawRideStatisticsPage()
@@ -647,11 +645,8 @@ void ControlerScreen::drawTrajets(int p_index)
 
 void ControlerScreen::drawDemarrerPrincipal()
 {
-    // TODO
-    Serial.println("Draw Demarrer Principale");
-    this->_screen->setTextSize(1);
-    this->_screen->setFont(1);
-    this->_screen->printText("Demarrer Principal", 100, 100);
+    // Serial.println("Draw Demarrer Principale");
+    drawRidePage();
 }
 
 void ControlerScreen::drawPauseStop()

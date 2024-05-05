@@ -5,6 +5,7 @@
 #include <Fonts/FreeSansOblique9pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeSans18pt7b.h>
+
 // #include <Fonts/BebasNeue_Regular18pt7b.h> // Font logo TrackSense
 // #include <Fonts/BebasNeue_Regular6pt7b.h>  // Font logo TrackSense
 // #include <Fonts/BebasNeue_Regular24pt7b.h> // Font logo TrackSense
@@ -518,6 +519,8 @@ void ScreenGC9A01::Draw_points_azimuths()
 
 void ScreenGC9A01::Draw_Destination(float dest)
 {
+    this->tft->fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, BLACK);
+
     // // Selon la position du point de destination par rapport aux coordonnées actuelles,
     // // il est divisé en quatre situations : nord-est, sud-est, sud-ouest, nord-ouest des coordonnées actuelles,
     // // l'écran actuel est inversé de 180 degrés, c'est-à-dire que les coordonnées 0,0 changent ;
@@ -561,14 +564,14 @@ void ScreenGC9A01::Draw_Destination(float dest)
 
     // dest = 30;
 
-    D1x = (120 + (100 * sin((-((dest))) * DEG2RAD)));
-    D1y = (120 + (100 * cos((-((dest))) * DEG2RAD)));
+    D1x = (120 + (100 * sin((180 - ((dest))) * DEG2RAD)));
+    D1y = (120 + (100 * cos((180 - ((dest))) * DEG2RAD)));
 
-    D2x = (120 + (80 * sin((-((dest - 7))) * DEG2RAD)));
-    D2y = (120 + (80 * cos((-((dest - 7))) * DEG2RAD)));
+    D2x = (120 + (80 * sin((180 - ((dest - 7))) * DEG2RAD)));
+    D2y = (120 + (80 * cos((180 - ((dest - 7))) * DEG2RAD)));
 
-    D3x = (120 + (80 * sin((-((dest + 7))) * DEG2RAD)));
-    D3y = (120 + (80 * cos((-((dest + 7))) * DEG2RAD)));
+    D3x = (120 + (80 * sin((180 - ((dest + 7))) * DEG2RAD)));
+    D3y = (120 + (80 * cos((180 - ((dest + 7))) * DEG2RAD)));
 
     // tft.fillCircle(D1x, D1y, 3, RED);
     // tft.fillCircle(D2x, D2y, 3, BLUE);
@@ -625,6 +628,76 @@ void ScreenGC9A01::cleanNeedleCompass()
     this->tft->fillTriangle(ox, oy, px, py, rx, ry, BLACK);
     this->tft->fillTriangle(qx, qy, px, py, rx, ry, BLACK);
     this->tft->fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, BLACK);
+}
+
+void ScreenGC9A01::drawFillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
+{
+    this->tft->fillTriangle(x0, y0, x1, y1, x2, y2, color);
+}
+
+void ScreenGC9A01::drawGoHomePage()
+{
+    // Triangle Vert point a Home
+    this->Draw_Destination(calculerDirectionDegree(this->_TSProperties->PropertiesGPS.Home_Longitude, this->_TSProperties->PropertiesGPS.Home_Latitude));
+    // flèche pointant vers le nord
+    this->Draw_FlecheNord(this->_TSProperties->PropertiesCompass.heading);
+    this->Draw_Distance();
+}
+float ScreenGC9A01::calculerDirectionDegree(float p_longitude_destination, float p_latitude_destination)
+{
+    double newDirectionDestinationRAD = 0.0;
+    float newDirectionDestinationDegree = 0.0;
+
+    float newHeading = _TSProperties->PropertiesCompass.heading;
+    float DX = p_longitude_destination;                // longitude de destination
+    float DY = p_latitude_destination;                 // dimension de destination
+    float OX = _TSProperties->PropertiesGPS.Longitude; // longitude actuelle
+    float OY = _TSProperties->PropertiesGPS.Latitude;  // dimension actuelle
+
+    float param1 = (90 - OY) * (DY - OY);
+    float param2 = sqrt((90 - DY) * (90 - DY));
+    float param3 = sqrt((DX - OX) * (DX - OX) + (DY - OY) * (DY - OY));
+    newDirectionDestinationRAD = cos(param1 / (param2 * param3));
+    newDirectionDestinationDegree = newDirectionDestinationRAD * RAD2DEG;
+    newDirectionDestinationDegree += 180;
+    newDirectionDestinationDegree += _TSProperties->PropertiesCompass.heading;
+    Serial.println("Degree---->" + String(newDirectionDestinationDegree));
+    return newDirectionDestinationDegree;
+}
+
+void ScreenGC9A01::Draw_FlecheNord(float azimuth)
+{
+    this->tft->drawLine(directionNordx1, directionNordy1, directionNordEndX, directionNordEndY, BLACK);
+    this->tft->fillTriangle(directionNordx1, directionNordy1, directionNordx2, directionNordy2, directionNordx3, directionNordy3, BLACK);
+
+    // TODO:
+    this->sdeg = azimuth;
+    // Point A
+    directionNordx1 = (120 + (70 * sin((-azimuth) * DEG2RAD)));
+    directionNordy1 = (120 + (70 * cos((-azimuth) * DEG2RAD)));
+
+    // Point end
+    directionNordEndX = (120 + 70 * sin((180 - azimuth) * DEG2RAD));
+    directionNordEndY = (120 + 70 * cos((180 - azimuth) * DEG2RAD));
+
+    this->tft->drawLine(directionNordx1, directionNordy1, directionNordEndX, directionNordEndY, WHITE);
+
+    directionNordx2 = (120 + (50 * sin((-((azimuth - 10))) * DEG2RAD)));
+    directionNordy2 = (120 + (50 * cos((-((azimuth - 10))) * DEG2RAD)));
+
+    directionNordx3 = (120 + (50 * sin((-((azimuth + 10))) * DEG2RAD)));
+    directionNordy3 = (120 + (50 * cos((-((azimuth + 10))) * DEG2RAD)));
+
+    this->tft->fillTriangle(directionNordx1, directionNordy1, directionNordx2, directionNordy2, directionNordx3, directionNordy3, WHITE);
+}
+
+void ScreenGC9A01::Draw_Distance()
+{
+    this->tft->setTextSize(3);
+    this->tft->setTextColor(WHITE);
+    this->tft->setCursor(120 - 35, 120 + 70);
+    this->tft->print(String(this->_TSProperties->PropertiesGPS.Distance2Home) + " m");
+    // this->tft->print("1500 m");
 }
 #pragma endregion DrawingTools
 

@@ -17,8 +17,8 @@ public:
     /* datas Current ride */
     struct TSPropertiesCurrentRide
     {
-        double latitude_destination;  // 维度，y
-        double longitude_destination; // 经度，x
+        double latitude_destination;  // y
+        double longitude_destination; // x
         double latitude_point_depart;
         double longitude_point_depart;
 
@@ -101,6 +101,8 @@ public:
     struct TSPropertiesGPS
     {
         // datas brute GPS
+        float Home_Latitude = 46.78552;   // Cegep
+        float Home_Longitude = -71.28686; // Cegep
         float Latitude;
         float Longitude;
         float Altitude;
@@ -118,6 +120,7 @@ public:
         bool IsGPSFixed;
         bool estChute;
         bool estEnvoyerSMS;
+        float Distance2Home;
 
         int CounterGoodValue;
         int CounterTotal;
