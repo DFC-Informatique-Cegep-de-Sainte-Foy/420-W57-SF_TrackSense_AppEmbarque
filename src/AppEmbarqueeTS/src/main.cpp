@@ -2,6 +2,7 @@
 #define TrackSense
 // #define Test_Trajet
 // #define SD_Card
+// #define WATCH
 
 #ifdef Address_detect
 #include <Adafruit_I2CDevice.h>
@@ -515,5 +516,112 @@ void testFileIO(fs::FS &fs, const char *path)
     end = millis() - start;
     Serial.printf("%u bytes written for %u ms\n", 2048 * 512, end);
     file.close();
+}
+#endif
+
+#ifdef WATCH
+// #include <TFT_eSPI.h> // Hardware-specific library
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_GC9A01A.h>
+#include "Configurations.h"
+
+#define TFT_GREY 0x5AEB
+
+Adafruit_GC9A01A *tft = new Adafruit_GC9A01A(TFT_CS, TFT_DC, TFT_MOSI, TFT_CLK, TFT_RST, TFT_MISO);
+GFXcanvas16 *canvas = new GFXcanvas16(TFT_WIDTH, TFT_HEIGHT);
+
+uint32_t targetTime = 0; // for next 1 second timeout
+
+static uint8_t conv2d(const char *p); // Forward declaration needed for IDE 1.6.x
+
+uint8_t hh = conv2d(__TIME__), mm = conv2d(__TIME__ + 3), ss = conv2d(__TIME__ + 6); // Get H, M, S from compile time
+
+byte omm = 99, oss = 99;
+byte xcolon = 0, xsecs = 0;
+unsigned int colour = 0;
+
+void setup(void)
+{
+    Serial.begin(115200);
+    tft->begin(80000000);
+    canvas->setTextWrap(false);
+    pinMode(25, OUTPUT);
+    digitalWrite(25, HIGH);
+    canvas->setRotation(1);
+    targetTime = millis() + 1000;
+    tft->fillScreen(GC9A01A_BLACK);
+}
+
+void loop()
+{
+    if (targetTime < millis())
+    {
+        // Set next update for 1 second later
+        targetTime = millis() + 1000;
+
+        // Adjust the time values by adding 1 second
+        ss++; // Advance second
+        if (ss == 60)
+        {             // Check for roll-over
+            ss = 0;   // Reset seconds to zero
+            omm = mm; // Save last minute time for display update
+            mm++;     // Advance minute
+            if (mm > 59)
+            { // Check for roll-over
+                mm = 0;
+                hh++; // Advance hour
+                if (hh > 23)
+                {           // Check for 24hr roll-over (could roll-over on 13)
+                    hh = 0; // 0 for 24 hour clock, set to 1 for 12 hour clock
+                }
+            }
+        }
+
+        // Update digital time
+        tft->setTextSize(8);
+        if (omm != mm)
+        {
+            tft->fillScreen(GC9A01A_BLACK);
+            // Redraw hours and minutes time every minute
+            omm = mm;
+            // Draw hours and minutes
+            if (hh < 10)
+            {
+                tft->setCursor(10, 90);
+                tft->print("0"); // Add hours leading zero for 24 hr clock
+                tft->setCursor(58, 90);
+                tft->print(hh); // Draw hours
+            }
+            else
+            {
+                tft->setCursor(10, 90);
+                tft->print(hh); // Draw hours
+            }
+            tft->setCursor(100, 90);
+            tft->setTextColor(GC9A01A_WHITE);
+            tft->print(":");
+            if (mm < 10)
+            {
+                tft->setCursor(140, 90);
+                tft->print("0"); // Add minutes leading zero
+                tft->setCursor(188, 90);
+                tft->print(mm); // Draw minutes
+            }
+            else
+            {
+                tft->setCursor(140, 90);
+                tft->print(mm); // Draw minutes
+            }
+        }
+    }
+}
+// Function to extract numbers from compile time string
+static uint8_t conv2d(const char *p)
+{
+    uint8_t v = 0;
+    if ('0' <= *p && *p <= '9')
+        v = *p - '0';
+    return 10 * v + *++p - '0';
 }
 #endif

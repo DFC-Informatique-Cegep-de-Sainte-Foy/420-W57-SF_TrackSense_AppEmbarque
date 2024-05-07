@@ -5,6 +5,7 @@ ControlerScreen::ControlerScreen(TSProperties *TSProperties, StringQueue *trajet
                                                                                        _timeToDisplayEndingRidePageMS(10000),
                                                                                        _xMutex(nullptr),
                                                                                        _trajetsSauvgardeSD(trajetsSD)
+
 {
     this->_screen = new ScreenGC9A01(this->_TSProperties);
     this->_xMutex = xSemaphoreCreateMutex(); // Create a mutex object
@@ -43,6 +44,16 @@ ControlerScreen::~ControlerScreen()
 */
 void ControlerScreen::tick()
 {
+    // Update time
+    if (this->_TSProperties->PropertiesGPS.targetTime < millis())
+    {
+        // Set next update for 1 second later
+        this->_TSProperties->PropertiesGPS.targetTime = millis() + 1000;
+
+        // Adjust the time values by adding 1 second
+        this->_TSProperties->PropertiesGPS.ss++; // Advance second
+    }
+
 #define BOUTON_TACTIL
     // #define Deux_BOUTON
     // Serial.println("4---ScreenControl --> tick");
@@ -147,6 +158,11 @@ void ControlerScreen::tick()
 #ifdef BOUTON_TACTIL
     if (xSemaphoreTake(_xMutex, (150 * portTICK_PERIOD_MS)))
     {
+        if (this->_TSProperties->PropertiesScreen.estChange)
+        {
+            this->refresh();
+            this->_TSProperties->PropertiesScreen.estChange = false;
+        }
         // 1
         this->_screen->drawBackgroundColor(); // Reset Canvas
         //
@@ -253,7 +269,8 @@ void ControlerScreen::tick()
                 }
                 else
                 {
-                    this->drawStatisticRide(sousMenu);
+                    // this->drawStatisticRide(sousMenu);
+                    this->drawRideStatisticsPage();
                 }
 
                 // else if (sousMenu == 1)
@@ -268,78 +285,6 @@ void ControlerScreen::tick()
         }
         xSemaphoreGive(_xMutex); // release the mutex
     }
-    /*
-        pseudocode - Affiche d'ecran
-        if TAKE XSemaphore
-            TODO:
-                1 - re-fresh Ecran
-                2 - set Rotation
-                3 - Affiche differents ecran :
-
-                    if _TSProperties->PropertiesScreen.etat_Actuel == Initialisation
-                        then Affiche Ecran Initialisation
-
-                    if _TSProperties->PropertiesScreen.etat_Actuel == Stand By
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 0
-                        then Affiche Ecran Stand By Principal
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 1
-                        then Affiche Ecran COMPASS
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 2
-                        then Affiche Ecran Direction Home
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 3
-                        then Affiche Ecran WATCH
-
-                    if _TSProperties->PropertiesScreen.etat_Actuel == Liste Trajet
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 0
-                        then Affiche Ecran Trajet 1
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 1
-                        then Affiche Ecran Trajet 2
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 2
-                        then Affiche Ecran Trajet 3
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 3
-                        then Affiche Ecran Trajet 4
-
-                    if _TSProperties->PropertiesScreen.etat_Actuel == Demarrer
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 0
-                        then Affiche Ecran DEMARRER PRINCIPAL
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 1
-                        then Affiche Ecran COMPASS
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 2
-                        then Affiche Ecran DIRECTION
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 3
-                        then Affiche Ecran STATISTIC
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 4
-                        then Affiche Ecran PAUSE/STOP
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 5
-                        then Affiche Ecran RE-DEMARRER
-
-                    if _TSProperties->PropertiesScreen.etat_Actuel == Statistic
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 0
-                        then Affiche Ecran STATISTIC PRINCIPAL
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 1
-                        then Affiche Ecran STATISTIC-TRAJET 1
-
-                        if _TSProperties->PropertiesScreen.ActiveScreen == 2
-                        then Affiche Ecran STATISTIC-TRAJET 2
-
-                    then Affiche Ecran Initialisation
-
-            GIVE XSemaphore
-        else
-            DO Nothing
-    */
 
 #endif
 }
@@ -427,21 +372,6 @@ void ControlerScreen::drawCompassPage()
 {
     // TODO
     float newHeading = _TSProperties->PropertiesCompass.heading;
-    // double newDirectionDestinationRAD = atan((_TSProperties->PropertiesCurrentRide.latitude_destination - _TSProperties->PropertiesGPS.Latitude) / (_TSProperties->PropertiesCurrentRide.longitude_destination - _TSProperties->PropertiesGPS.Longitude)); // 23.08
-    // Serial.println("New Direction --> " + String(newDirectionDestinationRAD * RAD2DEG));                                                                                                                                                                   // 0.40弧度
-    // // Angle de rotation en radians
-    // float newDirectionDestinationDegree = newDirectionDestinationRAD * RAD2DEG;
-    // Si vous dessinez pour la première fois, restituez le cadran
-    // Si les données ont changé, effacez d'abord l'ombre d'origine, puis dessinez le pointeur.
-    // if (!entreCompass)
-    // {
-    //     Serial.println(First time entrer Compass");
-    //     // Première fois que je peins un cadran
-    //     this->_screen->Draw_Cadran_Compass();
-    //     entreCompass = true;
-    //     delayMicroseconds(1000);
-    //     Serial.println("Dessin du cadran terminé");
-    // }
 
     this->_screen->Draw_Cadran_Compass();
 
@@ -456,17 +386,16 @@ void ControlerScreen::drawCompassPage()
         this->_screen->Draw_Destination(calculerDirectionDegree(this->_TSProperties->PropertiesCurrentRide.longitude_destination, this->_TSProperties->PropertiesCurrentRide.latitude_destination)); // 23.05  63.64
         lastDegree = newHeading;
     }
-    // this->_screen->drawCompass(_TSProperties->PropertiesCompass.heading);
-
-    // this->_screen->drawCompass(120);
 }
 
 void ControlerScreen::drawRideDirectionPage()
 {
     // TODO
-    this->_screen->setTextSize(1);
-    this->_screen->setFont(1);
-    this->_screen->printText("Direction", 100, 100);
+    // this->_screen->setTextSize(1);
+    // this->_screen->setFont(1);
+    // this->_screen->printText("Direction", 100, 100);
+
+    this->drawGoHomePage();
 }
 
 void ControlerScreen::drawRidePage()
@@ -531,10 +460,26 @@ void ControlerScreen::drawRidePage()
 
 void ControlerScreen::drawGlobalStatisticsPage()
 {
-    // TODO
-    this->_screen->setTextSize(1);
-    this->_screen->setFont(1);
-    this->_screen->printText("Global", 100, 100);
+    this->_screen->setTextColor();
+    this->_screen->setTextSize(2);
+    this->_screen->setFont(2);
+
+    this->_screen->printText("Global", this->_screen->calculateXCoordTextToCenter("Global"), 65); // Français & Anglais
+
+    if (this->_TSProperties->PropertiesTS.IsFrenchMode) // Français
+    {
+        this->_screen->drawStatistics("Dist.:", String(this->_TSProperties->PropertiesCurrentRide.DistanceTotalMeters / 1000, 3), "Km", 10, 85, 185, 95);
+        this->_screen->drawStatistics("Duree:", this->_TSProperties->PropertiesCurrentRide.formatDurationHMS(), "h:m:s", 10, 85, 185, 120);
+        this->_screen->drawStatistics("V.Moy:", String(this->_TSProperties->PropertiesCurrentRide.AverageSpeedKMPH, 2), "Km/h", 10, 85, 185, 145);
+        this->_screen->drawStatistics("V.Max:", String(this->_TSProperties->PropertiesCurrentRide.MaxSpeedKMPH, 2), "Km/h", 10, 85, 185, 170);
+    }
+    else // Anglais
+    {
+        this->_screen->drawStatistics("Dist.:", String(this->_TSProperties->PropertiesCurrentRide.DistanceTotalMeters / 1000, 3), "Km", 10, 90, 185, 95);
+        this->_screen->drawStatistics("Dur.:", this->_TSProperties->PropertiesCurrentRide.formatDurationHMS(), "h:m:s", 10, 90, 185, 120);
+        this->_screen->drawStatistics("Avg. S.:", String(this->_TSProperties->PropertiesCurrentRide.AverageSpeedKMPH, 2), "Km/h", 10, 90, 185, 145);
+        this->_screen->drawStatistics("Max S.:", String(this->_TSProperties->PropertiesCurrentRide.MaxSpeedKMPH, 2), "Km/h", 10, 90, 185, 170);
+    }
 }
 
 void ControlerScreen::drawGoHomePage()
@@ -615,10 +560,59 @@ void ControlerScreen::drawErrorPage()
 
 void ControlerScreen::drawWatch()
 {
-    // TODO
-    this->_screen->setTextSize(1);
-    this->_screen->setFont(1);
-    this->_screen->printText("WATCH", 100, 100);
+
+    if (this->_TSProperties->PropertiesGPS.ss == 60)
+    {                                                                                   // Check for roll-over
+        this->_TSProperties->PropertiesGPS.ss = 0;                                      // Reset seconds to zero
+        this->_TSProperties->PropertiesGPS.omm = this->_TSProperties->PropertiesGPS.mm; // Save last minute time for display update
+        this->_TSProperties->PropertiesGPS.mm++;                                        // Advance minute
+        if (this->_TSProperties->PropertiesGPS.mm > 59)
+        { // Check for roll-over
+            this->_TSProperties->PropertiesGPS.mm = 0;
+            this->_TSProperties->PropertiesGPS.hh++; // Advance hour
+            if (this->_TSProperties->PropertiesGPS.hh > 23)
+            {                                              // Check for 24hr roll-over (could roll-over on 13)
+                this->_TSProperties->PropertiesGPS.hh = 0; // 0 for 24 hour clock, set to 1 for 12 hour clock
+            }
+        }
+    }
+
+    // Update digital time
+    this->_screen->tft->setTextSize(8);
+    if (this->_TSProperties->PropertiesGPS.omm != this->_TSProperties->PropertiesGPS.mm)
+    {
+        this->_screen->tft->fillScreen(GC9A01A_BLACK);
+        // Redraw hours and minutes time every minute
+        this->_TSProperties->PropertiesGPS.omm = this->_TSProperties->PropertiesGPS.mm;
+        // Draw hours and minutes
+        if (this->_TSProperties->PropertiesGPS.hh < 10)
+        {
+            this->_screen->tft->setCursor(10, 90);
+            this->_screen->tft->print("0"); // Add hours leading zero for 24 hr clock
+            this->_screen->tft->setCursor(58, 90);
+            this->_screen->tft->print(this->_TSProperties->PropertiesGPS.hh); // Draw hours
+        }
+        else
+        {
+            this->_screen->tft->setCursor(10, 90);
+            this->_screen->tft->print(this->_TSProperties->PropertiesGPS.hh); // Draw hours
+        }
+        this->_screen->tft->setCursor(100, 90);
+        this->_screen->tft->setTextColor(GC9A01A_WHITE);
+        this->_screen->tft->print(":");
+        if (this->_TSProperties->PropertiesGPS.mm < 10)
+        {
+            this->_screen->tft->setCursor(140, 90);
+            this->_screen->tft->print("0"); // Add minutes leading zero
+            this->_screen->tft->setCursor(188, 90);
+            this->_screen->tft->print(this->_TSProperties->PropertiesGPS.mm); // Draw minutes
+        }
+        else
+        {
+            this->_screen->tft->setCursor(140, 90);
+            this->_screen->tft->print(this->_TSProperties->PropertiesGPS.mm); // Draw minutes
+        }
+    }
 }
 
 void ControlerScreen::drawTrajets(int p_index)
@@ -626,7 +620,6 @@ void ControlerScreen::drawTrajets(int p_index)
     // TODO
     /*
        1 - Destination du trajet
-
        2 - Distance du trajet
        3 - Temps moyen pour completer
        4 - Difficulté du trajet
@@ -683,6 +676,15 @@ void ControlerScreen::drawStatisticRide(int p_index)
     this->_screen->setTextSize(1);
     this->_screen->setFont(1);
     this->_screen->printText(trajet_nom + String(" donnees"), 100, 100);
+}
+
+void ControlerScreen::refresh()
+{
+    if (this->_TSProperties->PropertiesScreen.estChange)
+    {
+        this->_screen->tft->fillScreen(BLACK);
+        this->_TSProperties->PropertiesScreen.estChange = false;
+    }
 }
 
 #pragma endregion DrawPages

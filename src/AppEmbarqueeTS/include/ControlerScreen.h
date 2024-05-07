@@ -36,6 +36,7 @@ private:
     void drawPauseStop() override;
     void drawReDemarrer() override;
     void drawStatisticRide(int) override;
+    void refresh();
 
 public:
     ControlerScreen(TSProperties *TSProperties, StringQueue *trajetsSD);

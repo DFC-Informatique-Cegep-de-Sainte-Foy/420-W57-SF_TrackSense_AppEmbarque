@@ -121,6 +121,9 @@ public:
         bool estChute;
         bool estEnvoyerSMS;
         float Distance2Home;
+        uint32_t targetTime = 0;
+        uint8_t hh = conv2d(__TIME__), mm = conv2d(__TIME__ + 3), ss = conv2d(__TIME__ + 6); // Get H, M, S from compile time
+        byte omm = 99, oss = 99;
 
         int CounterGoodValue;
         int CounterTotal;
@@ -148,6 +151,9 @@ public:
             this->IsFixValid = false;
             this->estChute = false;
             this->estEnvoyerSMS = false;
+            this->targetTime = millis() + 1000;
+            this->omm = 99;
+            this->oss = 99;
         }
     } PropertiesGPS;
 
@@ -191,6 +197,7 @@ public:
         String etat_Actuel;
         int ActiveScreen; // Seul paramètre modifier par le controlerScreen
         bool IsDarkMode;
+        bool estChange = false;
 
         /*
             0 : Pins vers le haut
@@ -326,4 +333,11 @@ public:
     ~TSProperties();
 
     void initProperties();
+    static uint8_t conv2d(const char *p)
+    {
+        uint8_t v = 0;
+        if ('0' <= *p && *p <= '9')
+            v = *p - '0';
+        return 10 * v + *++p - '0';
+    }
 };

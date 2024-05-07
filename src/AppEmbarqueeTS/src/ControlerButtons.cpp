@@ -190,6 +190,7 @@ void ControlerButtons::tick()
         this->_lastDateChangementStateButtons = dateActuelle;
         this->_TSProperties->PropertiesTS.IsOnStanby = false;
         digitalWrite(TFT_BLK, HIGH); // Backlight on
+        this->_TSProperties->PropertiesScreen.estChange = true;
     }
     // Ecran Stand By : Stand By -> Compass -> Direction Home -> Watch
     if (this->_TSProperties->PropertiesScreen.etat_Actuel == "STAND_BY")
@@ -453,29 +454,6 @@ void ControlerButtons::tick()
 #endif
 }
 
-/*
-    0 : Home Page
-    1 : Ride Page
-    2 : Ride Statistics Page
-    3 : Compass Page
-    4 : Ride Direction Page
-    5 : Global Statistics Page
-    6 : Go Home Page
-    -1 : Init TS Page
-    -2 : Ending Ride Page
-    -3 : No Page (error)
-
-    0 : Page Accueil
-    1 : Page Trajet
-    2 : Page Statistiques Trajet
-    3 : Page Boussole
-    4 : Page Direction Trajet
-    5 : Page Statistiques Globales
-    6 : Page Retour Maison
-    -1 : Page Init TS
-    -2 : Page Fin Trajet
-    -3 : Page Erreur
-*/
 void ControlerButtons::changePageUp()
 {
     this->_TSProperties->PropertiesScreen.ActiveScreen++;
@@ -486,29 +464,6 @@ void ControlerButtons::changePageUp()
     }
 }
 
-/*
-    0 : Home Page
-    1 : Ride Page
-    2 : Ride Statistics Page
-    3 : Compass Page
-    4 : Ride Direction Page
-    5 : Global Statistics Page
-    6 : Go Home Page
-    -1 : Init TS Page
-    -2 : Ending Ride Page
-    -3 : No Page (error)
-
-    0 : Page Accueil
-    1 : Page Trajet
-    2 : Page Statistiques Trajet
-    3 : Page Boussole
-    4 : Page Direction Trajet
-    5 : Page Statistiques Globales
-    6 : Page Retour Maison
-    -1 : Page Init TS
-    -2 : Page Fin Trajet
-    -3 : Page Erreur
-*/
 void ControlerButtons::changePageDown()
 {
     this->_TSProperties->PropertiesScreen.ActiveScreen--;

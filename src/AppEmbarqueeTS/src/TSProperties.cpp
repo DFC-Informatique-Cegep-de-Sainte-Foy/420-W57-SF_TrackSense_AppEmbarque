@@ -49,7 +49,7 @@ void TSProperties::initProperties()
     this->PropertiesScreen.IsDarkMode = true;
     this->PropertiesScreen.ScreenRotation = atoi(ControlerConfigurationFile::getValue(FIELD_SCREEN_ROTATION).c_str());
     this->PropertiesScreen.IsScreenRotationChanged = false;
-
+    this->PropertiesScreen.estChange = false;
     // Current Ride
     this->PropertiesCurrentRide.resetCurrentRide();
 

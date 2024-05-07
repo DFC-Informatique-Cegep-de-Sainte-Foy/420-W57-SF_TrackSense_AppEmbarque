@@ -158,7 +158,7 @@
 #define PIN_CST816_INT 34
 
 /*----- Buzzer -----*/
-#define PIN_BUZZER -1
+#define PIN_BUZZER 32
 
 /*----- Battery -----*/
 // How to calculate Voltage : https://github.com/Xinyuan-LilyGO/LilyGO-T-SIM7000G/issues/104#issuecomment-833887214
