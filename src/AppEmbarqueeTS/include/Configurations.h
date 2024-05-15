@@ -191,6 +191,8 @@
 #define BLE_DELAY_SEND_POINT_MS 200
 
 // Service et caracterisiques pour CompletedRide
+// GUID contient seulement des caracteres en hexadecimal, donc il contient seulement des lettres a,b,c,d,e,f
+// string guidPattern = @"^[{(]?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}[)}]?$";
 #define BLE_COMPLETED_RIDE_SERVICE_UUID "62ffab64-3646-4fb9-88d8-541deb961192"
 
 #define BLE_COMPLETED_RIDE_CHARACTRISTIC_DATA "51656aa8-b795-427f-a96c-c4b6c57430dd"
@@ -206,10 +208,10 @@
 #define BLE_SCREEN_DESCRIPTOR_ROTATE_NAME "Rotate screen"
 #define BLE_SCREEN_DESCRIPTOR_ROTATE_UUID "65000b05-c1a9-4dfb-a173-bdaa4a029bf7"
 
-#define BLE_LED_SERVICE_UUID "68c50cff-e5ad-4cb8-9541-997d42925g17"
-#define BLE_LED_CHARACTRISTIC "65000b05-c1a9-4dfb-a173-bdaa4a029cf6"
-#define BLE_LED_DESCRIPTOR "LED SWITCH"
-#define BLE_LED_DESCRIPTOR_UUID "65000b05-c1a9-4dfb-a173-bdaa4a029cf7"
+#define BLE_RECEIVE_RIDE_SERVICE_UUID "68c50cff-e5ad-4cb8-9541-997d42925f17"
+#define BLE_RECEIVE_RIDE_CHARACTRISTIC "65000b05-c1a9-4dfb-a173-bdaa4a029cf6"
+#define BLE_RECEIVE_RIDE_DESCRIPTOR "LED SWITCH"
+#define BLE_RECEIVE_RIDE_DESCRIPTOR_UUID "65000b05-c1a9-4dfb-a173-bdaa4a029cf7"
 
 /*----- Configuration file -----*/
 #define PATH_CONFIGURATION_FILE "/Configuration.json"

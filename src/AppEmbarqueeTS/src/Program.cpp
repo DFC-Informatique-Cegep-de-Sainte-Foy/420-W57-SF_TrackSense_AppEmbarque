@@ -43,6 +43,29 @@ Program::~Program()
 
 void Program::executeCore1()
 {
+    // if (this->_TSProperties->PropertiesGPS.targetTime < millis())
+    // {
+    //     // Set next update for 1 second later
+    //     this->_TSProperties->PropertiesGPS.targetTime = millis() + 1000;
+    //     this->_TSProperties->PropertiesGPS.ss++; // Advance second
+
+    //     if (this->_TSProperties->PropertiesGPS.ss == 60)
+    //     {                                                                                   // Check for roll-over
+    //         this->_TSProperties->PropertiesGPS.ss = 0;                                      // Reset seconds to zero
+    //         this->_TSProperties->PropertiesGPS.omm = this->_TSProperties->PropertiesGPS.mm; // Save last minute time for display update
+    //         this->_TSProperties->PropertiesGPS.mm++;                                        // Advance minute
+    //         if (this->_TSProperties->PropertiesGPS.mm > 59)
+    //         { // Check for roll-over
+    //             this->_TSProperties->PropertiesGPS.mm = 0;
+    //             this->_TSProperties->PropertiesGPS.hh++; // Advance hour
+    //             if (this->_TSProperties->PropertiesGPS.hh > 23)
+    //             {                                              // Check for 24hr roll-over (could roll-over on 13)
+    //                 this->_TSProperties->PropertiesGPS.hh = 0; // 0 for 24 hour clock, set to 1 for 12 hour clock
+    //             }
+    //         }
+    //     }
+    // }
+
     DEBUG_STRING_LN(DEBUG_TS_CORE, "_controlerButtons");
     this->_controlerButtons->tick();
 

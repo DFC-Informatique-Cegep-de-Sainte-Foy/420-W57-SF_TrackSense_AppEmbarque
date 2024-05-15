@@ -223,7 +223,7 @@ void BLE::initAdvertising()
 
     this->_advertisingBLE->addServiceUUID(BLE_COMPLETED_RIDE_SERVICE_UUID);
     //
-    this->_advertisingBLE->addServiceUUID(BLE_LED_SERVICE_UUID);
+    this->_advertisingBLE->addServiceUUID(BLE_RECEIVE_RIDE_SERVICE_UUID);
     this->_advertisingBLE->start();
 };
 
@@ -231,7 +231,7 @@ void BLE::initServices()
 {
     this->_completedRideService = this->_serverBLE->createService(BLE_COMPLETED_RIDE_SERVICE_UUID);
     this->_screenService = this->_serverBLE->createService(BLE_SCREEN_SERVICE_UUID);
-    this->_receiveTrajetPlanifieService = this->_serverBLE->createService(BLE_LED_SERVICE_UUID);
+    this->_receiveTrajetPlanifieService = this->_serverBLE->createService(BLE_RECEIVE_RIDE_SERVICE_UUID);
 };
 
 void BLE::initCaracteristics()
@@ -248,7 +248,7 @@ void BLE::initCaracteristics()
     this->_screenRotateCharacteristic->setCallbacks(new ScreenRotateCallbacks());
 
     //
-    this->_trajetPlanifieCharacteristic = this->_receiveTrajetPlanifieService->createCharacteristic(BLE_LED_CHARACTRISTIC, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+    this->_trajetPlanifieCharacteristic = this->_receiveTrajetPlanifieService->createCharacteristic(BLE_RECEIVE_RIDE_CHARACTRISTIC, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
     this->_trajetPlanifieCharacteristic->setValue("LED allumer");
     this->_trajetPlanifieCharacteristic->setValue("id;nom;{}");
 
@@ -270,8 +270,8 @@ void BLE::initDescriptors()
     this->_screenRotateCharacteristic->addDescriptor(this->_screenRotateDescriptor);
 
     //
-    this->_trajetPlanifieDescriptor = new BLEDescriptor(BLE_LED_CHARACTRISTIC); // 65000b05-c1a9-4dfb-a173-bdaa4a029cf7
-    this->_trajetPlanifieDescriptor->setValue(BLE_LED_DESCRIPTOR);
+    this->_trajetPlanifieDescriptor = new BLEDescriptor(BLE_RECEIVE_RIDE_CHARACTRISTIC); // 65000b05-c1a9-4dfb-a173-bdaa4a029cf7
+    this->_trajetPlanifieDescriptor->setValue(BLE_RECEIVE_RIDE_DESCRIPTOR);
     this->_trajetPlanifieCharacteristic->addDescriptor(this->_trajetPlanifieDescriptor);
 };
 
