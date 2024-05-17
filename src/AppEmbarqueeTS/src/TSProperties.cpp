@@ -12,6 +12,7 @@ TSProperties::TSProperties() : PropertiesTS(),
                                PropertiesGPS()
 {
     this->initProperties();
+    this->trajet = new Trajet();
 }
 
 TSProperties::~TSProperties()
@@ -52,7 +53,6 @@ void TSProperties::initProperties()
     this->PropertiesScreen.estChange = false;
     // Current Ride
     this->PropertiesCurrentRide.resetCurrentRide();
-
     // BLE
     this->PropertiesCompletedRideToSend.CompletedRideId = "00000000-0000-0000-0000-000000000000";
     this->PropertiesCompletedRideToSend.Stats = "";

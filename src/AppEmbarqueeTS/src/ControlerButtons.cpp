@@ -66,7 +66,7 @@ void ControlerButtons::tick()
     this->_TSProperties->PropertiesButtons.Button1State = this->_finalStateButton1;
     this->_TSProperties->PropertiesButtons.Button2State = this->_finalStateButton2;
 #endif
-    // 说明按键了
+
     // Serial.println("2---Button-Appuyer Detecte ");
     if (this->_finalStateButton1 != 0 || this->_finalStateButton2 != 0)
     {
@@ -75,7 +75,6 @@ void ControlerButtons::tick()
         digitalWrite(TFT_BLK, HIGH); // Backlight on
     }
 
-    // 计算按键对应的值
     // Serial.println("3---Button-ControlState ");
 
     int controlerState = this->_finalStateButton1 + 4 * this->_finalStateButton2;
@@ -99,7 +98,7 @@ void ControlerButtons::tick()
         break;
 
     case 1:
-        /* Change Page Up ---- ici 添加指南针罗盘？？？*/
+
         // Serial.println("   3-2 --Button-State--1 ");
         if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted) // À retirer pour quand on ajoutera la boussole
         {
@@ -118,7 +117,7 @@ void ControlerButtons::tick()
         }
         else
         {
-            // 更新当前行程的数据
+
             this->startRide();
         }
         break;
@@ -480,6 +479,7 @@ void ControlerButtons::startRide()
     if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted == false)
     {
         DEBUG_STRING_LN(DEBUG_TS_BUTTONS, "===================== Start Ride =====================");
+
         this->_TSProperties->PropertiesCurrentRide.resetCurrentRide();
         this->_TSProperties->PropertiesGPS.resetGPSValues();
 
@@ -509,6 +509,8 @@ void ControlerButtons::startRide()
         // Test 418
         this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.78570;   //
         this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.28714; //
+        //
+        this->_TSProperties->startTrajet();
     }
 }
 
@@ -530,6 +532,8 @@ void ControlerButtons::finishRide()
         this->_TSProperties->PropertiesGPS.CounterTotal = 0;
         this->_TSProperties->PropertiesGPS.CounterGoodValue = 0;
 
+        //
+        this->_TSProperties->endTrajet();
         DEBUG_STRING_LN(DEBUG_TS_BUTTONS, "===================== Finish Ride =====================");
     }
 }

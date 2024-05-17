@@ -1,11 +1,14 @@
 #pragma once
 #include <Arduino.h>
 #include "Configurations.h"
+#include "Trajet.h"
 
 class TSProperties
 {
 public:
     /* Datas TrackSense */
+    Trajet *trajet;
+
     struct TSPropertiesTS
     {
         bool IsInitializingTS;
@@ -340,5 +343,44 @@ public:
         if ('0' <= *p && *p <= '9')
             v = *p - '0';
         return 10 * v + *++p - '0';
+    }
+    void startTrajet()
+    {
+        Serial.println("Ride Start!");
+        this->PropertiesCurrentRide.latitude_point_depart = this->PropertiesGPS.Latitude;
+        this->PropertiesCurrentRide.longitude_point_depart = this->PropertiesGPS.Longitude;
+        this->trajet->points->push_back(Location(this->PropertiesCurrentRide.latitude_point_depart, this->PropertiesCurrentRide.longitude_point_depart));
+        this->trajet->dateBegin = String(__DATE__);
+    }
+    void rajouterPointsDansTrajet()
+    {
+        this->trajet->points->push_back(Location(this->PropertiesGPS.Latitude, this->PropertiesGPS.Longitude));
+    }
+
+    void endTrajet()
+    {
+        Serial.println("Ride End!");
+        this->trajet->dateEnd = String(__DATE__);
+        // TODO:
+        this->trajet->estComplete = true;
+        this->trajet->estReadyToSave = true;
+        // this->trajet->nom = "New Trajet";
+        // this->trajet->ride_id = String(getuid());
+        // this->trajet->vitesse_moyenne=
+        //  this->trajet->duration=
+        // this->trajet->distance=
+    }
+
+    void PauseTrajet()
+    {
+        Serial.println("Ride paused!");
+        this->PropertiesCurrentRide.IsRidePaused = true;
+        // TODO:enrgistrer un timeSpam pour le start pause
+    }
+    void ReStartRide()
+    {
+        Serial.println("Ride re-start!");
+        this->PropertiesCurrentRide.IsRidePaused = false;
+        // TODO:enrgistrer un timeSpam pour le end pause
     }
 };
