@@ -42,7 +42,7 @@ void TSProperties::initProperties()
 
     // SD Card
     this->PropertiesSDCard.IsSDCardConnected = false;
-
+    this->PropertiesSDCard.NombreRidePlanifie = 0;
     // Screen
     this->PropertiesScreen.etat_Actuel = "INITIALISATION";
     this->PropertiesScreen.ActiveScreen = INIT_TS_PAGE_ID; //-1

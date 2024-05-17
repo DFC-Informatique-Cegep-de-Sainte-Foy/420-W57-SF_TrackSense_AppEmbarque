@@ -15,9 +15,9 @@ Program::Program() : _TSProperties(nullptr),
 {
     this->_TSProperties = new TSProperties();
     this->_trajetsSD = new StringQueue();
-    this->_controlerScreen = new ControlerScreen(this->_TSProperties, this->_trajetsSD);
     this->_controlerButtons = new ControlerButtons(this->_TSProperties);
     this->_sdCard = new SDCard(this->_TSProperties, this->_trajetsSD);
+    this->_controlerScreen = new ControlerScreen(this->_TSProperties, this->_trajetsSD, this->_sdCard);
     this->_ble = new BLE(this->_TSProperties, this->_sdCard);
     this->_gsm = new GSMTiny(this->_TSProperties);
     // this->_gsm = new MyTinyGsm(this->_TSProperties);
@@ -34,6 +34,8 @@ Program::Program() : _TSProperties(nullptr),
     this->_TSProperties->PropertiesScreen.etat_Actuel = "STAND_BY"; // Ecran est pret
     // this->_TSProperties->PropertiesScreen.ActiveScreen = HOME_PAGE_ID;
     this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
+    this->_TSProperties->PropertiesSDCard.NombreRidePlanifie = this->_sdCard->NumTrajet(PATH_RIDE_PLANIFIE);
+    Serial.println("Num Trajets -> " + String(this->_TSProperties->PropertiesSDCard.NombreRidePlanifie));
 }
 
 Program::~Program()

@@ -1,10 +1,11 @@
 #include "ControlerScreen.h"
 
-ControlerScreen::ControlerScreen(TSProperties *TSProperties, StringQueue *trajetsSD) : _TSProperties(TSProperties),
-                                                                                       _screen(nullptr),
-                                                                                       _timeToDisplayEndingRidePageMS(10000),
-                                                                                       _xMutex(nullptr),
-                                                                                       _trajetsSauvgardeSD(trajetsSD)
+ControlerScreen::ControlerScreen(TSProperties *TSProperties, StringQueue *trajetsSD, ISDCard *sdCard) : _TSProperties(TSProperties),
+                                                                                                        _screen(nullptr),
+                                                                                                        _timeToDisplayEndingRidePageMS(10000),
+                                                                                                        _xMutex(nullptr),
+                                                                                                        _trajetsSauvgardeSD(trajetsSD),
+                                                                                                        _sd(sdCard)
 
 {
     this->_screen = new ScreenGC9A01(this->_TSProperties);
@@ -625,12 +626,20 @@ void ControlerScreen::drawTrajets(int p_index)
        4 - Difficulté du trajet
        5 - Bouton Demarrer
     */
-    String trajet_nom = this->_trajetsSauvgardeSD->getNode(p_index);
+    /*
+        1-Lecture de la carte SD
+        2-Selon la valeur de p_index, obtenez le fichier json à l'emplacement correspondant et convertissez le fichier json en Trajet
+        3-Déterminer les données à afficher en fonction de la valeur du trajet
+        4-Affichage à l'écran
+    */
+    // Trajet trajet = this->_sd->ReadTrajet("planifie", _sd->GetJsonFileNames("planifie")[p_index]);
+    Trajet trajet = this->_sd->ReadTrajet(PATH_RIDE_PLANIFIE, _sd->GetJsonFileNamesAvecSuffixe(PATH_RIDE_PLANIFIE)[p_index]);
+    // Serial.println(trajet.nom + " " + trajet.distance);
     this->_screen->setTextSize(1);
     this->_screen->setFont(1);
-    this->_screen->printText("Destination: Everest", 20, 80);
-    this->_screen->printText("Distance: 15000 KM", 20, 100);
-    this->_screen->printText("Temps: 28D", 20, 120);
+    this->_screen->printText("Destination: " + trajet.nom, 20, 80);
+    this->_screen->printText("Distance: " + String(trajet.distance), 20, 100);
+    this->_screen->printText("Temps: " + String(trajet.duration), 20, 120);
     this->_screen->printText("Difficulte: Hard", 20, 140);
     // draw bouton
     this->_screen->drawBoutonTriangle(230, 120, 190, 150, 190, 90); // Un triangle point a droite en vert

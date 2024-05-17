@@ -116,6 +116,8 @@
 #define PIN_SDCARD_CS 13
 #define PIN_SDCARD_MISO 2
 
+#define PATH_RIDE_PLANIFIE "/planifie"
+#define PATH_RIDE_COMPLETE "/complete"
 #define SDCARD_ROOT_PATH "/cr"
 #define SDCARD_FILE_EXTENSION ".csv"
 #define SDCARD_FILE_STATS_NAME "_stats"

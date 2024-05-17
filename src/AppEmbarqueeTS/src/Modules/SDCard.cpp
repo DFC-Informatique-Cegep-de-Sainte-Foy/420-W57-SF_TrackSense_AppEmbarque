@@ -47,6 +47,8 @@ void SDCard::init()
 
         this->checkFiles();
     }
+    // this->_TSProperties->PropertiesSDCard.NombreRidePlanifie = this->NumTrajet(PATH_RIDE_PLANIFIE);
+    // Serial.println("Num Trajets -> " + String(this->_TSProperties->PropertiesSDCard.NombreRidePlanifie));
     DEBUG_STRING_LN(DEBUG_TS_SDCARD, "===========================");
 }
 
@@ -91,10 +93,33 @@ void SDCard::SaveTrajet(String p_path, String p_jsonStr)
     file.close();
 }
 
+std::vector<String> SDCard::GetJsonFileNamesAvecSuffixe(String p_dossier_path)
+{
+    // creer vector string
+    std::vector<String> listFileNames;
+    // open file
+    File root = SD.open(p_dossier_path, FILE_READ);
+    if (!root)
+    {
+        Serial.println("Impossible d'ouvrir le dossier");
+    }
+    // parcourir dossier Ride_Planifie
+    while (File file = root.openNextFile())
+    {
+        String name = file.name();
+        // rajouter
+        listFileNames.push_back(name);
+        file.close();
+    }
+    root.close();
+    return listFileNames;
+}
+
 Trajet SDCard::ReadTrajet(String p_path, String p_fileName)
 {
-    String FileName = p_path + "/" + p_fileName + ".txt";
+    String FileName = p_path + "/" + p_fileName;
     File file = SD.open(FileName, FILE_READ);
+    Serial.println(FileName); // planifie/5515.txt.txt
 
     if (!file)
     {
@@ -111,6 +136,23 @@ Trajet SDCard::ReadTrajet(String p_path, String p_fileName)
     return trajet;
 }
 
+int SDCard::NumTrajet(String p_dossier_path)
+{
+    int num = 0;
+    File root = SD.open(p_dossier_path, FILE_READ);
+    if (!root)
+    {
+        Serial.println("Impossible d'ouvrir le dossier");
+    }
+    // num = root.size();
+    while (File file = root.openNextFile())
+    {
+        num++;
+        file.close();
+    }
+    root.close();
+    return num;
+}
 void SDCard::checkFiles()
 {
     this->_nbRidesInSDCard = 0;
@@ -178,6 +220,7 @@ void SDCard::writeFile()
     }
     file.close();
 }
+
 void SDCard::creerDir(String p_dir)
 {
     Serial.printf("Creating Dir: %s\n", p_dir);
@@ -190,6 +233,7 @@ void SDCard::creerDir(String p_dir)
         Serial.println("mkdir failed");
     }
 }
+
 void SDCard::processCurrentRide()
 {
     if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted && !this->_isRideStarted)

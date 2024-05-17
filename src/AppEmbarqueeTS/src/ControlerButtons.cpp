@@ -243,8 +243,9 @@ void ControlerButtons::tick()
         }
         else if (this->_finalGesture == "SWIPE UP")
         {
+            // 0 - 1 - 2 - 3 - (nombreRidePlanifie-1)
             this->_TSProperties->PropertiesScreen.ActiveScreen++;
-            if (this->_TSProperties->PropertiesScreen.ActiveScreen == 5)
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen >= this->_TSProperties->PropertiesSDCard.NombreRidePlanifie)
             {
                 this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
             }
@@ -253,11 +254,11 @@ void ControlerButtons::tick()
         else if (this->_finalGesture == "SWIPE DOWN")
         {
             this->_TSProperties->PropertiesScreen.ActiveScreen--;
-            if (this->_TSProperties->PropertiesScreen.ActiveScreen == -1)
+            if (this->_TSProperties->PropertiesScreen.ActiveScreen < 0)
             {
-                this->_TSProperties->PropertiesScreen.ActiveScreen = 4;
+                this->_TSProperties->PropertiesScreen.ActiveScreen = this->_TSProperties->PropertiesSDCard.NombreRidePlanifie - 1;
             }
-            Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen);
+            Serial.println(this->_TSProperties->PropertiesScreen.ActiveScreen); //-1??
         }
         else if (this->_finalGesture == "SINGLE CLICK") // appuyer sur un Trajet
         {

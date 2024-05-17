@@ -623,6 +623,7 @@ void ScreenGC9A01::Draw_Cadran_Compass()
     // Dessinez 60 échelles et azimuts
     Draw_points_azimuths();
 }
+
 void ScreenGC9A01::cleanNeedleCompass()
 {
     this->tft->fillTriangle(ox, oy, px, py, rx, ry, BLACK);

@@ -6,12 +6,14 @@
 
 #include "Modules/ScreenGC9A01.h"
 #include "StringQueue.h"
+#include "Modules/SDCard.h"
 class ControlerScreen : public IControlerScreen
 {
 private:
     TSProperties *_TSProperties;
     ScreenGC9A01 *_screen;
     StringQueue *_trajetsSauvgardeSD;
+    ISDCard *_sd;
 
     unsigned long _timeToDisplayEndingRidePageMS;
     bool entreCompass = false;
@@ -39,7 +41,7 @@ private:
     void refresh();
 
 public:
-    ControlerScreen(TSProperties *TSProperties, StringQueue *trajetsSD);
+    ControlerScreen(TSProperties *TSProperties, StringQueue *trajetsSD, ISDCard *sdCard);
     ~ControlerScreen();
 
     /*

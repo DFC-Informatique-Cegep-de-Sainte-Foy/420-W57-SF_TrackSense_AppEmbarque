@@ -214,6 +214,7 @@ public:
     struct TSPropertiesSDCard
     {
         bool IsSDCardConnected;
+        int NombreRidePlanifie;
     } PropertiesSDCard;
 
     /* datas Bluetooth */
