@@ -6,6 +6,7 @@
 #include "Modules/ButtonTactile.h"
 #include "Modules/ButtonTouch.h"
 #include <UUID.h>
+#include "Modules/SDCard.h"
 
 class ControlerButtons
 {
@@ -13,6 +14,7 @@ private:
     TSProperties *_TSProperties;
     IButton *_button1;
     IButton *_button2;
+    ISDCard *_sd;
 
     UUID *_guidGenerator;
 
@@ -27,7 +29,7 @@ private:
 
     void changePageUp();
     void changePageDown();
-    void startRide();
+    void startRide(int p_index);
     void finishRide();
     void pauseRide();
     void restartRide();
@@ -35,7 +37,7 @@ private:
     void goHome();
 
 public:
-    ControlerButtons(TSProperties *TSProperties);
+    ControlerButtons(TSProperties *TSProperties, ISDCard *sdCard);
     ~ControlerButtons();
 
     void tick();

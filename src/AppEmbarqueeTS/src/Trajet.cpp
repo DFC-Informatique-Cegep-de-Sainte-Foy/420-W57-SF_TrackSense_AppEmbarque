@@ -158,3 +158,48 @@ String Trajet::fromTrajet2Json() const
     serializeJson(doc, jsonStr);
     return jsonStr;
 }
+
+void Trajet::calculerDuration(long p_duration)
+{
+    this->duration = p_duration;
+}
+
+void Trajet::calculerDIstance(double p_distance)
+{
+    this->distance = p_distance;
+}
+
+void Trajet::calculerVitesse(double p_vitesse)
+{
+    this->vitesse_moyenne = p_vitesse;
+}
+
+void Trajet::rajouterPointInteret(Location p_point)
+{
+    this->pointsdInteret->push_back(p_point);
+}
+
+void Trajet::rajouterPointDanger(Location p_point)
+{
+    this->pointsdDanger->push_back(p_point);
+}
+
+void Trajet::creerNomTrajet()
+{
+    this->nom = String(this->dateEnd);
+}
+
+void Trajet::setUUIDTrajet(String p_uuid)
+{
+    this->ride_id = p_uuid;
+}
+
+void Trajet::setStart(String p_start)
+{
+    this->dateBegin = p_start;
+}
+
+void Trajet::setEnd(String p_end)
+{
+    this->dateEnd = p_end;
+}

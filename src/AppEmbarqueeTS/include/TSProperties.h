@@ -377,6 +377,7 @@ public:
         this->PropertiesCurrentRide.IsRidePaused = true;
         // TODO:enrgistrer un timeSpam pour le start pause
     }
+
     void ReStartRide()
     {
         Serial.println("Ride re-start!");

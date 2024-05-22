@@ -2,16 +2,17 @@
 #define ECRAN_TACTILE
 // #define DEUX_BOUTON
 
-ControlerButtons::ControlerButtons(TSProperties *TSProperties) : _TSProperties(TSProperties),
-                                                                 _button1(nullptr),
-                                                                 _button2(nullptr),
-                                                                 // _isPressedButton1(false),
-                                                                 // _isPressedButton2(false),
-                                                                 _finalStateButton1(0),
-                                                                 _finalStateButton2(0),
-                                                                 _guidGenerator(nullptr),
-                                                                 _lastDateChangementStateButtons(millis()),
-                                                                 _finalGesture("NONE")
+ControlerButtons::ControlerButtons(TSProperties *TSProperties, ISDCard *sdCard) : _TSProperties(TSProperties),
+                                                                                  _button1(nullptr),
+                                                                                  _button2(nullptr),
+                                                                                  // _isPressedButton1(false),
+                                                                                  // _isPressedButton2(false),
+                                                                                  _finalStateButton1(0),
+                                                                                  _finalStateButton2(0),
+                                                                                  _guidGenerator(nullptr),
+                                                                                  _lastDateChangementStateButtons(millis()),
+                                                                                  _finalGesture("NONE"),
+                                                                                  _sd(sdCard)
 {
     // this->_button1 = new ButtonTactile(PIN_BUTTON1, _TSProperties);
 
@@ -264,10 +265,17 @@ void ControlerButtons::tick()
             // Si appuyer sur un bouton, (190,90) (230,120) (190,150)
             if (this->_button1->getTouchPosition().first >= 190 && this->_button1->getTouchPosition().first <= 230 && this->_button1->getTouchPosition().second >= 90 && this->_button1->getTouchPosition().second <= 150)
             {
+                int indexRide = this->_TSProperties->PropertiesScreen.ActiveScreen;
+                // diriger l'ecran vers Demarrer - 0
                 this->_TSProperties->PropertiesScreen.etat_Actuel = "DEMARRER"; // entrer dans ecran de DEMARRER
                 this->_TSProperties->PropertiesScreen.ActiveScreen = 0;
-                // Trajet Start
-                this->startRide();
+                // Trajet Start - >
+                // devrait appler une methode dans la classe de TSProperty pour modifier les properties du Trajet
+                // mais pas une methode de controlerButton; tell don't ask,mais ici on fait comme ca temporairement
+                // il faut donner aussi un index pour faire savoir quel trajet dans le vecteur est demarre
+                // le index est le numero d'active screen actuel avant de remettre a 0;
+                this->startRide(indexRide);
+                // this->_TSProperties->startTrajet();
                 Serial.println("2 Demarrer");
             }
         }
@@ -375,82 +383,6 @@ void ControlerButtons::tick()
         }
     }
 
-    // pseudocode
-    /*
-        1 - prendre gesture de touch
-        2 - verifier l'etat actuel de TS
-        3 - MAJ l'etat de TS selon l'etat actuel et gesture de touch
---------------------------------------------------------------------------
-    1)  this->_finalStateButton1 = this->_button1->getFinalState();
-
-    2)  Ecran 1
-        if this-> _TS_etat_Actuel == StandBy
-            if _finalStateButton1 == "SWIPE RIGHT"   →
-                then this-> _TS_etat_Actuel = Liste_Trajets
-                then this-> _TS_Ecran_Active = 0
-
-            else if _finalStateButton1 == "SWIPE LEFT"   ←
-                then this-> _TS_etat_Actuel = Statistic_Trajet
-                then this-> _TS_Ecran_Active = 0
-
-            else if _finalStateButton1 == "SWIPE UP"   ↑
-                then this-> _TS_etat_Actuel = StandBy
-                then this->  _TS_Ecran_Active ++
-
-            else if _finalStateButton1 == "SWIPE DOWN"  ↓
-                then this-> _TS_etat_Actuel = StandBy
-                then this-> _TS_Ecran_Active --
-        Ecran 2
-        if this-> _TS_etat_Actuel == Liste_Trajet
-            if _finalStateButton1 == "SWIPE RIGHT"   →
-                then this-> _TS_etat_Actuel = Statistic_Trajet
-                then this-> _TS_Ecran_Active = 0
-
-            else if _finalStateButton1 == "SWIPE LEFT"   ←
-                then this-> _TS_etat_Actuel = Stand_By
-                then this-> _TS_Ecran_Active = 0
-
-            else if _finalStateButton1 == "SWIPE UP"   ↑
-                then this-> _TS_etat_Actuel = Liste_Trajet
-                then this->  _TS_Ecran_Active ++
-
-            else if _finalStateButton1 == "SWIPE DOWN"  ↓
-                then this-> _TS_etat_Actuel = Liste_Trajet
-                then this-> _TS_Ecran_Active --
-
-            else if _finalStateButton1 == "SINGLE CLICK"
-                then this-> _TS_etat_Actuel = Demarrer
-
-        Ecran 3
-        if this-> _TS_etat_Actuel == Demarrer
-            else if _finalStateButton1 == "SWIPE UP"   ↑
-                then this-> _TS_etat_Actuel = Demarrer
-                then this->  _TS_Ecran_Active ++
-
-            else if _finalStateButton1 == "SWIPE DOWN"  ↓
-                then this-> _TS_etat_Actuel = Demarrer
-                then this-> _TS_Ecran_Active --
-
-            else if _finalStateButton1 == "SINGLE CLICK" sur "STOP"
-                then this-> _TS_etat_Actuel = Statistic_Trajets
-
-            else if _finalStateButton1 == "SINGLE CLICK" sur "Pause"
-                then this-> _TS_etat_Actuel = Pause
-                then this-> _TS_Ecran_Actuel = Pause  ??? rajouter un Bouton ou rajouter un ecran
-
-            else if _finalStateButton1 == "SINGLE CLICK" sur "Re-Demarrer"
-                then this-> _TS_etat_Actuel = Demarrer
-
-        Ecran 4
-        if this-> _TS_etat_Actuel == Statistic_Trajet
-            if _finalStateButton1 == "SWIPE RIGHT"   →
-                then this-> _TS_etat_Actuel = Stand By
-                then this-> _TS_Ecran_Active = 0
-
-            else if _finalStateButton1 == "SWIPE LEFT"   ←
-                then this-> _TS_etat_Actuel = Liste_Trajets
-                then this-> _TS_Ecran_Active = 0
-    */
 #endif
 }
 
@@ -474,44 +406,37 @@ void ControlerButtons::changePageDown()
     }
 }
 
-void ControlerButtons::startRide()
+void ControlerButtons::startRide(int p_index)
 {
+
     if (this->_TSProperties->PropertiesCurrentRide.IsRideStarted == false)
     {
         DEBUG_STRING_LN(DEBUG_TS_BUTTONS, "===================== Start Ride =====================");
-
+        // reset TS_Property et GPS
         this->_TSProperties->PropertiesCurrentRide.resetCurrentRide();
         this->_TSProperties->PropertiesGPS.resetGPSValues();
-
+        // creer Trajet par index
+        // this->_TSProperties->trajet = this->_sd->ReadTrajet(PATH_RIDE_PLANIFIE, _sd->GetJsonFileNamesAvecSuffixe(PATH_RIDE_PLANIFIE)[p_index]);
+        this->_TSProperties->trajet = new Trajet(this->_sd->ReadTrajet(PATH_RIDE_PLANIFIE, _sd->GetJsonFileNamesAvecSuffixe(PATH_RIDE_PLANIFIE)[p_index]));
+        // initialiser TSProperties
         this->_TSProperties->PropertiesCurrentRide.IsRideStarted = true;
         this->_TSProperties->PropertiesCurrentRide.IsRideFinished = false;
-
         this->_TSProperties->PropertiesCurrentRide.StartTimeMS = millis();
-
         this->_guidGenerator->seed(this->_TSProperties->PropertiesCurrentRide.StartTimeMS);
         this->_guidGenerator->generate();
-
         this->_TSProperties->PropertiesCurrentRide.CompletedRideId = this->_guidGenerator->toCharArray();
-        // this->_TSProperties->PropertiesScreen.ActiveScreen = RIDE_PAGE_ID; // RIDE_PAGE_ID =1
+        this->_TSProperties->PropertiesCurrentRide.latitude_destination = this->_TSProperties->trajet->points->back().latitude;   //
+        this->_TSProperties->PropertiesCurrentRide.longitude_destination = this->_TSProperties->trajet->points->back().longitude; //
 
-        // HOME
-        // this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.78772;   //
-        // this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.26219; //
-
-        // Chateau Frontenac
-        // this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.81207;   //
-        // this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.20501; //
-
-        // Test Garneau
-        // this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.79308;   //
-        // this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.26474; //
-
-        // Test 418
-        this->_TSProperties->PropertiesCurrentRide.latitude_destination = 46.78570;   //
-        this->_TSProperties->PropertiesCurrentRide.longitude_destination = -71.28714; //
-        //
-        this->_TSProperties->startTrajet();
+        // initialiser Trajet
+        this->_TSProperties->trajet->ride_id = this->_TSProperties->PropertiesCurrentRide.CompletedRideId;
+        this->_TSProperties->trajet->dateBegin = this->_TSProperties->PropertiesCurrentRide.StartTimeMS;
+        this->_TSProperties->trajet->estComplete = false;
+        this->_TSProperties->trajet->estReadyToSave = false;
     }
+    Serial.println("Trajet Nom->" + this->_TSProperties->trajet->nom + "  Begin->  " + this->_TSProperties->trajet->dateBegin); // checked！
+    Serial.println("Destination latitude-> " + String(this->_TSProperties->PropertiesCurrentRide.latitude_destination));        // checked！
+    Serial.println("Destination longitude-> " + String(this->_TSProperties->PropertiesCurrentRide.longitude_destination));      // checked！
 }
 
 void ControlerButtons::finishRide()

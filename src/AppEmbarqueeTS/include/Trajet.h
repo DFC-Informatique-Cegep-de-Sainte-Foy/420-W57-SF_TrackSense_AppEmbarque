@@ -4,6 +4,9 @@
 #include <vector>
 #include "Location.h"
 #include "ArduinoJson.h"
+#include <time.h>
+#include <UUID.h>
+
 class Trajet
 {
 private:
@@ -14,6 +17,16 @@ public:
     ~Trajet();
 
     String fromTrajet2Json() const;
+
+    void calculerDuration(long p_duration);
+    void calculerDIstance(double p_distance);
+    void calculerVitesse(double p_vitesse);
+    void rajouterPointInteret(Location p_point);
+    void rajouterPointDanger(Location p_point);
+    void creerNomTrajet();
+    void setUUIDTrajet(String p_uuid);
+    void setStart(String p_start);
+    void setEnd(String p_end);
 
     String ride_id;
     String nom;

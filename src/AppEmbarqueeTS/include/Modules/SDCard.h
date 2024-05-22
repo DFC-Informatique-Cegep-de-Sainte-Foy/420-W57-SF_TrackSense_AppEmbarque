@@ -48,6 +48,7 @@ public:
     std::vector<String> GetJsonFileNamesAvecSuffixe(String p_dossier_path) override;
     Trajet ReadTrajet(String p_path, String p_fileName) override;
     int NumTrajet(String p_dossier_path);
+
     // test
     void createRideFiles();
     void writeFile();
