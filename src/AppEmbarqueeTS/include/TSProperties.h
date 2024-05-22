@@ -360,7 +360,6 @@ public:
     void endTrajet()
     {
         Serial.println("Ride End!");
-        this->trajet->dateEnd = String(__DATE__);
         // TODO:
         this->trajet->estComplete = true;
         this->trajet->estReadyToSave = true;

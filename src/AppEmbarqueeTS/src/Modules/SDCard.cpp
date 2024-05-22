@@ -63,7 +63,7 @@ void SDCard::tick()
     }
 };
 
-void SDCard::SaveTrajet(String p_path, String p_jsonStr)
+void SDCard::SaveTrajetPlanifie(String p_path, String p_jsonStr)
 {
     // Creer path si n'existe pas
     if (!SD.exists(p_path))
@@ -93,6 +93,32 @@ void SDCard::SaveTrajet(String p_path, String p_jsonStr)
     file.close();
 }
 
+void SDCard::SaveTrajetComplete(String p_path, String p_fileName, String p_jsonStr)
+{
+    // Creer path si n'existe pas
+    if (!SD.exists(p_path))
+    {
+        SDCard::creerDir(p_path);
+    }
+
+    File file = SD.open(p_fileName, FILE_WRITE);
+    // write in file.txt
+    if (!file)
+    {
+        Serial.println("Failed to open file for writing");
+        return;
+    }
+
+    if (file.print(p_jsonStr))
+    {
+        Serial.println("File written" + p_jsonStr);
+    }
+    else
+    {
+        Serial.println("Write failed");
+    }
+    file.close();
+}
 std::vector<String> SDCard::GetJsonFileNamesAvecSuffixe(String p_dossier_path)
 {
     // creer vector string

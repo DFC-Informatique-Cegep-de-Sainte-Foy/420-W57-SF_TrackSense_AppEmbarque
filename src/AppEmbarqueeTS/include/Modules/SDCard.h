@@ -44,7 +44,9 @@ public:
     Trajet *_trajet;
     void init() override;
     void tick() override;
-    void SaveTrajet(String p_path, String p_jsonStr) override;
+    void SaveTrajetPlanifie(String p_path, String p_jsonStr) override;
+    void SaveTrajetComplete(String p_path, String p_fileName, String p_jsonStr) override;
+
     std::vector<String> GetJsonFileNamesAvecSuffixe(String p_dossier_path) override;
     Trajet ReadTrajet(String p_path, String p_fileName) override;
     int NumTrajet(String p_dossier_path);

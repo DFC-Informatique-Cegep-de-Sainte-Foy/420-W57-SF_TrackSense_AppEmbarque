@@ -434,9 +434,9 @@ void ControlerButtons::startRide(int p_index)
         this->_TSProperties->trajet->estComplete = false;
         this->_TSProperties->trajet->estReadyToSave = false;
     }
-    Serial.println("Trajet Nom->" + this->_TSProperties->trajet->nom + "  Begin->  " + this->_TSProperties->trajet->dateBegin); // checked！
-    Serial.println("Destination latitude-> " + String(this->_TSProperties->PropertiesCurrentRide.latitude_destination));        // checked！
-    Serial.println("Destination longitude-> " + String(this->_TSProperties->PropertiesCurrentRide.longitude_destination));      // checked！
+    // Serial.println("Trajet Nom->" + this->_TSProperties->trajet->nom + "  Begin->  " + this->_TSProperties->trajet->dateBegin); // checked！
+    // Serial.println("Destination latitude-> " + String(this->_TSProperties->PropertiesCurrentRide.latitude_destination));        // checked！
+    // Serial.println("Destination longitude-> " + String(this->_TSProperties->PropertiesCurrentRide.longitude_destination));      // checked！
 }
 
 void ControlerButtons::finishRide()
@@ -457,8 +457,16 @@ void ControlerButtons::finishRide()
         this->_TSProperties->PropertiesGPS.CounterTotal = 0;
         this->_TSProperties->PropertiesGPS.CounterGoodValue = 0;
 
+        // Trajet
+        this->_TSProperties->trajet->estComplete = true;
+        this->_TSProperties->trajet->dateEnd = this->_TSProperties->PropertiesCurrentRide.EndTimeMS;
+        this->_TSProperties->trajet->duration = this->_TSProperties->PropertiesCurrentRide.DurationS;
+        this->_TSProperties->trajet->vitesse_moyenne = this->_TSProperties->PropertiesCurrentRide.AverageSpeedKMPH;
+        this->_TSProperties->trajet->estReadyToSave = true;
+        String filename = this->_TSProperties->trajet->nom + "-" + String(this->_TSProperties->PropertiesGPS.Year) + "-" + String(this->_TSProperties->PropertiesGPS.Month) + "-" + String(this->_TSProperties->PropertiesGPS.Day) + "-" + String(this->_TSProperties->PropertiesGPS.Hour) + "-" + String(this->_TSProperties->PropertiesGPS.Minute) + "-" + String(this->_TSProperties->PropertiesGPS.Seconde) + "-" + String(this->_TSProperties->trajet->dateEnd);
+        String json = this->_TSProperties->trajet->fromTrajet2Json();
+        this->_sd->SaveTrajetComplete(PATH_RIDE_COMPLETE, String(PATH_RIDE_COMPLETE) + "/" + filename + ".txt", json);
         //
-        this->_TSProperties->endTrajet();
         DEBUG_STRING_LN(DEBUG_TS_BUTTONS, "===================== Finish Ride =====================");
     }
 }

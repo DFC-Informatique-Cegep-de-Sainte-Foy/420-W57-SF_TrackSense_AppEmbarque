@@ -365,6 +365,6 @@ void BLE::lancerTrajet()
     // Trajet t = Trajet::fromJsonStr2Trajet(stringJSON);
     // Serial.println(t.nom); // null
     // Sauvgarder un trajet dans SD
-    _sd->SaveTrajet("/planifie", stringJSON);
+    _sd->SaveTrajetPlanifie("/planifie", stringJSON);
     // Lancer un Trajet
 }
