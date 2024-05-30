@@ -15,6 +15,7 @@ GY87_Adafruit::GY87_Adafruit(TSProperties *p_tsProperties)
 
     Serial.println("MPU6050 6 accelerator et gyroscoper Test");
     Serial.println("");
+
     // Stand By Mpu6050
     if (!_mpu->begin())
     {
@@ -27,13 +28,15 @@ GY87_Adafruit::GY87_Adafruit(TSProperties *p_tsProperties)
     {
         Serial.println("MPU6050 Stand By...");
     }
-    // // initialiser les sensors apres mpu6050 stand By
+
+    // initialiser les sensors apres mpu6050 stand By
     this->mpu_accel = _mpu->getAccelerometerSensor();
     this->mpu_gyro = _mpu->getGyroSensor();
     this->mpu_temp = _mpu->getTemperatureSensor();
 
     // switch ON pour que ESP32 connecte directement au HMC5883L
-    _mpu->setI2CBypass(true); // 开启从模式，让MPU6050失去对HMC5883L的控制，而是由当前程序的控制者ESP32控制读取HMC5883L的芯片数据
+    _mpu->setI2CBypass(true); // Activez le mode esclave, de sorte que le MPU6050 perde le contrôle du HMC5883L.
+    // Au lieu de cela, le contrôleur du programme actuel, ESP32, contrôle la lecture des données de la puce du HMC5883L.
     // /*---------------------------------Initialiser sensor events---------------------------------------*/
 
     // initailiser les sensor events
@@ -87,28 +90,55 @@ void GY87_Adafruit::read()
     _mpu->getEvent(&temp_evt_acce, &temp_evt_gyro, &temp_evt_tem);
 
     /*---------------------------------lire donnees bruits via events----------------------------------------*/
-    float GaX = ((temp_evt_compass.magnetic.x) - Xoffset) * Kx;
-    float GaY = ((temp_evt_compass.magnetic.y) - Yoffset) * Ky;
+    // #define Test01
+    // #define Test02
 
-    float Magangle = 0;
+#ifdef Test01
+    // float GaX = ((temp_evt_compass.magnetic.x) - Xoffset) * Kx;
+    // float GaY = ((temp_evt_compass.magnetic.y) - Yoffset) * Ky;
 
-    if ((GaX > 0) && (GaY > 0))
-        Magangle = atan(GaY / GaX) * 57;
-    else if ((GaX > 0) && (GaY < 0))
-        Magangle = 360 + atan(GaY / GaX) * 57;
-    else if ((GaX == 0) && (GaY > 0))
-        Magangle = 90;
-    else if ((GaX == 0) && (GaY < 0))
-        Magangle = 270;
-    else if (GaX < 0)
-        Magangle = 180 + atan(GaY / GaX) * 57;
+    // float Magangle = 0;
+    // // Calculer angle
+    // if ((GaX > 0) && (GaY > 0))
+    //     Magangle = atan(GaY / GaX) * 57;
+    // else if ((GaX > 0) && (GaY < 0))
+    //     Magangle = 360 + atan(GaY / GaX) * 57;
+    // else if ((GaX == 0) && (GaY > 0))
+    //     Magangle = 90;
+    // else if ((GaX == 0) && (GaY < 0))
+    //     Magangle = 270;
+    // else if (GaX < 0)
+    //     Magangle = 180 + atan(GaY / GaX) * 57;
+#endif
 
-    // // 应用磁偏角
+#ifdef Test02
+    float GaX = ((temp_evt_compass.magnetic.x));
+    float GaY = ((temp_evt_compass.magnetic.y));
+
+    float Magangle = atan2(-GaY, GaX) / M_PI * 180;
+
+    if (Magangle < 0)
+    {
+        Magangle = Magangle + 360;
+        ;
+    }
+
+#endif
+
+    // Calculer angle _ test 1
     // Magangle += _magneticDeclinationDegrees;
-    Magangle += (-15.6);
     // Serial.print("MagAngle-> ");
-    // Serial.println(Magangle);
-    _TSProperties->PropertiesCompass.heading = Magangle;
+    // Serial.println(Magangle * 180 / M_PI);
+    // _TSProperties->PropertiesCompass.heading = Magangle;
+
+    //
+    // Rendre cohérent le système de coordonnées de l'axe d'accélération et de l'axe de vitesse angulaire
+    /*----------------------------------------Normaliser--------------------------------------------------------------------*/
+    this->normaliseMPU(&(temp_evt_gyro.gyro.x), &(temp_evt_gyro.gyro.y), &(temp_evt_gyro.gyro.z));
+    /*------------------------------------------------------------------------------------------------------------*/
+    // Calibration : So the goal of calibration was to transform displaced eliptical shapes into nice balanced spheres centered on the origin
+    /*------------------------------------------------------------------------------------------------------------*/
+    // print acceleration
     // Serial.print("Accn X: ");
     // Serial.print(temp_evt_acce.acceleration.x);
     // Serial.print(", Y: ");
@@ -116,12 +146,9 @@ void GY87_Adafruit::read()
     // Serial.print(", Z: ");
     // Serial.print(temp_evt_acce.acceleration.z);
     // Serial.print(" m/s^2");
-    // Serial.print("  ");
-    // Rendre cohérent le système de coordonnées de l'axe d'accélération et de l'axe de vitesse angulaire
-    /*----------------------------------------Normaliser--------------------------------------------------------------------*/
-    this->normaliseMPU(&(temp_evt_gyro.gyro.x), &(temp_evt_gyro.gyro.y), &(temp_evt_gyro.gyro.z));
-    /*------------------------------------------------------------------------------------------------------------*/
-
+    // Serial.println("  ");
+    // /*------------------------------------------------------------------------------------------------------------*/
+    // // print gyroscope
     // Serial.print("Rot X: ");
     // Serial.print(temp_evt_gyro.gyro.x);
     // Serial.print(", Y: ");
@@ -131,15 +158,47 @@ void GY87_Adafruit::read()
     // Serial.print(" rad/s");
     // Serial.print("  ");
     // /*------------------------------------------------------------------------------------------------------------*/
-    // Serial.print("Mag X: ");
+    // // print magnetic
+    // Serial.print("Mage X: ");
     // Serial.print(temp_evt_compass.magnetic.x);
     // Serial.print(", Y: ");
     // Serial.print(temp_evt_compass.magnetic.y);
     // Serial.print(", Z: ");
     // Serial.print(temp_evt_compass.magnetic.z);
-    // Serial.print(" rad/s");
+    // Serial.print(" uT");
     // Serial.println("  ");
-    /*---------------------------------------------------maj. data raw au TR---------------------------------------------------------*/
+    // Format pour MagViewer
+    // Serial.println(String(temp_evt_compass.magnetic.x) + "," + String(temp_evt_compass.magnetic.y) + "," + String(temp_evt_compass.magnetic.z));
+    float dataBrut[3] = {temp_evt_compass.magnetic.x, temp_evt_compass.magnetic.y, temp_evt_compass.magnetic.z};
+    transformation(dataBrut);
+    // Serial.println(String(calibrated_values[0]) + " " + String(calibrated_values[1]) + " " + String(calibrated_values[2]));
+    Serial.println(String(calibrated_values[0]) + "," + String(calibrated_values[1]) + "," + String(calibrated_values[2]));
+
+    /*------------------------------------------------------------------------------------------------------------*/
+    // Calculer  et  print Pitch & Roll
+    /* Calculate pitch and roll, in the range (-pi,pi) */
+    // double pitch = atan2((double)-temp_evt_acce.acceleration.x, sqrt((long)temp_evt_acce.acceleration.z * (long)temp_evt_acce.acceleration.z + (long)temp_evt_acce.acceleration.y * (long)temp_evt_acce.acceleration.y));
+    // double roll = atan2((double)temp_evt_acce.acceleration.y, sqrt((long)temp_evt_acce.acceleration.z * (long)temp_evt_acce.acceleration.z + (long)temp_evt_acce.acceleration.x * (long)temp_evt_acce.acceleration.x));
+    // Serial.print("Pitch_Manul : "); // 0.01
+    // Serial.print(pitch * 180.0 / 3.14);
+    // Serial.print("  Roll_Manul : "); // 0.05
+    // Serial.print(roll * 180.0 / 3.14);
+    // Serial.println("  ");
+    /*------------------------------------------------------------------------------------------------------------*/
+    // Calculer et print Azimuth
+    // double X_h = (double)calibrated_values[0] * cos(pitch) + (double)calibrated_values[1] * sin(roll) * sin(pitch) + (double)calibrated_values[2] * cos(roll) * sin(pitch);
+    // double Y_h = (double)calibrated_values[1] * cos(roll) - (double)calibrated_values[2] * sin(roll);
+    // double azimuth = atan2(Y_h, X_h);
+    // azimuth = atan2(Y_h, X_h);
+    // if (azimuth < 0)
+    // { /* Convert Azimuth in the range (0, 2pi) */
+    // azimuth = 2 * M_PI + azimuth;
+    // }
+    // appliquer declination de Quebec
+
+    // Serial.print("azimuth ");
+    // Serial.println((azimuth * 180.0 / 3.14) + _magneticDeclinationDegrees);
+    /*-------------------------------------------------maj. data raw au TR----------------------------------------------*/
     this->_TSProperties->PropertiesCompass.Acc_X = temp_evt_acce.acceleration.x;
     this->_TSProperties->PropertiesCompass.Acc_Y = temp_evt_acce.acceleration.y;
     this->_TSProperties->PropertiesCompass.Acc_Z = temp_evt_acce.acceleration.z;
@@ -152,43 +211,21 @@ void GY87_Adafruit::read()
     this->_TSProperties->PropertiesCompass.Mag_Y = temp_evt_compass.magnetic.y;
     this->_TSProperties->PropertiesCompass.Mag_Z = temp_evt_compass.magnetic.z;
     /*-------------------------------------------------Immiter une chute pour tester-----------------------------------------------------------*/
-    if (this->_TSProperties->PropertiesCompass.Acc_X > 4 && this->_TSProperties->PropertiesCompass.Gyro_X > 4)
-    {
-        Serial.println("Chute Detecter!");
-        this->_TSProperties->PropertiesGPS.estChute = true;
-        _timeSpamBuzzerChute = millis();
-    }
-    if (millis() - _timeSpamBuzzerChute < 4000)
-    {
-        digitalWrite(PIN_BUZZER, HIGH);
-        delay(500);
-        digitalWrite(PIN_BUZZER, LOW);
-    }
+    // if (this->_TSProperties->PropertiesCompass.Acc_X > 4 && this->_TSProperties->PropertiesCompass.Gyro_X > 4)
+    // {
+    //     Serial.println("Chute Detecter!");
+    //     this->_TSProperties->PropertiesGPS.estChute = true;
+    //     _timeSpamBuzzerChute = millis();
+    // }
+    // if (millis() - _timeSpamBuzzerChute < 4000)
+    // {
+    //     digitalWrite(PIN_BUZZER, HIGH);
+    //     delay(500);
+    //     digitalWrite(PIN_BUZZER, LOW);
+    // }
     /*------------------------------------------------------------------------------------------------------------*/
-
-    // Serial.print("Pitch-Gyro: ");
-    // Serial.print(temp_evt_gyro.gyro.pitch);
-    // Serial.print(", Y: ");
-    // Serial.print(temp_evt_gyro.gyro.y);
-    // Serial.print(", Z: ");
-    // Serial.print(temp_evt_gyro.gyro.z);
-    // Serial.print(" rad/s");
-    // Serial.print("  ");
-
-    // Serial.print("XYZ: ");
-    // Serial.print(temp_evt_compass.magnetic.x);
-    // Serial.print("  ");
-    // // Serial.print("Y: ");
-    // Serial.print(temp_evt_compass.magnetic.y);
-    // Serial.print("  ");
-    // // Serial.print("Z: ");
-    // Serial.print(temp_evt_compass.magnetic.z);
-    // Serial.print("  ");
-    // Serial.print("uT");
-    // // Serial.print("  ");
-    // Serial.println("  ");
-    // 以上程序获得磁力计的原始数据，单位特斯拉，是单位高斯的千分之一
-    // 一下程序进行HMC原始数据校准
+    // Le programme ci-dessus obtient les données originales du magnétomètre. L'unité est Tesla, qui est un millième de l'unité Gauss.
+    // Le programme suivant effectue l'étalonnage des données brutes HMC
     // Serial.println("Calibration HMC5883L  ");
     // uint8_t i = 0;
     // float GaX, GaY, GaXmax = 0, GaXmin = 0, GaYmax = 0, GaYmin = 0;
@@ -241,14 +278,14 @@ void GY87_Adafruit::read()
 
     // /*---------------------------------Sauvgarder donnees bruits en Json----------------------------------------*/
 
-    // -------------------------------计算欧拉角----------------------------------------------
+    // -------------------------------Calculer les angles d'Euler----------------------------------------------
     // Serial.print("Time -> ");
     // Serial.println(esp_timer_get_time());
     // this->Now = esp_timer_get_time();
     // this->deltat = (float)((this->Now - this->lastUpdate) / 1000000.0f);
     // this->lastUpdate = this->Now;
 
-    // 计算四元数来获取欧拉角
+    // Calculer les quaternions pour obtenir les angles d'Euler
     // this->MadgwickQuaternionUpdate(this->evt_acce->acceleration.x, this->evt_acce->acceleration.y, this->evt_acce->acceleration.z, this->evt_gyro->gyro.x * PI / 180.0f, this->evt_gyro->gyro.y * PI / 180.0f, this->evt_gyro->gyro.z * PI / 180.0f, this->evt_compass->magnetic.x, this->evt_compass->magnetic.y, this->evt_compass->magnetic.z);
     // Serial.print("Q1 : ");
     // Serial.print(this->q[0]);
@@ -272,8 +309,6 @@ void GY87_Adafruit::read()
     //     Serial.println("Chute detecter!");
     //     this->_TSProperties->PropertiesGPS.estChute = true;
     // }
-
-    // /*---------------------------------Sauvgarder donnees bruits en Json----------------------------------------*/
 }
 
 void GY87_Adafruit::displayCompassSensorDetails(void)
@@ -413,6 +448,7 @@ void GY87_Adafruit::calibrationHMC5883L(void)
         GaX = temp_evt_compass.magnetic.x;
         GaY = temp_evt_compass.magnetic.y;
 
+        // trouver le max et min pour X et Y
         GaXmax = GaXmax < GaX ? GaX : GaXmax;
         GaXmin = GaXmin > GaX ? GaX : GaXmin;
         GaYmax = GaYmax < GaY ? GaY : GaYmax;
@@ -421,8 +457,10 @@ void GY87_Adafruit::calibrationHMC5883L(void)
         i++;
         /* code */
     }
+    // definir les Offsets
     this->Xoffset = (GaXmax + GaXmin) / 2;
     this->Yoffset = (GaYmax + GaYmin) / 2;
+    // definir les K
     this->Kx = 2 / (GaXmax - GaXmin);
     this->Ky = 2 / (GaYmax - GaYmin);
     // Serial.println("La Calibration est fini.");
@@ -590,7 +628,7 @@ void GY87_Adafruit::quaternionToEuler()
     roll = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
     pitch *= 180.0f / PI;
     yaw *= 180.0f / PI;
-    yaw -= 54.0f; // Declination: 00 54 48.83, 2023-3-23，应用魁北克当地的磁偏角
+    // yaw -= 54.0f; // Declination: 00 54 48.83, 2023-3-23，应用魁北克当地的磁偏角
     roll *= 180.0f / PI;
 
     // Get gravity
@@ -598,4 +636,17 @@ void GY87_Adafruit::quaternionToEuler()
     gravityVector[0] = 2 * (q[1] * q[3] - q[0] * q[2]);
     gravityVector[1] = 2 * (q[0] * q[1] + q[2] * q[3]);
     gravityVector[2] = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
+}
+
+void GY87_Adafruit::transformation(float uncalibrated_values[3])
+{
+    // calculation
+    for (int i = 0; i < 3; ++i)
+        uncalibrated_values[i] = uncalibrated_values[i] - bias[i];
+    float result[3] = {0, 0, 0};
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+            result[i] += calibration_matrix[i][j] * uncalibrated_values[j];
+    for (int i = 0; i < 3; ++i)
+        calibrated_values[i] = result[i];
 }

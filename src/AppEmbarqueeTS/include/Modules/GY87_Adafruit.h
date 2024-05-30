@@ -21,9 +21,25 @@ private:
     int _vCalibrated[3];
     float Xoffset = 0, Yoffset = 0;
     float Kx = 0, Ky = 0;
-    float _magneticDeclinationDegrees = 0;
+    float _magneticDeclinationDegrees = MagneticDeclinationDegreesQuebec;
     unsigned long _timeSpamBuzzerChute;
-
+    // new sets of Calibration
+    // calibration_matrix[3][3] is the transformation matrix
+    // replace M11, M12,..,M33 with your transformation matrix data
+    double calibration_matrix[3][3] =
+        {
+            {0.7, 0.008, -1.258},
+            {-0.018, 0.825, 2.058},
+            {0.007, -0.069, 5.153}};
+    // bias[3] is the bias
+    // replace Bx, By, Bz with your bias data
+    double bias[3] =
+        {
+            23.234,
+            5.903,
+            7.468};
+    // calibrated magnietude data
+    float calibrated_values[3];
     //
     float GyroMeasError = PI * (60.0f / 180.0f);
     float beta = sqrt(3.0f / 4.0f) * GyroMeasError; // compute beta
@@ -55,4 +71,6 @@ public:
     void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
     void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
     void quaternionToEuler();
+    // new Calibration methode
+    void transformation(float uncalibrated_values[3]);
 };

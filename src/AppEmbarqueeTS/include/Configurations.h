@@ -125,13 +125,15 @@
 #define SDCARD_POSITION_NUMBER_OF_POINTS 9
 #define SDCARD_NUMBER_ELEMENTS_OF_POINT 8
 
-/*----- GSM LilyGO T-SIM7000G (GPS, LTE) -----*/
+/*----- GSM LilyGO T-SIM7600G (GPS, LTE) -----*/
 // Exemple point
 // 1;0.0000000000;0.0000000000;0.0000000000;00.00;00.00;0000/00/00-00:00:00;00:00:00
 
 // Exemple Stats
 // 00000000-0000-0000-0000-000000000000;00000000-0000-0000-0000-000000000000;00.00;00.00;0000/00/00-00:00:00;0000/00/00-00:00:00;00:00:00;000.0;5;0
 
+// https://www.magnetic-declination.com/Canada/Quebec/337254.html#:~:text=Answer%3A%20%2D15.09%C2%B0%20(%2D15%C2%B05')
+#define MagneticDeclinationDegreesQuebec -15.09
 #define SerialAT Serial1
 #define GPS_UART_BAUD 115200
 #define PIN_DTR 25

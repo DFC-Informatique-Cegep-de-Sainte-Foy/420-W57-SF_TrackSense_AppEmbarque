@@ -356,6 +356,7 @@ void BLE::updateTSProperties()
 
     BLE::isNeedToUpdateTSProperties = false;
 };
+
 void BLE::lancerTrajet()
 {
     Serial.println("Trajet receving...");

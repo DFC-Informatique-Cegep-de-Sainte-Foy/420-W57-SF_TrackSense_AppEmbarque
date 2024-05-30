@@ -214,24 +214,6 @@ void ControlerScreen::tick()
             if (menu == "Liste_Trajet")
             {
                 this->drawTrajets(sousMenu);
-                // sur Ecran, affiche les informations:
-
-                // if (sousMenu == 0)
-                // {
-                //     // Ecran Trajet 1
-                // }
-                // else if (sousMenu == 1)
-                // {
-                //     // Ecran Trajet 2
-                // }
-                // else if (sousMenu == 2)
-                // {
-                //     // Ecran Trajet 3
-                // }
-                // else if (sousMenu == 3)
-                // {
-                //     // Ecran Trajet 4
-                // }
             }
             if (menu == "DEMARRER")
             {
