@@ -186,18 +186,19 @@ void GY87_Adafruit::read()
     // Serial.println("  ");
     /*------------------------------------------------------------------------------------------------------------*/
     // Calculer et print Azimuth
-    // double X_h = (double)calibrated_values[0] * cos(pitch) + (double)calibrated_values[1] * sin(roll) * sin(pitch) + (double)calibrated_values[2] * cos(roll) * sin(pitch);
-    // double Y_h = (double)calibrated_values[1] * cos(roll) - (double)calibrated_values[2] * sin(roll);
-    // double azimuth = atan2(Y_h, X_h);
-    // azimuth = atan2(Y_h, X_h);
-    // if (azimuth < 0)
-    // { /* Convert Azimuth in the range (0, 2pi) */
-    // azimuth = 2 * M_PI + azimuth;
-    // }
+    double X_h = (double)calibrated_values[0] * cos(pitch) + (double)calibrated_values[1] * sin(roll) * sin(pitch) + (double)calibrated_values[2] * cos(roll) * sin(pitch);
+    double Y_h = (double)calibrated_values[1] * cos(roll) - (double)calibrated_values[2] * sin(roll);
+    double azimuth = atan2(Y_h, X_h);
+    azimuth = atan2(Y_h, X_h);
+    if (azimuth < 0)
+    { /* Convert Azimuth in the range (0, 2pi) */
+        azimuth = 2 * M_PI + azimuth;
+    }
     // appliquer declination de Quebec
-
     // Serial.print("azimuth ");
     // Serial.println((azimuth * 180.0 / 3.14) + _magneticDeclinationDegrees);
+    this->_TSProperties->PropertiesCompass.heading = (azimuth * 180.0 / 3.14) + _magneticDeclinationDegrees;
+
     /*-------------------------------------------------maj. data raw au TR----------------------------------------------*/
     this->_TSProperties->PropertiesCompass.Acc_X = temp_evt_acce.acceleration.x;
     this->_TSProperties->PropertiesCompass.Acc_Y = temp_evt_acce.acceleration.y;
