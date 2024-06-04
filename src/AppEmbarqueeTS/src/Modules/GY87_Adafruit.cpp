@@ -212,18 +212,18 @@ void GY87_Adafruit::read()
     this->_TSProperties->PropertiesCompass.Mag_Y = temp_evt_compass.magnetic.y;
     this->_TSProperties->PropertiesCompass.Mag_Z = temp_evt_compass.magnetic.z;
     /*-------------------------------------------------Immiter une chute pour tester-----------------------------------------------------------*/
-    // if (this->_TSProperties->PropertiesCompass.Acc_X > 4 && this->_TSProperties->PropertiesCompass.Gyro_X > 4)
-    // {
-    //     Serial.println("Chute Detecter!");
-    //     this->_TSProperties->PropertiesGPS.estChute = true;
-    //     _timeSpamBuzzerChute = millis();
-    // }
-    // if (millis() - _timeSpamBuzzerChute < 4000)
-    // {
-    //     digitalWrite(PIN_BUZZER, HIGH);
-    //     delay(500);
-    //     digitalWrite(PIN_BUZZER, LOW);
-    // }
+    if (this->_TSProperties->PropertiesCompass.Acc_X > 4 && this->_TSProperties->PropertiesCompass.Gyro_X > 4)
+    {
+        Serial.println("Chute Detecter!");
+        this->_TSProperties->PropertiesGPS.estChute = true;
+        _timeSpamBuzzerChute = millis();
+    }
+    if (millis() - _timeSpamBuzzerChute < 4000)
+    {
+        digitalWrite(PIN_BUZZER, HIGH);
+        delay(500);
+        digitalWrite(PIN_BUZZER, LOW);
+    }
     /*------------------------------------------------------------------------------------------------------------*/
     // Le programme ci-dessus obtient les données originales du magnétomètre. L'unité est Tesla, qui est un millième de l'unité Gauss.
     // Le programme suivant effectue l'étalonnage des données brutes HMC
