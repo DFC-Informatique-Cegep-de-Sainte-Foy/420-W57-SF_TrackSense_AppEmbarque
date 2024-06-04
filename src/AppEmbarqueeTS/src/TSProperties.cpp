@@ -12,6 +12,7 @@ TSProperties::TSProperties() : PropertiesTS(),
                                PropertiesGPS()
 {
     this->initProperties();
+    this->trajet = new Trajet();
 }
 
 TSProperties::~TSProperties()
@@ -26,7 +27,6 @@ void TSProperties::initProperties()
     this->PropertiesTS.IsInitializedGSM = true;
     this->PropertiesTS.IsOnStanby = false;
     this->PropertiesTS.IsFrenchMode = true; // À récupérer dans la mémoire avec les paramètres du cellulaire un jour
-
     // Battery
     this->PropertiesBattery.BatteryLevelPourcentage = 0;
 
@@ -43,16 +43,16 @@ void TSProperties::initProperties()
 
     // SD Card
     this->PropertiesSDCard.IsSDCardConnected = false;
-
+    this->PropertiesSDCard.NombreRidePlanifie = 0;
     // Screen
-    this->PropertiesScreen.ActiveScreen = INIT_TS_PAGE_ID;
+    this->PropertiesScreen.etat_Actuel = "INITIALISATION";
+    this->PropertiesScreen.ActiveScreen = INIT_TS_PAGE_ID; //-1
     this->PropertiesScreen.IsDarkMode = true;
     this->PropertiesScreen.ScreenRotation = atoi(ControlerConfigurationFile::getValue(FIELD_SCREEN_ROTATION).c_str());
     this->PropertiesScreen.IsScreenRotationChanged = false;
-
+    this->PropertiesScreen.estChange = false;
     // Current Ride
     this->PropertiesCurrentRide.resetCurrentRide();
-    
     // BLE
     this->PropertiesCompletedRideToSend.CompletedRideId = "00000000-0000-0000-0000-000000000000";
     this->PropertiesCompletedRideToSend.Stats = "";
@@ -67,5 +67,4 @@ void TSProperties::initProperties()
 
     // GPS
     this->PropertiesGPS.resetGPSValues();
-
 }

@@ -5,16 +5,20 @@
 #include "TSProperties.h"
 
 #include "Modules/ScreenGC9A01.h"
-
-
-
+#include "StringQueue.h"
+#include "Modules/SDCard.h"
 class ControlerScreen : public IControlerScreen
 {
 private:
     TSProperties *_TSProperties;
     ScreenGC9A01 *_screen;
+    StringQueue *_trajetsSauvgardeSD;
+    ISDCard *_sd;
+
     unsigned long _timeToDisplayEndingRidePageMS;
-    
+    bool entreCompass = false;
+    float lastDegree = -1;
+
     SemaphoreHandle_t _xMutex; // Create a mutex object
 
     /* Pages */
@@ -28,9 +32,16 @@ private:
     void drawRideStatisticsPage() override;
     void drawEndingRidePage() override;
     void drawErrorPage() override;
+    void drawWatch() override;
+    void drawTrajets(int) override;
+    void drawDemarrerPrincipal() override;
+    void drawPauseStop() override;
+    void drawReDemarrer() override;
+    void drawStatisticRide(int) override;
+    void refresh();
 
 public:
-    ControlerScreen(TSProperties *TSProperties);
+    ControlerScreen(TSProperties *TSProperties, StringQueue *trajetsSD, ISDCard *sdCard);
     ~ControlerScreen();
 
     /*
@@ -56,6 +67,8 @@ public:
         -2 : Page Fin Trajet
         -3 : Page Erreur
     */
+
     void tick() override;
     void drawOnScreen() override;
+    float calculerDirectionDegree(float p_longitude_destination, float p_latitude_destination);
 };

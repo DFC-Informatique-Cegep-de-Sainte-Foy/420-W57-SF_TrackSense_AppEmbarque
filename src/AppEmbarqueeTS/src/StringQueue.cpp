@@ -68,4 +68,14 @@ bool StringQueue::contains(const String &data)
         current = current->next;
     }
     return false;
+}
+String StringQueue::getNode(int p_index)
+{
+    // if (this->getSize() <= p_index)
+    // {
+    //     throw std::invalid_argument("Index out of boundary");
+    // }
+    // TODO: parcourir la liste
+
+    return String("Trajet _name->" + String(666));
 };

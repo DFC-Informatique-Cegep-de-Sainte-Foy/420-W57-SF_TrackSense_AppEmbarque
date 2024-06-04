@@ -10,25 +10,33 @@
 #include "Interfaces/IBLE.h"
 #include "Configurations.h"
 #include "TSProperties.h"
+#include "Trajet.h"
+#include "Modules/SDCard.h"
+#include "Interfaces/ISDCard.h"
 
-class BLE 
+class BLE
     : public IBLE
 {
 private:
-    TSProperties* _TSProperties;
+    TSProperties *_TSProperties;
+    ISDCard *_sd;
 
-    BLEServer* _serverBLE;
-    BLEAdvertising* _advertisingBLE;
+    BLEServer *_serverBLE;
+    BLEAdvertising *_advertisingBLE;
 
-    BLEService* _completedRideService;
-    BLECharacteristic* _CRDataCharacteristic;
-    BLECharacteristic* _CRNotificationCharacteristic;
-    BLEDescriptor* _CRDataDescriptor;
-    BLEDescriptor* _CRNotificationDescriptor;
+    BLEService *_completedRideService;
+    BLECharacteristic *_CRDataCharacteristic;
+    BLECharacteristic *_CRNotificationCharacteristic;
+    BLEDescriptor *_CRDataDescriptor;
+    BLEDescriptor *_CRNotificationDescriptor;
 
-    BLEService* _screenService;
-    BLECharacteristic* _screenRotateCharacteristic;
-    BLEDescriptor* _screenRotateDescriptor;
+    BLEService *_screenService;
+    BLECharacteristic *_screenRotateCharacteristic;
+    BLEDescriptor *_screenRotateDescriptor;
+
+    BLEService *_receiveTrajetPlanifieService;
+    BLECharacteristic *_trajetPlanifieCharacteristic;
+    BLEDescriptor *_trajetPlanifieDescriptor;
 
     unsigned long _lastTimeStatsSent;
     unsigned long _lastTimePointSent;
@@ -48,6 +56,9 @@ private:
 
     void updateTSProperties();
 
+    //
+    void lancerTrajet();
+
 public:
     static bool isDeviceConnected;
     static bool isCompletedRideStatsSending;
@@ -58,8 +69,10 @@ public:
     static int currentPointNumber;
 
     static bool isNeedToUpdateTSProperties;
+    static bool isRecivedTrajet;
+    static bool isRecived;
 
-    BLE(TSProperties* TSProperties);
+    BLE(TSProperties *TSProperties, ISDCard *SD);
     ~BLE();
 
     void tick() override;

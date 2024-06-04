@@ -1,25 +1,34 @@
 #pragma once
 #include <Arduino.h>
 #include "Configurations.h"
+#include "Trajet.h"
 
 class TSProperties
 {
 public:
     /* Datas TrackSense */
+    Trajet *trajet;
+
     struct TSPropertiesTS
     {
         bool IsInitializingTS;
         bool IsInitializedGSM;
-        bool IsOnStanby;    // mode veille
-        bool IsFrenchMode;  // mode français. If false, mode english. // TODO : Take from Configuration.json file
+        bool IsOnStanby;   // mode veille
+        bool IsFrenchMode; // mode français. If false, mode english. // TODO : Take from Configuration.json file
     } PropertiesTS;
 
     /* datas Current ride */
     struct TSPropertiesCurrentRide
     {
+        double latitude_destination;  // y
+        double longitude_destination; // x
+        double latitude_point_depart;
+        double longitude_point_depart;
+
         bool IsRideStarted;
         bool IsRidePaused;
         bool IsRideFinished;
+        bool estArrive;
 
         String CompletedRideId;
         String PlannedRideId;
@@ -36,7 +45,7 @@ public:
         String CurrentPoint;
         int NbPoints;
         int PointID;
-        int NbFalls;
+        int NbFalls; //??nombre de chute?
         bool IsRideReadyToSave;
         bool IsPointReadyToSave;
         float Temperature;
@@ -63,6 +72,9 @@ public:
 
         void resetCurrentRide()
         {
+            latitude_destination = 0;
+            longitude_destination = 0;
+
             this->IsRideStarted = false;
             this->IsRidePaused = false;
             this->IsRideFinished = false;
@@ -92,6 +104,8 @@ public:
     struct TSPropertiesGPS
     {
         // datas brute GPS
+        float Home_Latitude = 46.78552;   // Cegep
+        float Home_Longitude = -71.28686; // Cegep
         float Latitude;
         float Longitude;
         float Altitude;
@@ -107,6 +121,12 @@ public:
         int Seconde;
         bool IsFixValid;
         bool IsGPSFixed;
+        bool estChute;
+        bool estEnvoyerSMS;
+        float Distance2Home;
+        uint32_t targetTime = 0;
+        uint8_t hh = conv2d(__TIME__), mm = conv2d(__TIME__ + 3), ss = conv2d(__TIME__ + 6); // Get H, M, S from compile time
+        byte omm = 99, oss = 99;
 
         int CounterGoodValue;
         int CounterTotal;
@@ -132,6 +152,11 @@ public:
             this->CounterGoodValue = 0;
             this->CounterTotal = 0;
             this->IsFixValid = false;
+            this->estChute = false;
+            this->estEnvoyerSMS = false;
+            this->targetTime = millis() + 1000;
+            this->omm = 99;
+            this->oss = 99;
         }
     } PropertiesGPS;
 
@@ -142,7 +167,7 @@ public:
         // bool IsButton2Pressed;
         int Button1State;
         int Button2State;
-        unsigned long TimeBeforeInactivityMS; //BUTTON_INACTIVITY_TIME_MS
+        unsigned long TimeBeforeInactivityMS; // BUTTON_INACTIVITY_TIME_MS
 
     } PropertiesButtons;
 
@@ -172,8 +197,10 @@ public:
             -2 : Page Fin Trajet
             -3 : Page Erreur
         */
-        int ActiveScreen;                           // Seul paramètre modifier par le controlerScreen
+        String etat_Actuel;
+        int ActiveScreen; // Seul paramètre modifier par le controlerScreen
         bool IsDarkMode;
+        bool estChange = false;
 
         /*
             0 : Pins vers le haut
@@ -190,6 +217,7 @@ public:
     struct TSPropertiesSDCard
     {
         bool IsSDCardConnected;
+        int NombreRidePlanifie;
     } PropertiesSDCard;
 
     /* datas Bluetooth */
@@ -216,11 +244,40 @@ public:
     /* datas Compass */
     struct TSPropertiesCompass
     {
-        // double Heading_angle; // PositionNord
-        // double DeclinationAngle;
-        // double CalibrationCompassX;
-        // double CalibrationCompassY;
-        // double CalibrationCompassZ;
+        // datas brute Compass
+        float Acc_X;
+        float Acc_Y;
+        float Acc_Z;
+        float Gyro_X;
+        float Gyro_Y;
+        float Gyro_Z;
+        float Mag_X;
+        float Mag_Y;
+        float Mag_Z;
+
+        float heading;
+        float pitch;
+        float roll;
+        float yaw;
+        void resetCompassValues()
+        {
+            // data raw
+            this->Acc_X;
+            this->Acc_Y;
+            this->Acc_Z;
+            this->Gyro_X;
+            this->Gyro_Y;
+            this->Gyro_Z;
+            this->Mag_X;
+            this->Mag_Y;
+            this->Mag_Z;
+            // data normalise
+            this->heading;
+            this->pitch;
+            this->roll;
+            this->yaw;
+        }
+
     } PropertiesCompass;
 
     /* datas Gyroscope */
@@ -280,4 +337,50 @@ public:
     ~TSProperties();
 
     void initProperties();
+    static uint8_t conv2d(const char *p)
+    {
+        uint8_t v = 0;
+        if ('0' <= *p && *p <= '9')
+            v = *p - '0';
+        return 10 * v + *++p - '0';
+    }
+    void startTrajet()
+    {
+        Serial.println("Ride Start!");
+        this->PropertiesCurrentRide.latitude_point_depart = this->PropertiesGPS.Latitude;
+        this->PropertiesCurrentRide.longitude_point_depart = this->PropertiesGPS.Longitude;
+        this->trajet->points->push_back(Location(this->PropertiesCurrentRide.latitude_point_depart, this->PropertiesCurrentRide.longitude_point_depart));
+        this->trajet->dateBegin = String(__DATE__);
+    }
+    void rajouterPointsDansTrajet()
+    {
+        this->trajet->points->push_back(Location(this->PropertiesGPS.Latitude, this->PropertiesGPS.Longitude));
+    }
+
+    void endTrajet()
+    {
+        Serial.println("Ride End!");
+        // TODO:
+        this->trajet->estComplete = true;
+        this->trajet->estReadyToSave = true;
+        // this->trajet->nom = "New Trajet";
+        // this->trajet->ride_id = String(getuid());
+        // this->trajet->vitesse_moyenne=
+        //  this->trajet->duration=
+        // this->trajet->distance=
+    }
+
+    void PauseTrajet()
+    {
+        Serial.println("Ride paused!");
+        this->PropertiesCurrentRide.IsRidePaused = true;
+        // TODO:enrgistrer un timeSpam pour le start pause
+    }
+
+    void ReStartRide()
+    {
+        Serial.println("Ride re-start!");
+        this->PropertiesCurrentRide.IsRidePaused = false;
+        // TODO:enrgistrer un timeSpam pour le end pause
+    }
 };

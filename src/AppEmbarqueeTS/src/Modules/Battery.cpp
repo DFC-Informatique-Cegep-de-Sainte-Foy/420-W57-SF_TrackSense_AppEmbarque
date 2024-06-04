@@ -1,7 +1,5 @@
 #include "Modules/Battery.h"
 
-
-
 Battery::Battery(TSProperties *TSProperties) : _TSProperties(TSProperties),
                                                _batteryPercentage(0),
                                                _batteryVoltage(0),
@@ -18,6 +16,8 @@ Battery::~Battery()
 
 void Battery::tick()
 {
+    // Serial.println("3---Batterie --> tick");
+
     this->readBatteryVoltage();
     this->readBatteryPercentage();
 

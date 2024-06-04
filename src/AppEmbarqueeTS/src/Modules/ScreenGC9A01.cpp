@@ -5,11 +5,15 @@
 #include <Fonts/FreeSansOblique9pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeSans18pt7b.h>
+
 // #include <Fonts/BebasNeue_Regular18pt7b.h> // Font logo TrackSense
 // #include <Fonts/BebasNeue_Regular6pt7b.h>  // Font logo TrackSense
 // #include <Fonts/BebasNeue_Regular24pt7b.h> // Font logo TrackSense
 
-ScreenGC9A01::ScreenGC9A01(TSProperties *TSProperties) : _TSProperties(TSProperties), _lastBuffer(0)
+ScreenGC9A01::ScreenGC9A01(TSProperties *TSProperties)
+    : _TSProperties(TSProperties),
+      _lastBuffer(0),
+      status(false)
 {
     this->tft = new Adafruit_GC9A01A(TFT_CS, TFT_DC, TFT_MOSI, TFT_CLK, TFT_RST, TFT_MISO);
     this->canvas = new GFXcanvas16(TFT_WIDTH, TFT_HEIGHT);
@@ -207,6 +211,45 @@ void ScreenGC9A01::drawStatistics(String title, String value, String unit, int16
     this->setFont(2);
     this->printText(value, valueCoordX, coordY);
 }
+
+void ScreenGC9A01::drawCompass(float degree)
+{
+    this->sdeg = degree;
+    // Lorsque vous accédez à l'écran de la boussole pour la première fois ou que vous y entrez à nouveau,
+    // préparez la boussole et dessinez la boussole une seule fois, puis ne dessinez plus la boussole dans chaque boucle.
+    if (!this->status)
+    {
+        Serial.println("Compass---->Entrer");
+        // Dessine une boussole
+        this->tft->setTextColor(WHITE, GREY);
+        this->tft->fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
+        this->tft->fillCircle(120, 120, 110, BLACK);
+        // Mettre à jour l'état de l'écran
+        this->status = true;
+    }
+    // this->tft->fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
+    // this->tft->fillCircle(120, 120, 110, BLACK);
+    // Lorsque la valeur change, la dernière ombre dessinée est effacée.
+    // S'il n'y a pas de changement, la forme actuelle est conservée.
+    if (lastDegree != degree)
+    {
+        Serial.println("Compass---->Change");
+        lastDegree = degree; // Mettre à jour la valeur
+        this->tft->fillTriangle(ox, oy, px, py, rx, ry, BLACK);
+        this->tft->fillTriangle(qx, qy, px, py, rx, ry, BLACK);
+        this->tft->fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, BLACK);
+        delayMicroseconds(80);
+    }
+    Draw_points_azimuths();
+    Draw_green_ticks_bevels();
+    Draw_Compass(degree);
+    Draw_Destination(60);
+}
+
+void ScreenGC9A01::drawBoutonTriangle(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3)
+{
+    this->canvas->fillTriangle(x1, y1, x2, y2, x3, y3, GREEN);
+}
 #pragma endregion Elements
 
 /*
@@ -384,6 +427,278 @@ void ScreenGC9A01::drawFillRect(int16_t x, int16_t y, int16_t width, int16_t hei
     {
         this->canvas->fillRect(x, y, width, height, lightModeColor);
     }
+}
+
+void ScreenGC9A01::Draw_green_ticks_bevels()
+{
+    for (float i = 0; i < 360; i += 22.5) // draw 16 line segments at the outer ring
+    {
+        sx = cos((i - 90) * DEG2RAD);
+        sy = sin((i - 90) * DEG2RAD);
+        x0 = sx * 114 + 120;
+        yy0 = sy * 114 + 120;
+        x1 = sx * 100 + 120;
+        yy1 = sy * 100 + 120;
+        this->tft->drawLine(x0, yy0, x1, yy1, GREEN);
+
+        if (i == 45)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            this->tft->setTextSize(2);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 - 24, yy0 + 14);
+            this->tft->print("NE");
+        }
+        else if (i == 135)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            this->tft->setTextSize(2);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 - 24, yy0 - 30);
+            this->tft->print("SE");
+        }
+        else if (i == 225)
+        {
+            this->tft->setTextSize(2);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 + 14, yy0 - 30);
+            this->tft->print("SW");
+        }
+        else if (i == 315)
+        {
+            this->tft->setTextSize(2);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 + 14, yy0 + 14);
+            this->tft->print("NW");
+        }
+    }
+}
+
+void ScreenGC9A01::Draw_points_azimuths()
+{
+    for (int i = 0; i < 360; i += 6) // draw 60 dots - minute markers
+    {
+        sx = cos((i - 90) * DEG2RAD);
+        sy = sin((i - 90) * DEG2RAD);
+        x0 = sx * 102 + 120;
+        yy0 = sy * 102 + 120;
+        this->tft->drawPixel(x0, yy0, WHITE);
+
+        if (i == 0)
+        {
+            // tft.fillCircle(x0, yy0, 2, WHITE); // draw N
+            this->tft->setTextSize(3);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 - 7, yy0);
+            this->tft->print("N");
+        }
+
+        if (i == 90)
+        {
+            this->tft->setTextSize(3);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 - 15, yy0 - 10);
+            this->tft->print("E");
+        }
+        if (i == 180)
+        {
+            this->tft->setTextSize(3);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 - 7, yy0 - 20);
+            this->tft->print("S");
+        }
+        if (i == 270)
+        {
+            this->tft->setTextSize(3);
+            this->tft->setTextColor(WHITE);
+            this->tft->setCursor(x0 + 5, yy0 - 10);
+            this->tft->print("O");
+        }
+    }
+}
+
+void ScreenGC9A01::Draw_Destination(float dest)
+{
+    this->tft->fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, BLACK);
+
+    // // Selon la position du point de destination par rapport aux coordonnées actuelles,
+    // // il est divisé en quatre situations : nord-est, sud-est, sud-ouest, nord-ouest des coordonnées actuelles,
+    // // l'écran actuel est inversé de 180 degrés, c'est-à-dire que les coordonnées 0,0 changent ;
+    // // du haut à gauche vers le bas à droite ; si Nord-Est : 90 degrés-dest,
+    // // car l'ensemble est inversé de 180 degrés, donc au final 180 degrés seront ajoutés : 90-dest+180
+    // float degreeAjuste = 0.0;
+    // float DX = _TSProperties->PropertiesCurrentRide.longitude_destination;
+    // float DY = _TSProperties->PropertiesCurrentRide.latitude_destination;
+    // float OX = _TSProperties->PropertiesGPS.Longitude;
+    // float OY = _TSProperties->PropertiesGPS.Latitude;
+
+    // if (DX > OX && DY > OY)
+    // {
+    //     // La destination est dans le Nord-Est actuel
+    //     degreeAjuste = 180 + 90 - (dest);
+    // }
+    // else if (DX > OX && DY < OY)
+    // {
+    //     // La destination est dans le sud-est actuel
+    //     degreeAjuste = 180 + 90 + (dest);
+    // }
+    // else if (DX < OX && DY < OY)
+    // {
+    //     // La destination est dans le sud-ouest actuel
+    //     degreeAjuste = 180 + 90 + (dest);
+    // }
+    // else if (DX < OX && DY > OY)
+    // {
+    //     // La destination est dans le nord-ouest actuel
+    //     degreeAjuste = 180 + 90 + (dest);
+    // }
+
+    // D1x = (120 + (100 * sin((-(180 + 90 - (dest))) * DEG2RAD)));
+    // D1y = (120 + (100 * cos((-(180 + 90 - (dest))) * DEG2RAD)));
+
+    // D2x = (120 + (80 * sin((-(180 + 90 - (dest - 7))) * DEG2RAD)));
+    // D2y = (120 + (80 * cos((-(180 + 90 - (dest - 7))) * DEG2RAD)));
+
+    // D3x = (120 + (80 * sin((-(180 + 90 - (dest + 7))) * DEG2RAD)));
+    // D3y = (120 + (80 * cos((-(180 + 90 - (dest + 7))) * DEG2RAD)));
+
+    // dest = 30;
+
+    D1x = (120 + (100 * sin((180 - ((dest))) * DEG2RAD)));
+    D1y = (120 + (100 * cos((180 - ((dest))) * DEG2RAD)));
+
+    D2x = (120 + (80 * sin((180 - ((dest - 7))) * DEG2RAD)));
+    D2y = (120 + (80 * cos((180 - ((dest - 7))) * DEG2RAD)));
+
+    D3x = (120 + (80 * sin((180 - ((dest + 7))) * DEG2RAD)));
+    D3y = (120 + (80 * cos((180 - ((dest + 7))) * DEG2RAD)));
+
+    // tft.fillCircle(D1x, D1y, 3, RED);
+    // tft.fillCircle(D2x, D2y, 3, BLUE);
+    // tft.fillCircle(D3x, D3y, 3, GREEN);
+
+    this->tft->fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, GREEN);
+}
+
+void ScreenGC9A01::Draw_Compass(float degree)
+{
+    this->sdeg = degree;
+    // Point A
+    // tft.drawLine(ox, oy, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    ox = (120 + (70 * sin((-degree) * DEG2RAD)));
+    oy = (120 + (70 * cos((-degree) * DEG2RAD)));
+    // tft.drawLine(ox, oy, 120, 121, GREEN);
+
+    // point B
+    // tft.drawLine(px, py, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    px = (120 + 15 * sin((90 - degree) * DEG2RAD));
+    py = (120 + 15 * cos((90 - degree) * DEG2RAD));
+    // tft.drawLine(px, py, 120, 121, YELLOW);
+
+    // Point C
+    // tft.drawLine(qx, qy, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    qx = (120 + 70 * sin((180 - degree) * DEG2RAD));
+    qy = (120 + 70 * cos((180 - degree) * DEG2RAD));
+    // tft.drawLine(qx, qy, 120, 121, GREEN);
+
+    // Point D
+    // tft.drawLine(rx, ry, 120, 121, BLACK); // erase hour and minute hand positions every minute
+    rx = (120 + 15 * sin((270 - degree) * DEG2RAD));
+    ry = (120 + 15 * cos((270 - degree) * DEG2RAD));
+    // tft.drawLine(rx, ry, 120, 121, YELLOW);
+
+    // tft.drawTriangle(ox, oy, px, py, rx, ry, RED);
+    this->tft->fillTriangle(ox, oy, px, py, rx, ry, BLUE);
+    // tft.drawTriangle(qx, qy, px, py, rx, ry, BLUE);
+    this->tft->fillTriangle(qx, qy, px, py, rx, ry, RED);
+}
+
+void ScreenGC9A01::Draw_Cadran_Compass()
+{
+    // draw background
+    // this->tft->fillCircle(120, 120, 118, BORDEAUX); // creates outer ring
+    // this->tft->fillCircle(120, 120, 110, BLACK);
+    // Dessinez des graduations vertes et des biseaux
+    Draw_green_ticks_bevels();
+    // Dessinez 60 échelles et azimuts
+    Draw_points_azimuths();
+}
+
+void ScreenGC9A01::cleanNeedleCompass()
+{
+    this->tft->fillTriangle(ox, oy, px, py, rx, ry, BLACK);
+    this->tft->fillTriangle(qx, qy, px, py, rx, ry, BLACK);
+    this->tft->fillTriangle(D1x, D1y, D2x, D2y, D3x, D3y, BLACK);
+}
+
+void ScreenGC9A01::drawFillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
+{
+    this->tft->fillTriangle(x0, y0, x1, y1, x2, y2, color);
+}
+
+void ScreenGC9A01::drawGoHomePage()
+{
+    // Triangle Vert point a Home
+    this->Draw_Destination(calculerDirectionDegree(this->_TSProperties->PropertiesGPS.Home_Longitude, this->_TSProperties->PropertiesGPS.Home_Latitude));
+    // flèche pointant vers le nord
+    this->Draw_FlecheNord(this->_TSProperties->PropertiesCompass.heading);
+    this->Draw_Distance();
+}
+float ScreenGC9A01::calculerDirectionDegree(float p_longitude_destination, float p_latitude_destination)
+{
+    double newDirectionDestinationRAD = 0.0;
+    float newDirectionDestinationDegree = 0.0;
+
+    float newHeading = _TSProperties->PropertiesCompass.heading;
+    float DX = p_longitude_destination;                // longitude de destination
+    float DY = p_latitude_destination;                 // dimension de destination
+    float OX = _TSProperties->PropertiesGPS.Longitude; // longitude actuelle
+    float OY = _TSProperties->PropertiesGPS.Latitude;  // dimension actuelle
+
+    float param1 = (90 - OY) * (DY - OY);
+    float param2 = sqrt((90 - DY) * (90 - DY));
+    float param3 = sqrt((DX - OX) * (DX - OX) + (DY - OY) * (DY - OY));
+    newDirectionDestinationRAD = cos(param1 / (param2 * param3));
+    newDirectionDestinationDegree = newDirectionDestinationRAD * RAD2DEG;
+    newDirectionDestinationDegree += 180;
+    newDirectionDestinationDegree += _TSProperties->PropertiesCompass.heading;
+    Serial.println("Degree---->" + String(newDirectionDestinationDegree));
+    return newDirectionDestinationDegree;
+}
+
+void ScreenGC9A01::Draw_FlecheNord(float azimuth)
+{
+    this->tft->drawLine(directionNordx1, directionNordy1, directionNordEndX, directionNordEndY, BLACK);
+    this->tft->fillTriangle(directionNordx1, directionNordy1, directionNordx2, directionNordy2, directionNordx3, directionNordy3, BLACK);
+
+    // TODO:
+    this->sdeg = azimuth;
+    // Point A
+    directionNordx1 = (120 + (70 * sin((-azimuth) * DEG2RAD)));
+    directionNordy1 = (120 + (70 * cos((-azimuth) * DEG2RAD)));
+
+    // Point end
+    directionNordEndX = (120 + 70 * sin((180 - azimuth) * DEG2RAD));
+    directionNordEndY = (120 + 70 * cos((180 - azimuth) * DEG2RAD));
+
+    this->tft->drawLine(directionNordx1, directionNordy1, directionNordEndX, directionNordEndY, WHITE);
+
+    directionNordx2 = (120 + (50 * sin((-((azimuth - 10))) * DEG2RAD)));
+    directionNordy2 = (120 + (50 * cos((-((azimuth - 10))) * DEG2RAD)));
+
+    directionNordx3 = (120 + (50 * sin((-((azimuth + 10))) * DEG2RAD)));
+    directionNordy3 = (120 + (50 * cos((-((azimuth + 10))) * DEG2RAD)));
+
+    this->tft->fillTriangle(directionNordx1, directionNordy1, directionNordx2, directionNordy2, directionNordx3, directionNordy3, WHITE);
+}
+
+void ScreenGC9A01::Draw_Distance()
+{
+    this->tft->setTextSize(3);
+    this->tft->setTextColor(WHITE);
+    this->tft->setCursor(120 - 35, 120 + 70);
+    this->tft->print(String(this->_TSProperties->PropertiesGPS.Distance2Home) + " m");
+    // this->tft->print("1500 m");
 }
 #pragma endregion DrawingTools
 
